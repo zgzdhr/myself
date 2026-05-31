@@ -8,7 +8,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: AppShell()));
 
     expect(find.text('Personal Memory'), findsOneWidget);
-    expect(find.text('AI 个人记忆与行动整理系统'), findsOneWidget);
+    expect(find.text('万能输入框'), findsOneWidget);
     expect(find.byIcon(Icons.add), findsNothing);
   });
 }

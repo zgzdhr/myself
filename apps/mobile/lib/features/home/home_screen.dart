@@ -1,27 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../../data/local_db/app_database.dart';
+import '../../data/parser/mock_parser_client.dart';
+import '../../data/parser/parser_client.dart';
+import '../extracted_items/extracted_items_controller.dart';
+import '../input/input_screen.dart';
+
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final database = AppDatabase();
+  ref.onDispose(database.close);
+  return database;
+});
+
+final parserClientProvider = Provider<ParserClient>((ref) {
+  return const MockParserClient();
+});
+
+final extractedItemsControllerProvider = Provider<ExtractedItemsController>((
+  ref,
+) {
+  return ExtractedItemsController(
+    database: ref.watch(appDatabaseProvider),
+    parserClient: ref.watch(parserClientProvider),
+  );
+});
+
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text('Personal Memory')),
-      body: const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'AI 个人记忆与行动整理系统',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-              ),
-              SizedBox(height: 12),
-              Text('Task 1 已建立移动端 App 壳，后续会接入输入、确认卡片、本地数据库和首页建议。'),
-            ],
-          ),
-        ),
+      body: InputScreen(
+        controller: ref.watch(extractedItemsControllerProvider),
       ),
     );
   }
