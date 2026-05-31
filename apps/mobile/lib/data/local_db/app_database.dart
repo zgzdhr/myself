@@ -133,4 +133,15 @@ class AppDatabase extends _$AppDatabase {
       tasks,
     )..where((task) => task.status.equals(RecordStatus.confirmed.value))).get();
   }
+
+  Future<List<ShortTermState>> getActiveShortTermStates({
+    required DateTime now,
+  }) {
+    return (select(shortTermStates)..where(
+          (state) =>
+              state.status.equals(RecordStatus.confirmed.value) &
+              state.validUntil.isBiggerThanValue(now),
+        ))
+        .get();
+  }
 }

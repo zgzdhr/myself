@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../data/parser/parser_client.dart';
 import '../../domain/extracted_item.dart';
+import '../extracted_items/edit_extracted_item_sheet.dart';
 import '../extracted_items/extracted_item_card.dart';
 import '../extracted_items/extracted_items_controller.dart';
 
 class InputScreen extends StatefulWidget {
-  const InputScreen({
-    required this.controller,
-    super.key,
-  });
+  const InputScreen({required this.controller, super.key});
 
   final ExtractedItemsController controller;
 
@@ -38,9 +36,9 @@ class _InputScreenState extends State<InputScreen> {
           children: [
             Text(
               '万能输入框',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             const Text('把任务、状态、经历或偏好直接说出来，我会先整理成待确认卡片。'),
@@ -74,12 +72,18 @@ class _InputScreenState extends State<InputScreen> {
               const SizedBox(height: 20),
               Text(
                 '待确认内容',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 12),
-              for (final item in _items) ExtractedItemCard(item: item),
+              for (final item in _items)
+                ExtractedItemCard(
+                  item: item,
+                  onConfirm: () => _confirm(item),
+                  onEdit: () => _edit(item),
+                  onReject: () => _reject(item),
+                ),
             ],
           ],
         ),
@@ -101,7 +105,7 @@ class _InputScreenState extends State<InputScreen> {
       }
 
       setState(() {
-        _items = result.parseResult.items;
+        _items = result.items;
       });
     } on ParserFailure catch (error) {
       if (!mounted) {
@@ -118,5 +122,47 @@ class _InputScreenState extends State<InputScreen> {
         });
       }
     }
+  }
+
+  Future<void> _confirm(ExtractedItem item) async {
+    await widget.controller.confirmExtractedItem(extractedItemId: item.localId);
+    _removeItem(item);
+  }
+
+  Future<void> _edit(ExtractedItem item) async {
+    final editedItem = await showModalBottomSheet<EditedExtractedItem>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => EditExtractedItemSheet(item: item),
+    );
+
+    if (editedItem == null) {
+      return;
+    }
+
+    await widget.controller.confirmExtractedItem(
+      extractedItemId: item.localId,
+      editedTitle: editedItem.title,
+      editedContent: editedItem.content,
+    );
+    _removeItem(item);
+  }
+
+  Future<void> _reject(ExtractedItem item) async {
+    await widget.controller.rejectExtractedItem(extractedItemId: item.localId);
+    _removeItem(item);
+  }
+
+  void _removeItem(ExtractedItem item) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _items = [
+        for (final currentItem in _items)
+          if (currentItem.localId != item.localId) currentItem,
+      ];
+    });
   }
 }

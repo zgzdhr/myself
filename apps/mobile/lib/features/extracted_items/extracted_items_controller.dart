@@ -15,11 +15,13 @@ class SubmitInputResult {
     required this.rawInputId,
     required this.aiParseResultId,
     required this.parseResult,
+    required this.items,
   });
 
   final String rawInputId;
   final String aiParseResultId;
   final ParseResult parseResult;
+  final List<ExtractedItem> items;
 }
 
 class ExtractedItemsController {
@@ -28,15 +30,18 @@ class ExtractedItemsController {
     required this.parserClient,
     String Function()? rawInputIdFactory,
     String Function()? parseResultIdFactory,
+    String Function()? officialRecordIdFactory,
     DateTime Function()? nowProvider,
-  })  : rawInputIdFactory = rawInputIdFactory ?? const Uuid().v4,
-        parseResultIdFactory = parseResultIdFactory ?? const Uuid().v4,
-        nowProvider = nowProvider ?? DateTime.now;
+  }) : rawInputIdFactory = rawInputIdFactory ?? const Uuid().v4,
+       parseResultIdFactory = parseResultIdFactory ?? const Uuid().v4,
+       officialRecordIdFactory = officialRecordIdFactory ?? const Uuid().v4,
+       nowProvider = nowProvider ?? DateTime.now;
 
   final db.AppDatabase database;
   final ParserClient parserClient;
   final String Function() rawInputIdFactory;
   final String Function() parseResultIdFactory;
+  final String Function() officialRecordIdFactory;
   final DateTime Function() nowProvider;
 
   Future<SubmitInputResult> submitInput(String text) async {
@@ -53,7 +58,9 @@ class ExtractedItemsController {
     final rawInputId = rawInputIdFactory();
     final aiParseResultId = parseResultIdFactory();
 
-    await database.into(database.rawInputs).insert(
+    await database
+        .into(database.rawInputs)
+        .insert(
           db.RawInputsCompanion.insert(
             id: rawInputId,
             inputText: trimmedText,
@@ -63,9 +70,16 @@ class ExtractedItemsController {
 
     try {
       final parseResult = await parserClient.parseInput(trimmedText);
+      final persistedItems = _toPersistedItems(
+        items: parseResult.items,
+        rawInputId: rawInputId,
+        now: now,
+      );
 
       await database.transaction(() async {
-        await database.into(database.aiParseResults).insert(
+        await database
+            .into(database.aiParseResults)
+            .insert(
               db.AiParseResultsCompanion.insert(
                 id: aiParseResultId,
                 rawInputId: rawInputId,
@@ -75,12 +89,12 @@ class ExtractedItemsController {
               ),
             );
 
-        for (final (index, item) in parseResult.items.indexed) {
-          await database.into(database.extractedItems).insert(
+        for (final item in persistedItems) {
+          await database
+              .into(database.extractedItems)
+              .insert(
                 _toCompanion(
                   item: item,
-                  index: index,
-                  rawInputId: rawInputId,
                   aiParseResultId: aiParseResultId,
                   now: now,
                 ),
@@ -92,6 +106,7 @@ class ExtractedItemsController {
         rawInputId: rawInputId,
         aiParseResultId: aiParseResultId,
         parseResult: parseResult,
+        items: persistedItems,
       );
     } on ParserFailure catch (error) {
       await _recordParseFailure(
@@ -118,13 +133,122 @@ class ExtractedItemsController {
     }
   }
 
+  Future<void> confirmExtractedItem({
+    required String extractedItemId,
+    String? editedTitle,
+    String? editedContent,
+  }) async {
+    final item = await _getExtractedItem(extractedItemId);
+    final now = nowProvider();
+    final officialRecordId = officialRecordIdFactory();
+    final status =
+        _hasEdits(editedTitle: editedTitle, editedContent: editedContent)
+        ? RecordStatus.edited
+        : RecordStatus.confirmed;
+    final title = editedTitle ?? item.title;
+    final content = editedContent ?? item.content;
+    final fallbackText = title ?? content ?? item.sourceText;
+
+    await database.transaction(() async {
+      await (database.update(
+        database.extractedItems,
+      )..where((row) => row.id.equals(extractedItemId))).write(
+        db.ExtractedItemsCompanion(
+          title: Value(title),
+          content: Value(content),
+          status: Value(status.value),
+          updatedAt: Value(now),
+        ),
+      );
+
+      switch (ItemTypeApiValue.fromApiValue(item.type)) {
+        case ItemType.taskCreate:
+          await database
+              .into(database.tasks)
+              .insert(
+                db.TasksCompanion.insert(
+                  id: officialRecordId,
+                  sourceRawInputId: item.rawInputId,
+                  sourceExtractedItemId: item.id,
+                  title: fallbackText,
+                  description: Value(content),
+                  status: RecordStatus.confirmed.value,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+        case ItemType.shortTermState:
+          await database
+              .into(database.shortTermStates)
+              .insert(
+                db.ShortTermStatesCompanion.insert(
+                  id: officialRecordId,
+                  sourceRawInputId: item.rawInputId,
+                  sourceExtractedItemId: item.id,
+                  content: content ?? title ?? item.sourceText,
+                  tagsJson: Value(item.tagsJson),
+                  validUntil:
+                      item.expiresAt ?? now.add(const Duration(days: 1)),
+                  status: RecordStatus.confirmed.value,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+        case ItemType.lifeEvent:
+          await database
+              .into(database.lifeEvents)
+              .insert(
+                db.LifeEventsCompanion.insert(
+                  id: officialRecordId,
+                  sourceRawInputId: item.rawInputId,
+                  sourceExtractedItemId: item.id,
+                  content: content ?? title ?? item.sourceText,
+                  tagsJson: Value(item.tagsJson),
+                  status: RecordStatus.confirmed.value,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+        case ItemType.profileCandidate:
+          await database
+              .into(database.profileItems)
+              .insert(
+                db.ProfileItemsCompanion.insert(
+                  id: officialRecordId,
+                  sourceRawInputId: item.rawInputId,
+                  sourceExtractedItemId: item.id,
+                  content: content ?? title ?? item.sourceText,
+                  tagsJson: Value(item.tagsJson),
+                  confidence: item.confidence,
+                  status: RecordStatus.confirmed.value,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+        case ItemType.taskUpdate:
+        case ItemType.generalAnswer:
+          break;
+      }
+    });
+  }
+
+  Future<void> rejectExtractedItem({required String extractedItemId}) {
+    return database.updateExtractedItemStatus(
+      id: extractedItemId,
+      status: RecordStatus.rejected,
+      updatedAt: nowProvider(),
+    );
+  }
+
   Future<void> _recordParseFailure({
     required String id,
     required String rawInputId,
     required ParserFailure error,
     required DateTime now,
   }) {
-    return database.into(database.aiParseResults).insert(
+    return database
+        .into(database.aiParseResults)
+        .insert(
           db.AiParseResultsCompanion.insert(
             id: id,
             rawInputId: rawInputId,
@@ -138,14 +262,12 @@ class ExtractedItemsController {
 
   db.ExtractedItemsCompanion _toCompanion({
     required ExtractedItem item,
-    required int index,
-    required String rawInputId,
     required String aiParseResultId,
     required DateTime now,
   }) {
     return db.ExtractedItemsCompanion.insert(
-      id: '$rawInputId:$index',
-      rawInputId: rawInputId,
+      id: item.localId,
+      rawInputId: item.rawInputId,
       aiParseResultId: aiParseResultId,
       type: item.type.apiValue,
       title: Value(item.title),
@@ -165,12 +287,8 @@ class ExtractedItemsController {
     return {
       'user_reply': result.userReply,
       'input_summary': result.inputSummary,
-      'intent_types': [
-        for (final type in result.intentTypes) type.apiValue,
-      ],
-      'items': [
-        for (final item in result.items) _itemToJson(item),
-      ],
+      'intent_types': [for (final type in result.intentTypes) type.apiValue],
+      'items': [for (final item in result.items) _itemToJson(item)],
     };
   }
 
@@ -185,5 +303,43 @@ class ExtractedItemsController {
       'need_user_confirm': item.needUserConfirm,
       'expires_at': item.expiresAt?.toIso8601String(),
     };
+  }
+
+  List<ExtractedItem> _toPersistedItems({
+    required List<ExtractedItem> items,
+    required String rawInputId,
+    required DateTime now,
+  }) {
+    return [
+      for (final (index, item) in items.indexed)
+        ExtractedItem(
+          localId: '$rawInputId:$index',
+          rawInputId: rawInputId,
+          type: item.type,
+          title: item.title,
+          content: item.content,
+          sourceText: item.sourceText,
+          tags: item.tags,
+          confidence: item.confidence,
+          needUserConfirm: item.needUserConfirm,
+          status: RecordStatus.pending,
+          createdAt: now,
+          updatedAt: now,
+          expiresAt: item.expiresAt,
+        ),
+    ];
+  }
+
+  Future<db.ExtractedItem> _getExtractedItem(String id) {
+    return (database.select(
+      database.extractedItems,
+    )..where((item) => item.id.equals(id))).getSingle();
+  }
+
+  bool _hasEdits({
+    required String? editedTitle,
+    required String? editedContent,
+  }) {
+    return editedTitle != null || editedContent != null;
   }
 }
