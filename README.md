@@ -14,6 +14,11 @@
 - `AI_personal_memory_action_system_design_v0.2.md`：最初的产品与系统设计讨论稿。
 - `docs/superpowers/plans/2026-05-31-personal-memory-action-system-mvp.md`：MVP 实施计划。
 
+## Apps
+
+- `apps/mobile`: Flutter Android/iOS app.
+- `apps/api`: Minimal TypeScript DeepSeek API proxy.
+
 ## MVP 闭环
 
 ```text
