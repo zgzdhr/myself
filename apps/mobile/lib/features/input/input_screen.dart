@@ -7,9 +7,16 @@ import '../extracted_items/extracted_item_card.dart';
 import '../extracted_items/extracted_items_controller.dart';
 
 class InputScreen extends StatefulWidget {
-  const InputScreen({required this.controller, super.key});
+  const InputScreen({
+    required this.controller,
+    this.header,
+    this.onRecordsChanged,
+    super.key,
+  });
 
   final ExtractedItemsController controller;
+  final Widget? header;
+  final VoidCallback? onRecordsChanged;
 
   @override
   State<InputScreen> createState() => _InputScreenState();
@@ -34,6 +41,10 @@ class _InputScreenState extends State<InputScreen> {
         padding: const EdgeInsets.all(20),
         child: ListView(
           children: [
+            if (widget.header != null) ...[
+              widget.header!,
+              const SizedBox(height: 20),
+            ],
             Text(
               '万能输入框',
               style: Theme.of(
@@ -127,6 +138,7 @@ class _InputScreenState extends State<InputScreen> {
   Future<void> _confirm(ExtractedItem item) async {
     await widget.controller.confirmExtractedItem(extractedItemId: item.localId);
     _removeItem(item);
+    widget.onRecordsChanged?.call();
   }
 
   Future<void> _edit(ExtractedItem item) async {
@@ -146,11 +158,13 @@ class _InputScreenState extends State<InputScreen> {
       editedContent: editedItem.content,
     );
     _removeItem(item);
+    widget.onRecordsChanged?.call();
   }
 
   Future<void> _reject(ExtractedItem item) async {
     await widget.controller.rejectExtractedItem(extractedItemId: item.localId);
     _removeItem(item);
+    widget.onRecordsChanged?.call();
   }
 
   void _removeItem(ExtractedItem item) {
