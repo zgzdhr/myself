@@ -25,17 +25,37 @@ type DeepSeekChatResponse = {
   }>;
 };
 
+export type ParserServiceErrorCode =
+  | "missing_api_key"
+  | "deepseek_request_failed"
+  | "deepseek_http_error"
+  | "empty_parse_result"
+  | "invalid_parse_result";
+
 export class ParserServiceError extends Error {
-  readonly code: string;
+  readonly code: ParserServiceErrorCode;
   readonly statusCode: number;
   readonly details?: unknown;
 
-  constructor(code: string, statusCode: number, message: string, details?: unknown) {
+  constructor(
+    code: ParserServiceErrorCode,
+    statusCode: number,
+    message: string,
+    details?: unknown,
+  ) {
     super(message);
     this.name = "ParserServiceError";
     this.code = code;
     this.statusCode = statusCode;
     this.details = details;
+  }
+
+  toLogEntry(requestId: string) {
+    return {
+      requestId,
+      errorType: this.code,
+      statusCode: this.statusCode,
+    };
   }
 }
 

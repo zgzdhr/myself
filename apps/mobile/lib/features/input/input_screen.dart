@@ -124,7 +124,9 @@ class _InputScreenState extends State<InputScreen> {
       }
 
       setState(() {
-        _errorMessage = error.userMessage;
+        _errorMessage = error.code == 'empty_input'
+            ? error.userMessage
+            : parserFailureDisplayMessage;
       });
     } finally {
       if (mounted) {

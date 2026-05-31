@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
+import 'privacy_screen.dart';
 
 class MemoryScreen extends StatelessWidget {
   const MemoryScreen({
@@ -28,6 +29,21 @@ class MemoryScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
+              Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: ListTile(
+                  title: const Text('隐私说明'),
+                  subtitle: const Text('了解本地优先、AI 解析和长期画像确认规则'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => const PrivacyScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
               _Section(
                 title: '任务',
                 emptyText: '暂无任务记忆',
