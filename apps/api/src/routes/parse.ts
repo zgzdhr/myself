@@ -6,6 +6,7 @@ import {
   type ParseRequest,
   type ParseResult,
 } from "../schemas/parseResultSchema.js";
+import { ParserServiceError } from "../services/deepseekParser.js";
 
 type ParseText = (request: ParseRequest) => Promise<unknown>;
 
@@ -40,11 +41,22 @@ export function createParseRouter(parseText: ParseText): Router {
       }
 
       response.json(parseResult.data satisfies ParseResult);
-    } catch {
+    } catch (error) {
+      if (error instanceof ParserServiceError) {
+        response.status(error.statusCode).json({
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+        return;
+      }
+
       response.status(503).json({
         error: {
           code: "parser_unavailable",
-          message: "Parser service is not configured yet.",
+          message: "Parser service is unavailable.",
         },
       });
     }
