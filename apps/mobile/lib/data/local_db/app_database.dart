@@ -122,6 +122,57 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> updateProfileItemContent({
+    required String id,
+    required String content,
+    required DateTime updatedAt,
+  }) {
+    return (update(profileItems)..where((item) => item.id.equals(id))).write(
+      ProfileItemsCompanion(
+        content: Value(content),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
+  Future<void> markTaskDeleted({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(tasks)..where((task) => task.id.equals(id))).write(
+      TasksCompanion(
+        status: Value(RecordStatus.deleted.value),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
+  Future<void> markShortTermStateDeleted({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(
+      shortTermStates,
+    )..where((state) => state.id.equals(id))).write(
+      ShortTermStatesCompanion(
+        status: Value(RecordStatus.deleted.value),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
+  Future<void> markLifeEventDeleted({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(lifeEvents)..where((event) => event.id.equals(id))).write(
+      LifeEventsCompanion(
+        status: Value(RecordStatus.deleted.value),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
   Future<List<ProfileItem>> getActiveProfileItems() {
     return (select(
       profileItems,
@@ -132,6 +183,12 @@ class AppDatabase extends _$AppDatabase {
     return (select(
       tasks,
     )..where((task) => task.status.equals(RecordStatus.confirmed.value))).get();
+  }
+
+  Future<List<LifeEvent>> getActiveLifeEvents() {
+    return (select(lifeEvents)
+          ..where((event) => event.status.equals(RecordStatus.confirmed.value)))
+        .get();
   }
 
   Future<List<ShortTermState>> getActiveShortTermStates({
