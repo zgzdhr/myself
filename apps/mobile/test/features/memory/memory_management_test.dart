@@ -32,7 +32,9 @@ void main() {
   });
 
   testWidgets('memory overview shows remembered categories', (tester) async {
-    await tester.pumpWidget(_wrap(MemoryScreen(database: database)));
+    await tester.pumpWidget(
+      _wrap(MemoryScreen(database: database, nowProvider: () => now)),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('记忆管理'), findsOneWidget);
@@ -41,7 +43,13 @@ void main() {
     expect(find.text('生活事件'), findsOneWidget);
     expect(find.text('长期画像'), findsOneWidget);
     expect(find.text('联系王总'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -360));
+    await tester.pumpAndSettle();
     expect(find.text('用户今天感觉疲惫'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -360));
+    await tester.pumpAndSettle();
     expect(find.text('用户不喜欢太频繁的提醒'), findsOneWidget);
   });
 

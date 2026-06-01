@@ -159,7 +159,7 @@ class HomeSuggestionService {
       return '这个任务安排在今天，适合作为当前行动入口。';
     }
 
-    return '这是未来 7 天内的重要任务，适合提前准备。';
+    return '这是未来 7 天内的已确认任务，适合提前准备。';
   }
 
   bool _hasLowEnergy(List<HomeShortTermState> states) {
@@ -196,17 +196,16 @@ class HomeSuggestionService {
 
 extension HomeSuggestionQueries on AppDatabase {
   Future<List<Task>> getSuggestionTasks({required DateTime now}) {
-    final todayEnd = DateTime(now.year, now.month, now.day + 1);
     final nextSevenDaysEnd = now.add(const Duration(days: 7));
 
-    return (select(tasks)..where(
-          (task) =>
-              task.status.equals(RecordStatus.confirmed.value) &
-              task.dueTime.isNotNull() &
-              (task.dueTime.isSmallerThanValue(todayEnd) |
-                  (task.priority.equals('high') &
-                      task.dueTime.isSmallerOrEqualValue(nextSevenDaysEnd))),
-        ))
+    return (select(tasks)
+          ..where(
+            (task) =>
+                task.status.equals(RecordStatus.confirmed.value) &
+                (task.dueTime.isNull() |
+                    task.dueTime.isSmallerOrEqualValue(nextSevenDaysEnd)),
+          )
+          ..orderBy([(task) => OrderingTerm(expression: task.dueTime)]))
         .get();
   }
 }

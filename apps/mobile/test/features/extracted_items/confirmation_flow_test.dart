@@ -45,6 +45,8 @@ void main() {
       final extractedItem = await _getExtractedItem(database, 'raw-1:0');
 
       expect(task.title, '联系王总');
+      expect(task.dueTimeText, '明天上午');
+      expect(task.dueTime, DateTime(2026, 6, 1, 9));
       expect(task.status, RecordStatus.confirmed.value);
       expect(extractedItem.status, RecordStatus.confirmed.value);
     },

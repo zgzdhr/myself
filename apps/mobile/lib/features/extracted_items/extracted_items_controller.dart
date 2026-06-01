@@ -148,6 +148,10 @@ class ExtractedItemsController {
     final title = editedTitle ?? item.title;
     final content = editedContent ?? item.content;
     final fallbackText = title ?? content ?? item.sourceText;
+    final taskDue = _inferTaskDue(
+      text: '${title ?? ''} ${content ?? ''} ${item.sourceText}',
+      now: now,
+    );
 
     await database.transaction(() async {
       await (database.update(
@@ -172,6 +176,8 @@ class ExtractedItemsController {
                   sourceExtractedItemId: item.id,
                   title: fallbackText,
                   description: Value(content),
+                  dueTimeText: Value(taskDue.dueTimeText),
+                  dueTime: Value(taskDue.dueTime),
                   status: RecordStatus.confirmed.value,
                   createdAt: now,
                   updatedAt: now,
@@ -341,5 +347,40 @@ class ExtractedItemsController {
     required String? editedContent,
   }) {
     return editedTitle != null || editedContent != null;
+  }
+
+  ({String? dueTimeText, DateTime? dueTime}) _inferTaskDue({
+    required String text,
+    required DateTime now,
+  }) {
+    if (text.contains('明天上午')) {
+      return (
+        dueTimeText: '明天上午',
+        dueTime: DateTime(now.year, now.month, now.day + 1, 9),
+      );
+    }
+
+    if (text.contains('明天下午')) {
+      return (
+        dueTimeText: '明天下午',
+        dueTime: DateTime(now.year, now.month, now.day + 1, 14),
+      );
+    }
+
+    if (text.contains('明天')) {
+      return (
+        dueTimeText: '明天',
+        dueTime: DateTime(now.year, now.month, now.day + 1, 9),
+      );
+    }
+
+    if (text.contains('今天')) {
+      return (
+        dueTimeText: '今天',
+        dueTime: DateTime(now.year, now.month, now.day, now.hour),
+      );
+    }
+
+    return (dueTimeText: null, dueTime: null);
   }
 }

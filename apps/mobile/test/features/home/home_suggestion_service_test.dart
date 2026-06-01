@@ -43,6 +43,20 @@ void main() {
         status: RecordStatus.pending,
         dueTime: now,
       );
+      await _insertTask(
+        database,
+        id: 'task-no-time',
+        title: '没有时间但已确认的任务',
+        status: RecordStatus.confirmed,
+        dueTime: null,
+      );
+      await _insertTask(
+        database,
+        id: 'task-upcoming-normal',
+        title: '明天联系王总',
+        status: RecordStatus.confirmed,
+        dueTime: now.add(const Duration(days: 1)),
+      );
       await _insertState(
         database,
         id: 'state-active',
@@ -72,7 +86,11 @@ void main() {
 
       final context = await service.loadContext(database: database, now: now);
 
-      expect(context.tasks.map((task) => task.title), ['补交客户资料']);
+      expect(context.tasks.map((task) => task.title), [
+        '没有时间但已确认的任务',
+        '补交客户资料',
+        '明天联系王总',
+      ]);
       expect(context.shortTermStates.map((state) => state.content), [
         '用户今天感觉疲惫',
       ]);
@@ -189,7 +207,7 @@ Future<void> _insertTask(
   required String id,
   required String title,
   required RecordStatus status,
-  required DateTime dueTime,
+  required DateTime? dueTime,
 }) {
   return database
       .into(database.tasks)
@@ -202,8 +220,8 @@ Future<void> _insertTask(
           dueTime: Value(dueTime),
           priority: const Value('medium'),
           status: status.value,
-          createdAt: dueTime,
-          updatedAt: dueTime,
+          createdAt: dueTime ?? DateTime.utc(2026, 5, 31),
+          updatedAt: dueTime ?? DateTime.utc(2026, 5, 31),
         ),
       );
 }
