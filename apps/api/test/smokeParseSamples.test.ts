@@ -65,6 +65,36 @@ test("evaluates parser smoke result against expected and forbidden types", () =>
   );
 });
 
+test("allows accepted alternative types for ambiguous boundary samples", () => {
+  assert.equal(
+    evaluateSampleResult(
+      {
+        id: "ambiguous",
+        label: "ambiguous",
+        text: "今天客户说话让我有点不舒服",
+        expectedTypes: [],
+        acceptedTypes: ["short_term_state", "life_event"],
+        forbiddenTypes: ["profile_candidate"],
+      },
+      {
+        ...validResult,
+        intent_types: ["short_term_state"],
+        items: [
+          {
+            type: "short_term_state",
+            content: "用户今天有点不舒服",
+            source_text: "今天客户说话让我有点不舒服",
+            tags: ["emotion"],
+            confidence: 0.8,
+            need_user_confirm: false,
+          },
+        ],
+      },
+    ).ok,
+    true,
+  );
+});
+
 test("runParseSmoke checks health and posts every sample to parse endpoint", async () => {
   const requestedUrls: string[] = [];
   const requestedBodies: unknown[] = [];

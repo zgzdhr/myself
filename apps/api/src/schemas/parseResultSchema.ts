@@ -20,6 +20,7 @@ export const parseResultItemSchema = z
     title: z.string().nullable().optional(),
     content: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
+    detail: z.string().nullable().optional(),
     source_text: z.string().trim().min(1),
     tags: z.array(z.string()).default([]),
     confidence: z.number().min(0).max(1),

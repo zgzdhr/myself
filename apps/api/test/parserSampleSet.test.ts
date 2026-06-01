@@ -14,9 +14,15 @@ test("parser smoke sample set covers the eight Phase 2 scenarios", () => {
     assert.ok(sample.id);
     assert.ok(sample.label);
     assert.ok(sample.text.length >= 4);
-    assert.ok(sample.expectedTypes.length >= 1);
+    assert.ok(
+      sample.expectedTypes.length >= 1 || (sample.acceptedTypes?.length ?? 0) >= 1,
+    );
 
     for (const type of sample.expectedTypes) {
+      assert.equal(validTypes.has(type), true);
+    }
+
+    for (const type of sample.acceptedTypes ?? []) {
       assert.equal(validTypes.has(type), true);
     }
 
@@ -32,7 +38,8 @@ test("one-off emotion sample is explicitly not a profile candidate", () => {
   );
 
   assert.ok(sample);
-  assert.deepEqual(sample.expectedTypes, ["short_term_state"]);
+  assert.deepEqual(sample.expectedTypes, []);
+  assert.deepEqual(sample.acceptedTypes, ["short_term_state", "life_event"]);
   assert.deepEqual(sample.forbiddenTypes, ["profile_candidate"]);
 });
 

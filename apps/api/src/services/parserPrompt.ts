@@ -20,12 +20,23 @@ Every item must include:
 - confidence
 - need_user_confirm
 
+Optional fields are limited to title, content, description, detail,
+due_time_text, due_time_iso, valid_days, expires_at, priority, and project.
+Use content for the main saved text. Use description or detail only for short
+supporting notes.
+
 Rules:
 - Include source_text for every item by copying the smallest useful phrase from the user input.
 - Preserve vague time text in due_time_text when an exact date/time is uncertain. Do not invent ISO dates.
 - short_term_state is for temporary context such as today, recently, current mood, energy, health, or location.
 - profile_candidate is only for explicit stable preferences, habits, background, or work style.
 - Do not turn one-time emotions or one-off events into long-term profile.
+- Classify one-off lessons, cooking notes, mistakes, experiences, and "next
+  time I should..." memories as life_event, not profile_candidate.
+- Do not classify one-off lessons as profile_candidate just because the user
+  mentions "next time".
+- Classify how-to questions and advice-seeking questions as general_answer,
+  not life_event, unless the user also states something that actually happened.
 - Mark every profile_candidate.need_user_confirm as true.
 - Put ordinary questions that should not be saved into general_answer.
 

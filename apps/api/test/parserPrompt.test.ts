@@ -12,3 +12,19 @@ test("parser prompt contains the required MVP parsing rules", () => {
   assert.match(prompt, /source_text/);
   assert.match(prompt, /need_user_confirm/);
 });
+
+test("parser prompt keeps one-off lessons and cooking notes out of profile", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /cooking/i);
+  assert.match(prompt, /life_event/);
+  assert.match(prompt, /Do not classify one-off lessons/i);
+});
+
+test("parser prompt keeps how-to questions out of saved memories", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /how-to questions/i);
+  assert.match(prompt, /general_answer/);
+  assert.match(prompt, /not life_event/i);
+});

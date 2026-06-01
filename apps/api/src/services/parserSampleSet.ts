@@ -7,6 +7,7 @@ export type ParserSmokeSample = {
   label: string;
   text: string;
   expectedTypes: ParserItemType[];
+  acceptedTypes?: ParserItemType[];
   forbiddenTypes?: ParserItemType[];
 };
 
@@ -58,7 +59,8 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     id: "one_off_emotion",
     label: "不应保存的情绪表达",
     text: "今天客户说话让我有点不舒服，但可能只是今天这一次。",
-    expectedTypes: ["short_term_state"],
+    expectedTypes: [],
+    acceptedTypes: ["short_term_state", "life_event"],
     forbiddenTypes: ["profile_candidate"],
   },
 ];

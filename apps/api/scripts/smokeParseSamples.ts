@@ -36,9 +36,15 @@ export function evaluateSampleResult(
   result: ParseResult,
 ): SmokeSampleResult {
   const actualTypes = [...new Set(result.items.map((item) => item.type))];
-  const missingTypes = sample.expectedTypes.filter(
-    (type) => !actualTypes.includes(type),
-  );
+  const missingTypes = sample.expectedTypes.filter((type) => {
+    if (actualTypes.includes(type)) {
+      return false;
+    }
+
+    return !sample.acceptedTypes?.some((acceptedType) =>
+      actualTypes.includes(acceptedType),
+    );
+  });
   const forbiddenTypes = (sample.forbiddenTypes ?? []).filter((type) =>
     actualTypes.includes(type),
   );

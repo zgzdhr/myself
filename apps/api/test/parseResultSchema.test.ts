@@ -52,6 +52,26 @@ test("accepts a valid task, state, and profile parse result", () => {
   }
 });
 
+test("accepts DeepSeek detail field on life event items", () => {
+  const result = parseResultSchema.safeParse({
+    ...validParseResult,
+    intent_types: ["life_event"],
+    items: [
+      {
+        type: "life_event",
+        content: "今天做番茄炒蛋的时候糖放多了",
+        detail: "下次要少放一点糖",
+        source_text: "今天做番茄炒蛋的时候糖放多了，下次要少放一点。",
+        tags: ["cooking"],
+        confidence: 0.86,
+        need_user_confirm: true,
+      },
+    ],
+  });
+
+  assert.equal(result.success, true);
+});
+
 test("rejects unknown item types", () => {
   const result = parseResultSchema.safeParse({
     ...validParseResult,
