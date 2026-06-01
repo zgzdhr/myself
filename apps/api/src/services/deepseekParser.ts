@@ -65,7 +65,7 @@ export function createDeepSeekParser(config: DeepSeekParserConfig = {}) {
   ): Promise<ParseResult> {
     const apiKey = (config.apiKey ?? process.env.DEEPSEEK_API_KEY ?? "").trim();
 
-    if (!apiKey) {
+    if (isMissingApiKey(apiKey)) {
       throw new ParserServiceError(
         "missing_api_key",
         503,
@@ -121,6 +121,10 @@ export function createDeepSeekParser(config: DeepSeekParserConfig = {}) {
       lastError,
     );
   };
+}
+
+function isMissingApiKey(apiKey: string): boolean {
+  return !apiKey || apiKey === "replace_with_your_key";
 }
 
 function normalizeBaseUrl(baseUrl: string): string {

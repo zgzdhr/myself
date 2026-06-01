@@ -53,6 +53,19 @@ test("returns a clear error when the DeepSeek API key is missing", async () => {
   );
 });
 
+test("treats the example placeholder DeepSeek API key as missing", async () => {
+  const parser = createDeepSeekParser({ apiKey: "replace_with_your_key" });
+
+  await assert.rejects(
+    () => parser({ text: "明天联系王总", timezone: "Asia/Shanghai" }),
+    (error) => {
+      assert.equal(error instanceof ParserServiceError, true);
+      assert.equal((error as ParserServiceError).code, "missing_api_key");
+      return true;
+    },
+  );
+});
+
 test("retries once when DeepSeek returns invalid JSON, then validates the result", async () => {
   const calls: RequestInit[] = [];
   const responses = [

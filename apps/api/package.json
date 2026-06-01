@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tsx src/server.ts",
+    "smoke:parse": "tsx scripts/smokeParseSamples.ts",
     "test": "node --test --import tsx test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
