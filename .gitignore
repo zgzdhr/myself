@@ -17,6 +17,9 @@ coverage/
 apps/mobile/android/local.properties
 apps/mobile/ios/Flutter/Generated.xcconfig
 apps/mobile/ios/Flutter/flutter_export_environment.sh
+apps/mobile/.metadata
+apps/mobile/ohos/
+myself/
 
 # Node / TypeScript
 node_modules/
