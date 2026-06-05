@@ -45,6 +45,13 @@ void main() {
       );
       await _insertTask(
         database,
+        id: 'task-deleted',
+        title: '已撤销的自动任务',
+        status: RecordStatus.deleted,
+        dueTime: now.add(const Duration(hours: 1)),
+      );
+      await _insertTask(
+        database,
         id: 'task-no-time',
         title: '没有时间但已确认的任务',
         status: RecordStatus.confirmed,
@@ -70,6 +77,13 @@ void main() {
         content: '过期状态',
         status: RecordStatus.confirmed,
         validUntil: now.subtract(const Duration(minutes: 1)),
+      );
+      await _insertState(
+        database,
+        id: 'state-deleted',
+        content: '已撤销状态',
+        status: RecordStatus.deleted,
+        validUntil: now.add(const Duration(days: 1)),
       );
       await _insertProfile(
         database,

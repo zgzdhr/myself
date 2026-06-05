@@ -52,6 +52,27 @@ void main() {
     expect(find.text('有效期至 2026-06-01'), findsOneWidget);
   });
 
+  testWidgets('auto-saved card shows auto-save hint and undo action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.taskCreate,
+            title: '联系王总',
+            sourceText: '明天上午联系王总',
+            status: RecordStatus.confirmed,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('已自动整理，可修改或撤销'), findsOneWidget);
+    expect(find.text('撤销'), findsOneWidget);
+    expect(find.text('确认'), findsNothing);
+  });
+
   testWidgets('input screen submits text and stores pending extracted items', (
     tester,
   ) async {
@@ -75,7 +96,10 @@ void main() {
     );
 
     await tester.pumpWidget(_wrap(InputScreen(controller: controller)));
-    await tester.enterText(find.byType(TextField), '明天上午联系王总，我今天很累，我不喜欢太频繁的提醒。');
+    await tester.enterText(
+      find.byType(TextField),
+      '明天上午联系王总，我今天很累，我不喜欢太频繁的提醒。',
+    );
     await tester.tap(find.text('整理'));
     await tester.pumpAndSettle();
 
@@ -92,44 +116,51 @@ void main() {
     expect(rawInputs.single.inputText, '明天上午联系王总，我今天很累，我不喜欢太频繁的提醒。');
     expect(parseResults.single.validationState, 'valid');
     expect(extractedItems, hasLength(3));
-    expect(
-      extractedItems.map((item) => item.status).toSet(),
-      {RecordStatus.pending.value},
-    );
-    expect(tasks, isEmpty);
+    expect(extractedItems.map((item) => item.status).toList(), [
+      RecordStatus.confirmed.value,
+      RecordStatus.confirmed.value,
+      RecordStatus.pending.value,
+    ]);
+    expect(tasks, hasLength(1));
+    expect(find.text('已自动整理，可修改或撤销'), findsNWidgets(2));
   });
 
-  test('controller records parser failures without creating extracted items', () async {
-    final database = db.AppDatabase(
-      DatabaseConnection(
-        NativeDatabase.memory(),
-        closeStreamsSynchronously: true,
-      ),
-    );
-    addTearDown(database.close);
+  test(
+    'controller records parser failures without creating extracted items',
+    () async {
+      final database = db.AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      addTearDown(database.close);
 
-    final controller = ExtractedItemsController(
-      database: database,
-      parserClient: const _FailingParserClient(),
-      rawInputIdFactory: () => 'raw-fail-1',
-      parseResultIdFactory: () => 'parse-fail-1',
-      nowProvider: () => DateTime.utc(2026, 5, 31),
-    );
+      final controller = ExtractedItemsController(
+        database: database,
+        parserClient: const _FailingParserClient(),
+        rawInputIdFactory: () => 'raw-fail-1',
+        parseResultIdFactory: () => 'parse-fail-1',
+        nowProvider: () => DateTime.utc(2026, 5, 31),
+      );
 
-    await expectLater(
-      controller.submitInput('明天联系王总'),
-      throwsA(isA<ParserFailure>()),
-    );
+      await expectLater(
+        controller.submitInput('明天联系王总'),
+        throwsA(isA<ParserFailure>()),
+      );
 
-    final rawInputs = await database.select(database.rawInputs).get();
-    final parseResults = await database.select(database.aiParseResults).get();
-    final extractedItems = await database.select(database.extractedItems).get();
+      final rawInputs = await database.select(database.rawInputs).get();
+      final parseResults = await database.select(database.aiParseResults).get();
+      final extractedItems = await database
+          .select(database.extractedItems)
+          .get();
 
-    expect(rawInputs.single.inputText, '明天联系王总');
-    expect(parseResults.single.validationState, 'error');
-    expect(parseResults.single.errorMessage, 'network_error');
-    expect(extractedItems, isEmpty);
-  });
+      expect(rawInputs.single.inputText, '明天联系王总');
+      expect(parseResults.single.validationState, 'error');
+      expect(parseResults.single.errorMessage, 'network_error');
+      expect(extractedItems, isEmpty);
+    },
+  );
 }
 
 Widget _wrap(Widget child) {
@@ -153,6 +184,7 @@ ExtractedItem _item({
   required String sourceText,
   String? title,
   String? content,
+  RecordStatus status = RecordStatus.pending,
   DateTime? expiresAt,
 }) {
   return ExtractedItem(
@@ -165,7 +197,7 @@ ExtractedItem _item({
     tags: const ['test'],
     confidence: 0.86,
     needUserConfirm: true,
-    status: RecordStatus.pending,
+    status: status,
     createdAt: DateTime.utc(2026, 5, 31),
     updatedAt: DateTime.utc(2026, 5, 31),
     expiresAt: expiresAt,

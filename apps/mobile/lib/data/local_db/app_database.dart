@@ -147,6 +147,20 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> markTaskDeletedBySourceExtractedItemId({
+    required String extractedItemId,
+    required DateTime updatedAt,
+  }) {
+    return (update(tasks)
+          ..where((task) => task.sourceExtractedItemId.equals(extractedItemId)))
+        .write(
+          TasksCompanion(
+            status: Value(RecordStatus.deleted.value),
+            updatedAt: Value(updatedAt),
+          ),
+        );
+  }
+
   Future<void> markShortTermStateDeleted({
     required String id,
     required DateTime updatedAt,
@@ -161,6 +175,21 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> markShortTermStateDeletedBySourceExtractedItemId({
+    required String extractedItemId,
+    required DateTime updatedAt,
+  }) {
+    return (update(shortTermStates)..where(
+          (state) => state.sourceExtractedItemId.equals(extractedItemId),
+        ))
+        .write(
+          ShortTermStatesCompanion(
+            status: Value(RecordStatus.deleted.value),
+            updatedAt: Value(updatedAt),
+          ),
+        );
+  }
+
   Future<void> markLifeEventDeleted({
     required String id,
     required DateTime updatedAt,
@@ -171,6 +200,76 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(updatedAt),
       ),
     );
+  }
+
+  Future<void> markLifeEventDeletedBySourceExtractedItemId({
+    required String extractedItemId,
+    required DateTime updatedAt,
+  }) {
+    return (update(lifeEvents)..where(
+          (event) => event.sourceExtractedItemId.equals(extractedItemId),
+        ))
+        .write(
+          LifeEventsCompanion(
+            status: Value(RecordStatus.deleted.value),
+            updatedAt: Value(updatedAt),
+          ),
+        );
+  }
+
+  Future<void> updateTaskBySourceExtractedItemId({
+    required String extractedItemId,
+    required String title,
+    String? description,
+    String? dueTimeText,
+    DateTime? dueTime,
+    required DateTime updatedAt,
+  }) {
+    return (update(tasks)
+          ..where((task) => task.sourceExtractedItemId.equals(extractedItemId)))
+        .write(
+          TasksCompanion(
+            title: Value(title),
+            description: Value(description),
+            dueTimeText: Value(dueTimeText),
+            dueTime: Value(dueTime),
+            updatedAt: Value(updatedAt),
+          ),
+        );
+  }
+
+  Future<void> updateShortTermStateBySourceExtractedItemId({
+    required String extractedItemId,
+    required String content,
+    required DateTime validUntil,
+    required DateTime updatedAt,
+  }) {
+    return (update(shortTermStates)..where(
+          (state) => state.sourceExtractedItemId.equals(extractedItemId),
+        ))
+        .write(
+          ShortTermStatesCompanion(
+            content: Value(content),
+            validUntil: Value(validUntil),
+            updatedAt: Value(updatedAt),
+          ),
+        );
+  }
+
+  Future<void> updateLifeEventBySourceExtractedItemId({
+    required String extractedItemId,
+    required String content,
+    required DateTime updatedAt,
+  }) {
+    return (update(lifeEvents)..where(
+          (event) => event.sourceExtractedItemId.equals(extractedItemId),
+        ))
+        .write(
+          LifeEventsCompanion(
+            content: Value(content),
+            updatedAt: Value(updatedAt),
+          ),
+        );
   }
 
   Future<List<ProfileItem>> getActiveProfileItems() {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../domain/extracted_item.dart';
 import '../../domain/item_type.dart';
+import '../../domain/record_status.dart';
+import 'extracted_items_controller.dart';
 
 class ExtractedItemCard extends StatelessWidget {
   const ExtractedItemCard({
@@ -20,6 +22,7 @@ class ExtractedItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = item.title ?? item.content ?? item.sourceText;
+    final isAutoSaved = item.status == RecordStatus.confirmed;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -32,9 +35,9 @@ class ExtractedItemCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text('来源：${item.sourceText}'),
@@ -43,9 +46,7 @@ class ExtractedItemCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  for (final tag in item.tags) Chip(label: Text(tag)),
-                ],
+                children: [for (final tag in item.tags) Chip(label: Text(tag))],
               ),
             ],
             const SizedBox(height: 8),
@@ -61,14 +62,28 @@ class ExtractedItemCard extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
+            if (isAutoSaved) ...[
+              const SizedBox(height: 10),
+              const Text(
+                ExtractedItemsController.autoSaveHint,
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
-                FilledButton(onPressed: onConfirm, child: const Text('确认')),
+                if (!isAutoSaved)
+                  FilledButton(onPressed: onConfirm, child: const Text('确认')),
+                if (!isAutoSaved) const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: onEdit,
+                  child: Text(isAutoSaved ? '修改' : '编辑'),
+                ),
                 const SizedBox(width: 8),
-                OutlinedButton(onPressed: onEdit, child: const Text('编辑')),
-                const SizedBox(width: 8),
-                TextButton(onPressed: onReject, child: const Text('拒绝')),
+                TextButton(
+                  onPressed: onReject,
+                  child: Text(isAutoSaved ? '撤销' : '拒绝'),
+                ),
               ],
             ),
           ],

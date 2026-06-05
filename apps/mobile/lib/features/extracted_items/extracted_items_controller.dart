@@ -44,6 +44,8 @@ class ExtractedItemsController {
   final String Function() officialRecordIdFactory;
   final DateTime Function() nowProvider;
 
+  static const autoSaveHint = '已自动整理，可修改或撤销';
+
   Future<SubmitInputResult> submitInput(String text) async {
     final trimmedText = text.trim();
 
@@ -99,6 +101,14 @@ class ExtractedItemsController {
                   now: now,
                 ),
               );
+
+          if (_shouldAutoSave(item: item, now: now)) {
+            await _createOfficialRecordFromExtractedItem(
+              item: item,
+              officialRecordId: officialRecordIdFactory(),
+              now: now,
+            );
+          }
         }
       });
 
@@ -246,6 +256,102 @@ class ExtractedItemsController {
     );
   }
 
+  Future<void> undoAutoSavedExtractedItem({
+    required String extractedItemId,
+  }) async {
+    final item = await _getExtractedItem(extractedItemId);
+    final type = ItemTypeApiValue.fromApiValue(item.type);
+
+    await database.transaction(() async {
+      switch (type) {
+        case ItemType.taskCreate:
+          await database.markTaskDeletedBySourceExtractedItemId(
+            extractedItemId: extractedItemId,
+            updatedAt: nowProvider(),
+          );
+        case ItemType.shortTermState:
+          await database.markShortTermStateDeletedBySourceExtractedItemId(
+            extractedItemId: extractedItemId,
+            updatedAt: nowProvider(),
+          );
+        case ItemType.lifeEvent:
+          await database.markLifeEventDeletedBySourceExtractedItemId(
+            extractedItemId: extractedItemId,
+            updatedAt: nowProvider(),
+          );
+        case ItemType.taskUpdate:
+        case ItemType.generalAnswer:
+        case ItemType.profileCandidate:
+          break;
+      }
+
+      await database.updateExtractedItemStatus(
+        id: extractedItemId,
+        status: RecordStatus.deleted,
+        updatedAt: nowProvider(),
+      );
+    });
+  }
+
+  Future<void> editAutoSavedExtractedItem({
+    required String extractedItemId,
+    String? editedTitle,
+    String? editedContent,
+  }) async {
+    final item = await _getExtractedItem(extractedItemId);
+    final now = nowProvider();
+    final type = ItemTypeApiValue.fromApiValue(item.type);
+    final title = editedTitle ?? item.title;
+    final content = editedContent ?? item.content;
+    final fallbackText = title ?? content ?? item.sourceText;
+    final taskDue = _inferTaskDue(
+      text: '${title ?? ''} ${content ?? ''} ${item.sourceText}',
+      now: now,
+    );
+
+    await database.transaction(() async {
+      await (database.update(
+        database.extractedItems,
+      )..where((row) => row.id.equals(extractedItemId))).write(
+        db.ExtractedItemsCompanion(
+          title: Value(title),
+          content: Value(content),
+          status: Value(RecordStatus.edited.value),
+          updatedAt: Value(now),
+        ),
+      );
+
+      switch (type) {
+        case ItemType.taskCreate:
+          await database.updateTaskBySourceExtractedItemId(
+            extractedItemId: extractedItemId,
+            title: fallbackText,
+            description: content,
+            dueTimeText: taskDue.dueTimeText,
+            dueTime: taskDue.dueTime,
+            updatedAt: now,
+          );
+        case ItemType.shortTermState:
+          await database.updateShortTermStateBySourceExtractedItemId(
+            extractedItemId: extractedItemId,
+            content: content ?? title ?? item.sourceText,
+            validUntil: item.expiresAt ?? now.add(const Duration(days: 1)),
+            updatedAt: now,
+          );
+        case ItemType.lifeEvent:
+          await database.updateLifeEventBySourceExtractedItemId(
+            extractedItemId: extractedItemId,
+            content: content ?? title ?? item.sourceText,
+            updatedAt: now,
+          );
+        case ItemType.taskUpdate:
+        case ItemType.generalAnswer:
+        case ItemType.profileCandidate:
+          break;
+      }
+    });
+  }
+
   Future<void> _recordParseFailure({
     required String id,
     required String rawInputId,
@@ -282,7 +388,7 @@ class ExtractedItemsController {
       tagsJson: Value(jsonEncode(item.tags)),
       confidence: item.confidence,
       needUserConfirm: item.needUserConfirm,
-      status: RecordStatus.pending.value,
+      status: item.status.value,
       expiresAt: Value(item.expiresAt),
       createdAt: now,
       updatedAt: now,
@@ -328,7 +434,9 @@ class ExtractedItemsController {
           tags: item.tags,
           confidence: item.confidence,
           needUserConfirm: item.needUserConfirm,
-          status: RecordStatus.pending,
+          status: _shouldAutoSave(item: item, now: now)
+              ? RecordStatus.confirmed
+              : RecordStatus.pending,
           createdAt: now,
           updatedAt: now,
           expiresAt: item.expiresAt,
@@ -347,6 +455,91 @@ class ExtractedItemsController {
     required String? editedContent,
   }) {
     return editedTitle != null || editedContent != null;
+  }
+
+  bool _shouldAutoSave({required ExtractedItem item, required DateTime now}) {
+    return switch (item.type) {
+      ItemType.shortTermState => true,
+      ItemType.taskCreate =>
+        _inferTaskDue(
+              text:
+                  '${item.title ?? ''} ${item.content ?? ''} ${item.sourceText}',
+              now: now,
+            ).dueTime !=
+            null,
+      ItemType.lifeEvent =>
+        item.sourceText.contains('记一下') || item.sourceText.contains('记住'),
+      ItemType.taskUpdate ||
+      ItemType.generalAnswer ||
+      ItemType.profileCandidate => false,
+    };
+  }
+
+  Future<void> _createOfficialRecordFromExtractedItem({
+    required ExtractedItem item,
+    required String officialRecordId,
+    required DateTime now,
+  }) async {
+    final fallbackText = item.title ?? item.content ?? item.sourceText;
+    final taskDue = _inferTaskDue(
+      text: '${item.title ?? ''} ${item.content ?? ''} ${item.sourceText}',
+      now: now,
+    );
+
+    switch (item.type) {
+      case ItemType.taskCreate:
+        await database
+            .into(database.tasks)
+            .insert(
+              db.TasksCompanion.insert(
+                id: officialRecordId,
+                sourceRawInputId: item.rawInputId,
+                sourceExtractedItemId: item.localId,
+                title: fallbackText,
+                description: Value(item.content),
+                dueTimeText: Value(taskDue.dueTimeText),
+                dueTime: Value(taskDue.dueTime),
+                status: RecordStatus.confirmed.value,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      case ItemType.shortTermState:
+        await database
+            .into(database.shortTermStates)
+            .insert(
+              db.ShortTermStatesCompanion.insert(
+                id: officialRecordId,
+                sourceRawInputId: item.rawInputId,
+                sourceExtractedItemId: item.localId,
+                content: item.content ?? item.title ?? item.sourceText,
+                tagsJson: Value(jsonEncode(item.tags)),
+                validUntil: item.expiresAt ?? now.add(const Duration(days: 1)),
+                status: RecordStatus.confirmed.value,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      case ItemType.lifeEvent:
+        await database
+            .into(database.lifeEvents)
+            .insert(
+              db.LifeEventsCompanion.insert(
+                id: officialRecordId,
+                sourceRawInputId: item.rawInputId,
+                sourceExtractedItemId: item.localId,
+                content: item.content ?? item.title ?? item.sourceText,
+                tagsJson: Value(jsonEncode(item.tags)),
+                status: RecordStatus.confirmed.value,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      case ItemType.taskUpdate:
+      case ItemType.generalAnswer:
+      case ItemType.profileCandidate:
+        break;
+    }
   }
 
   ({String? dueTimeText, DateTime? dueTime}) _inferTaskDue({

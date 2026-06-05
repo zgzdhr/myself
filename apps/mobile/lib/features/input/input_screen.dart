@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/parser/parser_client.dart';
 import '../../domain/extracted_item.dart';
+import '../../domain/record_status.dart';
 import '../extracted_items/edit_extracted_item_sheet.dart';
 import '../extracted_items/extracted_item_card.dart';
 import '../extracted_items/extracted_items_controller.dart';
@@ -158,6 +159,10 @@ class _InputScreenState extends State<InputScreen> {
   }
 
   Future<void> _confirm(ExtractedItem item) async {
+    if (item.status == RecordStatus.confirmed) {
+      return;
+    }
+
     await widget.controller.confirmExtractedItem(extractedItemId: item.localId);
     _removeItem(item);
     widget.onRecordsChanged?.call();
@@ -174,17 +179,33 @@ class _InputScreenState extends State<InputScreen> {
       return;
     }
 
-    await widget.controller.confirmExtractedItem(
-      extractedItemId: item.localId,
-      editedTitle: editedItem.title,
-      editedContent: editedItem.content,
-    );
+    if (item.status == RecordStatus.confirmed) {
+      await widget.controller.editAutoSavedExtractedItem(
+        extractedItemId: item.localId,
+        editedTitle: editedItem.title,
+        editedContent: editedItem.content,
+      );
+    } else {
+      await widget.controller.confirmExtractedItem(
+        extractedItemId: item.localId,
+        editedTitle: editedItem.title,
+        editedContent: editedItem.content,
+      );
+    }
     _removeItem(item);
     widget.onRecordsChanged?.call();
   }
 
   Future<void> _reject(ExtractedItem item) async {
-    await widget.controller.rejectExtractedItem(extractedItemId: item.localId);
+    if (item.status == RecordStatus.confirmed) {
+      await widget.controller.undoAutoSavedExtractedItem(
+        extractedItemId: item.localId,
+      );
+    } else {
+      await widget.controller.rejectExtractedItem(
+        extractedItemId: item.localId,
+      );
+    }
     _removeItem(item);
     widget.onRecordsChanged?.call();
   }
