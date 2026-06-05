@@ -72,8 +72,12 @@ class ExtractedItemsController {
 
     try {
       final parseResult = await parserClient.parseInput(trimmedText);
+      final saveableParsedItems = [
+        for (final item in parseResult.items)
+          if (item.type != ItemType.generalAnswer) item,
+      ];
       final persistedItems = _toPersistedItems(
-        items: parseResult.items,
+        items: saveableParsedItems,
         rawInputId: rawInputId,
         now: now,
       );
@@ -404,7 +408,7 @@ class ExtractedItemsController {
     };
   }
 
-  Map<String, Object?> _itemToJson(ExtractedItem item) {
+  Map<String, Object?> _itemToJson(ParsedExtractedItem item) {
     return {
       'type': item.type.apiValue,
       'title': item.title,
@@ -418,7 +422,7 @@ class ExtractedItemsController {
   }
 
   List<ExtractedItem> _toPersistedItems({
-    required List<ExtractedItem> items,
+    required List<ParsedExtractedItem> items,
     required String rawInputId,
     required DateTime now,
   }) {
@@ -434,7 +438,13 @@ class ExtractedItemsController {
           tags: item.tags,
           confidence: item.confidence,
           needUserConfirm: item.needUserConfirm,
-          status: _shouldAutoSave(item: item, now: now)
+          status: _shouldAutoSaveValues(
+                type: item.type,
+                title: item.title,
+                content: item.content,
+                sourceText: item.sourceText,
+                now: now,
+              )
               ? RecordStatus.confirmed
               : RecordStatus.pending,
           createdAt: now,
@@ -458,17 +468,33 @@ class ExtractedItemsController {
   }
 
   bool _shouldAutoSave({required ExtractedItem item, required DateTime now}) {
-    return switch (item.type) {
+    return _shouldAutoSaveValues(
+      type: item.type,
+      title: item.title,
+      content: item.content,
+      sourceText: item.sourceText,
+      now: now,
+    );
+  }
+
+  bool _shouldAutoSaveValues({
+    required ItemType type,
+    required String? title,
+    required String? content,
+    required String sourceText,
+    required DateTime now,
+  }) {
+    return switch (type) {
       ItemType.shortTermState => true,
       ItemType.taskCreate =>
         _inferTaskDue(
               text:
-                  '${item.title ?? ''} ${item.content ?? ''} ${item.sourceText}',
+                  '${title ?? ''} ${content ?? ''} $sourceText',
               now: now,
             ).dueTime !=
             null,
       ItemType.lifeEvent =>
-        item.sourceText.contains('记一下') || item.sourceText.contains('记住'),
+        sourceText.contains('记一下') || sourceText.contains('记住'),
       ItemType.taskUpdate ||
       ItemType.generalAnswer ||
       ItemType.profileCandidate => false,

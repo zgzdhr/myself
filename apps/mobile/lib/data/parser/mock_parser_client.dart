@@ -3,20 +3,16 @@ import 'parser_client.dart';
 
 class MockParserClient implements ParserClient {
   const MockParserClient({
-    this.rawInputIdFactory = _defaultRawInputId,
     this.parsedAtProvider = DateTime.now,
   });
 
-  final String Function() rawInputIdFactory;
   final DateTime Function() parsedAtProvider;
 
   @override
   Future<ParseResult> parseInput(String text) async {
-    final rawInputId = rawInputIdFactory();
     final parsedAt = parsedAtProvider();
 
     return ParseResult.fromAiJson(
-      rawInputId: rawInputId,
       parsedAt: parsedAt,
       json: {
         'user_reply': '我帮你整理出了 1 个任务、1 条短期状态和 1 条长期画像候选。',
@@ -56,9 +52,5 @@ class MockParserClient implements ParserClient {
         ],
       },
     );
-  }
-
-  static String _defaultRawInputId() {
-    return 'mock-${DateTime.now().microsecondsSinceEpoch}';
   }
 }

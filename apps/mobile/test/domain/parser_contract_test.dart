@@ -19,7 +19,6 @@ void main() {
     final parsedAt = DateTime.utc(2026, 5, 31, 12);
 
     final result = ParseResult.fromAiJson(
-      rawInputId: 'raw-1',
       parsedAt: parsedAt,
       json: {
         'user_reply': '我帮你整理出了 1 个任务、1 条短期状态和 1 条长期画像候选。',
@@ -72,8 +71,7 @@ void main() {
     ]);
 
     final taskItem = result.items[0];
-    expect(taskItem.localId, 'raw-1:0');
-    expect(taskItem.rawInputId, 'raw-1');
+    expect(taskItem.localId, 'parsed:0');
     expect(taskItem.title, '联系王总');
     expect(taskItem.sourceText, '明天上午联系王总');
 

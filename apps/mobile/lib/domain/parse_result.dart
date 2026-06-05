@@ -12,11 +12,10 @@ class ParseResult {
   final String userReply;
   final String inputSummary;
   final List<ItemType> intentTypes;
-  final List<ExtractedItem> items;
+  final List<ParsedExtractedItem> items;
 
   factory ParseResult.fromAiJson({
     required Map<String, Object?> json,
-    required String rawInputId,
     required DateTime parsedAt,
   }) {
     final itemJsonList = json['items'] as List<Object?>;
@@ -30,10 +29,9 @@ class ParseResult {
           .toList(),
       items: [
         for (final (index, itemJson) in itemJsonList.indexed)
-          ExtractedItem.fromAiJson(
+          ParsedExtractedItem.fromAiJson(
             json: itemJson as Map<String, Object?>,
-            localId: '$rawInputId:$index',
-            rawInputId: rawInputId,
+            localId: 'parsed:$index',
             parsedAt: parsedAt,
           ),
       ],

@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:uuid/uuid.dart';
-
 import '../../domain/parse_result.dart';
 import 'parser_client.dart';
 
@@ -28,17 +26,14 @@ class HttpParserClient implements ParserClient {
   HttpParserClient({
     required this.baseUri,
     this.timezone = 'Asia/Shanghai',
-    String Function()? rawInputIdFactory,
     DateTime Function()? parsedAtProvider,
     ParserHttpPost? postJson,
     this.timeout = const Duration(seconds: 12),
-  })  : rawInputIdFactory = rawInputIdFactory ?? const Uuid().v4,
-        parsedAtProvider = parsedAtProvider ?? DateTime.now,
+  })  : parsedAtProvider = parsedAtProvider ?? DateTime.now,
         postJson = postJson ?? _defaultPostJson;
 
   final Uri baseUri;
   final String timezone;
-  final String Function() rawInputIdFactory;
   final DateTime Function() parsedAtProvider;
   final ParserHttpPost postJson;
   final Duration timeout;
@@ -58,7 +53,6 @@ class HttpParserClient implements ParserClient {
       final json = jsonDecode(response.body) as Map<String, Object?>;
       return ParseResult.fromAiJson(
         json: json,
-        rawInputId: rawInputIdFactory(),
         parsedAt: parsedAtProvider(),
       );
     } on FormatException {

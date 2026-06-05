@@ -28,7 +28,6 @@ void main() {
     controller = ExtractedItemsController(
       database: database,
       parserClient: MockParserClient(
-        rawInputIdFactory: () => 'parser-raw-ignored',
         parsedAtProvider: () => DateTime.utc(2026, 5, 31),
       ),
       rawInputIdFactory: () => 'raw-${++rawInputCounter}',
@@ -67,6 +66,29 @@ void main() {
       expect(taskItem.status, RecordStatus.confirmed.value);
       expect(stateItem.status, RecordStatus.confirmed.value);
       expect(profileItem.status, RecordStatus.pending.value);
+    },
+  );
+
+  test(
+    'submitInput binds raw input, parse result, and extracted items to the controller-owned rawInputId',
+    () async {
+      final result = await controller.submitInput('明天上午联系王总，我今天很累，我不喜欢太频繁的提醒。');
+
+      final rawInput = await database.select(database.rawInputs).getSingle();
+      final parseResult = await database.select(database.aiParseResults).getSingle();
+      final extractedItems = await database.select(database.extractedItems).get();
+
+      expect(result.rawInputId, 'raw-1');
+      expect(rawInput.id, 'raw-1');
+      expect(parseResult.rawInputId, rawInput.id);
+      expect(
+        extractedItems.map((item) => item.rawInputId).toSet(),
+        {rawInput.id},
+      );
+      expect(
+        extractedItems.map((item) => item.id),
+        ['raw-1:0', 'raw-1:1', 'raw-1:2'],
+      );
     },
   );
 
@@ -192,9 +214,8 @@ ExtractedItemsController _buildPendingTaskController(db.AppDatabase database) {
         inputSummary: '用户提到联系王总。',
         intentTypes: const [ItemType.taskCreate],
         items: [
-          ExtractedItem(
-            localId: 'ignored',
-            rawInputId: 'ignored',
+          ParsedExtractedItem(
+            localId: 'parsed:0',
             type: ItemType.taskCreate,
             title: '联系王总',
             content: null,
@@ -202,9 +223,7 @@ ExtractedItemsController _buildPendingTaskController(db.AppDatabase database) {
             tags: const ['任务'],
             confidence: 0.92,
             needUserConfirm: true,
-            status: RecordStatus.pending,
-            createdAt: DateTime.utc(2026, 5, 31),
-            updatedAt: DateTime.utc(2026, 5, 31),
+            parsedAt: DateTime.utc(2026, 5, 31),
           ),
         ],
       ),

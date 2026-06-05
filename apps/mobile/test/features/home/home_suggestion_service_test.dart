@@ -171,6 +171,43 @@ void main() {
     expect(suggestions.first.text, isNot(contains('必须')));
     expect(suggestions.first.text, isNot(contains('马上')));
   });
+
+  test('general answer parse rows do not create context for home suggestions', () async {
+    final cleanDatabase = AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(cleanDatabase.close);
+
+    await cleanDatabase
+        .into(cleanDatabase.rawInputs)
+        .insert(
+          RawInputsCompanion.insert(
+            id: 'raw-general',
+            inputText: 'Flutter 是什么？',
+            createdAt: now,
+          ),
+        );
+    await cleanDatabase
+        .into(cleanDatabase.aiParseResults)
+        .insert(
+          AiParseResultsCompanion.insert(
+            id: 'parse-general',
+            rawInputId: 'raw-general',
+            rawJson: '{"items":[{"type":"general_answer"}]}',
+            validationState: 'valid',
+            createdAt: now,
+          ),
+        );
+
+    final context = await service.loadContext(database: cleanDatabase, now: now);
+
+    expect(context.tasks, isEmpty);
+    expect(context.shortTermStates, isEmpty);
+    expect(context.profileItems, isEmpty);
+  });
 }
 
 Future<void> _insertSourceRows(

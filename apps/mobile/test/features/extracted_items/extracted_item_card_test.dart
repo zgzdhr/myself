@@ -87,7 +87,6 @@ void main() {
     final controller = ExtractedItemsController(
       database: database,
       parserClient: MockParserClient(
-        rawInputIdFactory: () => 'parser-raw-ignored',
         parsedAtProvider: () => DateTime.utc(2026, 5, 31),
       ),
       rawInputIdFactory: () => 'raw-1',
@@ -123,6 +122,129 @@ void main() {
     ]);
     expect(tasks, hasLength(1));
     expect(find.text('已自动整理，可修改或撤销'), findsNWidgets(2));
+  });
+
+  testWidgets('pure general answer shows assistant reply without save cards', (
+    tester,
+  ) async {
+    final database = db.AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: _StaticParserClient(
+        ParseResult(
+          userReply: 'Flutter 是一个跨平台 UI 开发框架，适合先做这类 MVP。',
+          inputSummary: '用户在问 Flutter 是什么。',
+          intentTypes: const [ItemType.generalAnswer],
+          items: [
+            ParsedExtractedItem(
+              localId: 'parsed:0',
+              type: ItemType.generalAnswer,
+              content: 'Flutter 是一个跨平台 UI 开发框架。',
+              sourceText: 'Flutter 是什么？',
+              tags: const ['qa'],
+              confidence: 0.98,
+              needUserConfirm: false,
+              parsedAt: DateTime.utc(2026, 5, 31),
+            ),
+          ],
+        ),
+      ),
+      rawInputIdFactory: () => 'raw-general-1',
+      parseResultIdFactory: () => 'parse-general-1',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    await tester.pumpWidget(_wrap(InputScreen(controller: controller)));
+    await tester.enterText(find.byType(TextField), 'Flutter 是什么？');
+    await tester.tap(find.text('整理'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Flutter 是一个跨平台 UI 开发框架，适合先做这类 MVP。'),
+      findsOneWidget,
+    );
+    expect(find.text('待确认内容'), findsNothing);
+    expect(find.text('普通问答'), findsNothing);
+    expect(find.text('确认'), findsNothing);
+
+    final extractedItems = await database.select(database.extractedItems).get();
+    final tasks = await database.select(database.tasks).get();
+    final states = await database.select(database.shortTermStates).get();
+    final profiles = await database.select(database.profileItems).get();
+
+    expect(extractedItems, isEmpty);
+    expect(tasks, isEmpty);
+    expect(states, isEmpty);
+    expect(profiles, isEmpty);
+  });
+
+  testWidgets('mixed answer and memory result shows reply plus saveable cards', (
+    tester,
+  ) async {
+    final database = db.AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: _StaticParserClient(
+        ParseResult(
+          userReply: '我先回答你，也顺手帮你整理出一个任务。',
+          inputSummary: '用户既在提问，也提到一个明天要做的动作。',
+          intentTypes: const [ItemType.generalAnswer, ItemType.taskCreate],
+          items: [
+            ParsedExtractedItem(
+              localId: 'parsed:0',
+              type: ItemType.generalAnswer,
+              content: '可以先做一个最小可运行版本。',
+              sourceText: '我应该怎么开始做？',
+              tags: const ['qa'],
+              confidence: 0.95,
+              needUserConfirm: false,
+              parsedAt: DateTime.utc(2026, 5, 31),
+            ),
+            ParsedExtractedItem(
+              localId: 'parsed:1',
+              type: ItemType.taskCreate,
+              title: '联系王总',
+              sourceText: '明天上午联系王总',
+              tags: const ['work'],
+              confidence: 0.91,
+              needUserConfirm: true,
+              parsedAt: DateTime.utc(2026, 5, 31),
+            ),
+          ],
+        ),
+      ),
+      rawInputIdFactory: () => 'raw-mixed-1',
+      parseResultIdFactory: () => 'parse-mixed-1',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    await tester.pumpWidget(_wrap(InputScreen(controller: controller)));
+    await tester.enterText(find.byType(TextField), '我应该怎么开始做？明天上午联系王总。');
+    await tester.tap(find.text('整理'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('我先回答你，也顺手帮你整理出一个任务。'), findsOneWidget);
+    expect(find.text('待确认内容'), findsOneWidget);
+    expect(find.text('联系王总'), findsOneWidget);
+    expect(find.text('普通问答'), findsNothing);
+
+    final extractedItems = await database.select(database.extractedItems).get();
+    expect(extractedItems, hasLength(1));
+    expect(extractedItems.single.type, ItemType.taskCreate.apiValue);
   });
 
   test(
@@ -176,6 +298,17 @@ class _FailingParserClient implements ParserClient {
       code: 'network_error',
       userMessage: '暂时无法连接解析服务，请稍后再试。',
     );
+  }
+}
+
+class _StaticParserClient implements ParserClient {
+  const _StaticParserClient(this.result);
+
+  final ParseResult result;
+
+  @override
+  Future<ParseResult> parseInput(String text) async {
+    return result;
   }
 }
 

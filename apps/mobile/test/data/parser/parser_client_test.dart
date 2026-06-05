@@ -12,7 +12,6 @@ void main() {
   group('MockParserClient', () {
     test('returns stable contract objects for the MVP sample input', () async {
       final client = MockParserClient(
-        rawInputIdFactory: () => 'raw-1',
         parsedAtProvider: () => DateTime.utc(2026, 5, 31),
       );
 
@@ -29,6 +28,7 @@ void main() {
       expect(result.items[1].hasExpiry, isTrue);
       expect(result.items[2].type, ItemType.profileCandidate);
       expect(result.items[2].needUserConfirm, isTrue);
+      expect(result.items[0].localId, 'parsed:0');
     });
   });
 
@@ -48,7 +48,6 @@ void main() {
         final client = HttpParserClient(
           baseUri: Uri.parse('http://localhost:8787'),
           timezone: 'Asia/Shanghai',
-          rawInputIdFactory: () => 'raw-http-1',
           parsedAtProvider: () => DateTime.utc(2026, 5, 31),
           postJson: (uri, headers, body) async {
             requestedUri = uri;
@@ -80,6 +79,7 @@ void main() {
         expect(requestedUri, Uri.parse('http://localhost:8787/parse'));
         expect(requestBody, {'text': '明天联系王总', 'timezone': 'Asia/Shanghai'});
         expect(result.items.single.type, ItemType.taskCreate);
+        expect(result.items.single.localId, 'parsed:0');
       },
     );
 

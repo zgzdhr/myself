@@ -30,6 +30,7 @@ class _InputScreenState extends State<InputScreen> {
   final FocusNode _inputFocusNode = FocusNode();
   var _isLoading = false;
   String? _errorMessage;
+  String? _assistantReply;
   List<ExtractedItem> _items = const [];
   var _isInputPressed = false;
 
@@ -90,6 +91,10 @@ class _InputScreenState extends State<InputScreen> {
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
+            if (_assistantReply != null) ...[
+              const SizedBox(height: 20),
+              _AssistantReplyPanel(message: _assistantReply!),
+            ],
             if (_items.isNotEmpty) ...[
               const SizedBox(height: 20),
               Text(
@@ -107,7 +112,7 @@ class _InputScreenState extends State<InputScreen> {
                   onEdit: () => _edit(item),
                   onReject: () => _reject(item),
                 ),
-            ] else if (!_isLoading) ...[
+            ] else if (!_isLoading && _assistantReply == null) ...[
               const SizedBox(height: 20),
               const _PendingEmptyPanel(),
             ],
@@ -127,6 +132,7 @@ class _InputScreenState extends State<InputScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _assistantReply = null;
     });
 
     try {
@@ -137,6 +143,7 @@ class _InputScreenState extends State<InputScreen> {
       }
 
       setState(() {
+        _assistantReply = result.parseResult.userReply;
         _items = result.items;
       });
     } on ParserFailure catch (error) {
@@ -145,6 +152,7 @@ class _InputScreenState extends State<InputScreen> {
       }
 
       setState(() {
+        _assistantReply = null;
         _errorMessage = error.code == 'empty_input'
             ? error.userMessage
             : parserFailureDisplayMessage;
@@ -221,6 +229,32 @@ class _InputScreenState extends State<InputScreen> {
           if (currentItem.localId != item.localId) currentItem,
       ];
     });
+  }
+}
+
+class _AssistantReplyPanel extends StatelessWidget {
+  const _AssistantReplyPanel({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F1E8),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: const Color(0xFF1D1D1F),
+            height: 1.5,
+          ),
+        ),
+      ),
+    );
   }
 }
 
