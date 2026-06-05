@@ -317,6 +317,20 @@ class AppDatabase extends _$AppDatabase {
     )..where((task) => task.status.equals(RecordStatus.confirmed.value))).get();
   }
 
+  Future<List<Task>> getSuggestionTasks({required DateTime now}) {
+    final nextSevenDaysEnd = now.add(const Duration(days: 7));
+
+    return (select(tasks)
+          ..where(
+            (task) =>
+                task.status.equals(RecordStatus.confirmed.value) &
+                (task.dueTime.isNull() |
+                    task.dueTime.isSmallerOrEqualValue(nextSevenDaysEnd)),
+          )
+          ..orderBy([(task) => OrderingTerm(expression: task.dueTime)]))
+        .get();
+  }
+
   Future<List<LifeEvent>> getActiveLifeEvents() {
     return (select(lifeEvents)
           ..where((event) => event.status.equals(RecordStatus.confirmed.value)))
@@ -344,11 +358,9 @@ class AppDatabase extends _$AppDatabase {
     List<String> ids,
   ) async {
     if (ids.isEmpty) return {};
-    final rows = await (select(extractedItems)
-          ..where((item) => item.id.isIn(ids)))
-        .get();
-    return {
-      for (final row in rows) row.id: row.sourceText,
-    };
+    final rows = await (select(
+      extractedItems,
+    )..where((item) => item.id.isIn(ids))).get();
+    return {for (final row in rows) row.id: row.sourceText};
   }
 }

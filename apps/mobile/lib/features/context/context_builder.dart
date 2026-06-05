@@ -1,0 +1,242 @@
+import 'dart:convert';
+
+import '../../data/local_db/app_database.dart';
+import '../../domain/item_type.dart';
+import '../../domain/record_status.dart';
+
+enum ContextIntent {
+  currentSuggestion;
+
+  String get value {
+    return switch (this) {
+      ContextIntent.currentSuggestion => 'current_suggestion',
+    };
+  }
+}
+
+class ContextBuilder {
+  const ContextBuilder();
+
+  ContextIntent? detectIntent(String input) {
+    final normalized = input.trim();
+    if (normalized.contains('该干什么') ||
+        normalized.contains('做什么') ||
+        normalized.contains('先干嘛') ||
+        normalized.contains('先做什么')) {
+      return ContextIntent.currentSuggestion;
+    }
+    return null;
+  }
+
+  Future<ContextPackage> buildCurrentSuggestion({
+    required AppDatabase database,
+    required DateTime now,
+  }) async {
+    final suggestionTasks = await database.getSuggestionTasks(now: now);
+    final states = await database.getActiveShortTermStates(now: now);
+    final profiles = await database.getActiveProfileItems();
+    final excludedReasonCounts = await _loadExcludedReasonCounts(
+      database: database,
+      now: now,
+    );
+
+    final contextTasks = [
+      for (final task in suggestionTasks)
+        ContextTask(
+          id: task.id,
+          title: task.title,
+          priority: task.priority,
+          dueTime: task.dueTime,
+        ),
+    ];
+
+    return ContextPackage(
+      intent: ContextIntent.currentSuggestion,
+      currentTime: now,
+      suggestionTasks: contextTasks,
+      overdueTasks: [
+        for (final task in contextTasks)
+          if (task.dueTime != null && task.dueTime!.isBefore(now)) task,
+      ],
+      todayTasks: [
+        for (final task in contextTasks)
+          if (task.dueTime == null || _isSameDay(task.dueTime!, now)) task,
+      ],
+      nextSevenDaysTasks: [
+        for (final task in contextTasks)
+          if (task.dueTime != null &&
+              task.dueTime!.isAfter(now) &&
+              !_isSameDay(task.dueTime!, now))
+            task,
+      ],
+      activeShortTermStates: [
+        for (final state in states)
+          ContextShortTermState(
+            id: state.id,
+            content: state.content,
+            tags: _decodeTags(state.tagsJson),
+            validUntil: state.validUntil,
+          ),
+      ],
+      confirmedProfileItems: [
+        for (final profile in profiles)
+          ContextProfileItem(id: profile.id, content: profile.content),
+      ],
+      excludedReasonCounts: excludedReasonCounts,
+    );
+  }
+
+  Future<Map<String, int>> _loadExcludedReasonCounts({
+    required AppDatabase database,
+    required DateTime now,
+  }) async {
+    final tasks = await database.select(database.tasks).get();
+    final states = await database.select(database.shortTermStates).get();
+    final profiles = await database.select(database.profileItems).get();
+    final extractedItems = await database.select(database.extractedItems).get();
+    final rawInputs = await database.select(database.rawInputs).get();
+
+    final counts = <String, int>{
+      'deleted': 0,
+      'rejected': 0,
+      'pending': 0,
+      'expired': 0,
+      'unconfirmed_profile_candidate': 0,
+      'raw_inputs_default_excluded': rawInputs.length,
+    };
+
+    for (final task in tasks) {
+      if (task.status == RecordStatus.deleted.value) {
+        counts['deleted'] = counts['deleted']! + 1;
+      }
+    }
+
+    for (final state in states) {
+      if (state.status == RecordStatus.deleted.value) {
+        counts['deleted'] = counts['deleted']! + 1;
+      }
+      if (state.status == RecordStatus.expired.value ||
+          (state.status == RecordStatus.confirmed.value &&
+              !state.validUntil.isAfter(now))) {
+        counts['expired'] = counts['expired']! + 1;
+      }
+    }
+
+    for (final profile in profiles) {
+      if (profile.status == RecordStatus.deleted.value) {
+        counts['deleted'] = counts['deleted']! + 1;
+      }
+    }
+
+    for (final item in extractedItems) {
+      if (item.status == RecordStatus.deleted.value) {
+        counts['deleted'] = counts['deleted']! + 1;
+      }
+      if (item.status == RecordStatus.rejected.value) {
+        counts['rejected'] = counts['rejected']! + 1;
+      }
+      if (item.status == RecordStatus.pending.value) {
+        counts['pending'] = counts['pending']! + 1;
+      }
+      if (item.type == ItemType.profileCandidate.apiValue &&
+          item.status != RecordStatus.confirmed.value &&
+          item.status != RecordStatus.deleted.value &&
+          item.status != RecordStatus.rejected.value) {
+        counts['unconfirmed_profile_candidate'] =
+            counts['unconfirmed_profile_candidate']! + 1;
+      }
+    }
+
+    return {
+      for (final entry in counts.entries)
+        if (entry.value > 0) entry.key: entry.value,
+    };
+  }
+
+  static List<String> _decodeTags(String value) {
+    final decoded = jsonDecode(value) as List<Object?>;
+    return decoded.whereType<String>().toList();
+  }
+
+  static bool _isSameDay(DateTime left, DateTime right) {
+    final leftLocal = left.toLocal();
+    final rightLocal = right.toLocal();
+    return leftLocal.year == rightLocal.year &&
+        leftLocal.month == rightLocal.month &&
+        leftLocal.day == rightLocal.day;
+  }
+}
+
+class ContextPackage {
+  const ContextPackage({
+    required this.intent,
+    required this.currentTime,
+    required this.suggestionTasks,
+    required this.overdueTasks,
+    required this.todayTasks,
+    required this.nextSevenDaysTasks,
+    required this.activeShortTermStates,
+    required this.confirmedProfileItems,
+    required this.excludedReasonCounts,
+  });
+
+  final ContextIntent intent;
+  final DateTime currentTime;
+  final List<ContextTask> suggestionTasks;
+  final List<ContextTask> overdueTasks;
+  final List<ContextTask> todayTasks;
+  final List<ContextTask> nextSevenDaysTasks;
+  final List<ContextShortTermState> activeShortTermStates;
+  final List<ContextProfileItem> confirmedProfileItems;
+  final Map<String, int> excludedReasonCounts;
+
+  Map<String, Object?> toDebugJson() {
+    return {
+      'intent': intent.value,
+      'current_time': currentTime.toIso8601String(),
+      'section_counts': {
+        'overdue_tasks': overdueTasks.length,
+        'today_tasks': todayTasks.length,
+        'next_7_days_tasks': nextSevenDaysTasks.length,
+        'active_short_term_states': activeShortTermStates.length,
+        'confirmed_profile_items': confirmedProfileItems.length,
+      },
+      'excluded_reason_counts': excludedReasonCounts,
+    };
+  }
+}
+
+class ContextTask {
+  const ContextTask({
+    required this.id,
+    required this.title,
+    required this.priority,
+    this.dueTime,
+  });
+
+  final String id;
+  final String title;
+  final String priority;
+  final DateTime? dueTime;
+}
+
+class ContextShortTermState {
+  const ContextShortTermState({
+    required this.id,
+    required this.content,
+    required this.tags,
+    required this.validUntil,
+  });
+
+  final String id;
+  final String content;
+  final List<String> tags;
+  final DateTime validUntil;
+}
+
+class ContextProfileItem {
+  const ContextProfileItem({required this.id, required this.content});
+
+  final String id;
+  final String content;
+}

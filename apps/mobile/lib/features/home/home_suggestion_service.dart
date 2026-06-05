@@ -1,9 +1,5 @@
-import 'dart:convert';
-
-import 'package:drift/drift.dart';
-
 import '../../data/local_db/app_database.dart';
-import '../../domain/record_status.dart';
+import '../context/context_builder.dart';
 
 class HomeSuggestion {
   const HomeSuggestion({required this.text, required this.reason});
@@ -68,14 +64,15 @@ class HomeSuggestionService {
     required AppDatabase database,
     required DateTime now,
   }) async {
-    final tasks = await database.getSuggestionTasks(now: now);
-    final states = await database.getActiveShortTermStates(now: now);
-    final profiles = await database.getActiveProfileItems();
+    final package = await const ContextBuilder().buildCurrentSuggestion(
+      database: database,
+      now: now,
+    );
 
     return HomeSuggestionContext(
       now: now,
       tasks: [
-        for (final task in tasks)
+        for (final task in package.suggestionTasks)
           HomeTask(
             id: task.id,
             title: task.title,
@@ -84,16 +81,16 @@ class HomeSuggestionService {
           ),
       ],
       shortTermStates: [
-        for (final state in states)
+        for (final state in package.activeShortTermStates)
           HomeShortTermState(
             id: state.id,
             content: state.content,
-            tags: _decodeTags(state.tagsJson),
+            tags: state.tags,
             validUntil: state.validUntil,
           ),
       ],
       profileItems: [
-        for (final profile in profiles)
+        for (final profile in package.confirmedProfileItems)
           HomeProfileItem(id: profile.id, content: profile.content),
       ],
     );
@@ -186,26 +183,5 @@ class HomeSuggestionService {
     return leftLocal.year == rightLocal.year &&
         leftLocal.month == rightLocal.month &&
         leftLocal.day == rightLocal.day;
-  }
-
-  static List<String> _decodeTags(String value) {
-    final decoded = jsonDecode(value) as List<Object?>;
-    return decoded.whereType<String>().toList();
-  }
-}
-
-extension HomeSuggestionQueries on AppDatabase {
-  Future<List<Task>> getSuggestionTasks({required DateTime now}) {
-    final nextSevenDaysEnd = now.add(const Duration(days: 7));
-
-    return (select(tasks)
-          ..where(
-            (task) =>
-                task.status.equals(RecordStatus.confirmed.value) &
-                (task.dueTime.isNull() |
-                    task.dueTime.isSmallerOrEqualValue(nextSevenDaysEnd)),
-          )
-          ..orderBy([(task) => OrderingTerm(expression: task.dueTime)]))
-        .get();
   }
 }
