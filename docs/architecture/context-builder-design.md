@@ -173,7 +173,33 @@ Main rule:
 
 Weekly review may mention repeated situations, but it must not convert them into active long-term profile.
 
-### `task_update`
+### `task_update_resolution` (B2 implemented)
+
+Date: 2026-06-05. Phase 3 B2.
+
+The `task_update_resolution` intent is now implemented as
+`ContextBuilder.buildTaskUpdateResolution()`. It provides active confirmed tasks
+as `ContextTaskCandidate` objects for the `ExtractedItemsController` to match
+against parser-supplied target titles.
+
+Include:
+
+- Confirmed tasks only (status = `confirmed`).
+- Minimal candidate fields: `id`, `title`, `priority`, `dueTimeText`, `dueTime`.
+
+Exclude:
+
+- `deleted` tasks.
+- `archived` tasks.
+- Raw inputs, life events, profile items, summaries, short-term states.
+- Task content/description beyond the candidate fields.
+
+Implementation files:
+
+- `apps/mobile/lib/features/context/context_builder.dart` — `ContextTaskUpdatePackage`, `ContextTaskCandidate`, `buildTaskUpdateResolution()`
+- `apps/mobile/lib/features/extracted_items/extracted_items_controller.dart` — `_resolveTaskUpdateIntent` now uses `contextBuilder.buildTaskUpdateResolution()` instead of `database.getActiveTasks()`
+
+### `task_update` (design only)
 
 Example:
 
@@ -585,6 +611,19 @@ Then add one intent at a time:
 3. `daily_review`, because it can use existing records without vector search.
 4. `life_event_reflection`, because it needs more careful relevance rules.
 5. `profile_question`, because it has the highest risk of turning candidates into false identity claims.
+
+Current B-state implementation:
+
+```text
+ContextBuilder.buildCurrentSuggestion()
+→ returns ContextPackage for current_suggestion
+→ used by HomeSuggestionService
+
+ContextBuilder.buildTaskUpdateResolution()
+→ returns ContextTaskUpdatePackage for task_update_resolution
+→ used by ExtractedItemsController._resolveTaskUpdateIntent
+→ provides active confirmed task candidates for task update matching
+```
 
 The smallest useful first implementation is:
 

@@ -5,11 +5,13 @@ import '../../domain/item_type.dart';
 import '../../domain/record_status.dart';
 
 enum ContextIntent {
-  currentSuggestion;
+  currentSuggestion,
+  taskUpdateResolution;
 
   String get value {
     return switch (this) {
       ContextIntent.currentSuggestion => 'current_suggestion',
+      ContextIntent.taskUpdateResolution => 'task_update_resolution',
     };
   }
 }
@@ -82,6 +84,43 @@ class ContextBuilder {
         for (final profile in profiles)
           ContextProfileItem(id: profile.id, content: profile.content),
       ],
+      excludedReasonCounts: excludedReasonCounts,
+    );
+  }
+
+  Future<ContextTaskUpdatePackage> buildTaskUpdateResolution({
+    required AppDatabase database,
+    required DateTime now,
+  }) async {
+    final allTasks = await database.select(database.tasks).get();
+    final candidates = <ContextTaskCandidate>[];
+    var deletedCount = 0;
+    var archivedCount = 0;
+
+    for (final task in allTasks) {
+      if (task.status == RecordStatus.confirmed.value) {
+        candidates.add(
+          ContextTaskCandidate(
+            id: task.id,
+            title: task.title,
+            priority: task.priority,
+            dueTimeText: task.dueTimeText,
+            dueTime: task.dueTime,
+          ),
+        );
+      } else if (task.status == RecordStatus.deleted.value) {
+        deletedCount++;
+      } else if (task.status == RecordStatus.archived.value) {
+        archivedCount++;
+      }
+    }
+
+    final excludedReasonCounts = <String, int>{};
+    if (deletedCount > 0) excludedReasonCounts['deleted'] = deletedCount;
+    if (archivedCount > 0) excludedReasonCounts['archived'] = archivedCount;
+
+    return ContextTaskUpdatePackage(
+      candidates: candidates,
       excludedReasonCounts: excludedReasonCounts,
     );
   }
@@ -239,4 +278,38 @@ class ContextProfileItem {
 
   final String id;
   final String content;
+}
+
+class ContextTaskUpdatePackage {
+  const ContextTaskUpdatePackage({
+    required this.candidates,
+    required this.excludedReasonCounts,
+  });
+
+  final List<ContextTaskCandidate> candidates;
+  final Map<String, int> excludedReasonCounts;
+
+  Map<String, Object?> toDebugJson() {
+    return {
+      'intent': ContextIntent.taskUpdateResolution.value,
+      'candidate_count': candidates.length,
+      'excluded_reason_counts': excludedReasonCounts,
+    };
+  }
+}
+
+class ContextTaskCandidate {
+  const ContextTaskCandidate({
+    required this.id,
+    required this.title,
+    required this.priority,
+    this.dueTimeText,
+    this.dueTime,
+  });
+
+  final String id;
+  final String title;
+  final String priority;
+  final String? dueTimeText;
+  final DateTime? dueTime;
 }

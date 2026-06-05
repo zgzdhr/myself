@@ -140,6 +140,127 @@ void main() {
     expect(debugText, isNot(contains('用户不喜欢太频繁的提醒')));
   });
 
+  test('task update resolution includes confirmed tasks', () async {
+    await _insertTask(
+      database,
+      id: 'task-active-1',
+      title: '联系王总',
+      status: RecordStatus.confirmed,
+      dueTime: now,
+    );
+    await _insertTask(
+      database,
+      id: 'task-active-2',
+      title: '客户资料',
+      status: RecordStatus.confirmed,
+      dueTime: now,
+    );
+
+    final package = await builder.buildTaskUpdateResolution(
+      database: database,
+      now: now,
+    );
+
+    expect(package.candidates.map((c) => c.title), [
+      '联系王总',
+      '客户资料',
+    ]);
+  });
+
+  test('task update resolution excludes deleted tasks', () async {
+    await _insertTask(
+      database,
+      id: 'task-deleted-1',
+      title: '已删除任务',
+      status: RecordStatus.deleted,
+      dueTime: now,
+    );
+    await _insertTask(
+      database,
+      id: 'task-active-1',
+      title: '联系王总',
+      status: RecordStatus.confirmed,
+      dueTime: now,
+    );
+
+    final package = await builder.buildTaskUpdateResolution(
+      database: database,
+      now: now,
+    );
+
+    expect(package.candidates.map((c) => c.title), ['联系王总']);
+    expect(package.excludedReasonCounts['deleted'], greaterThanOrEqualTo(1));
+  });
+
+  test('task update resolution excludes archived tasks', () async {
+    await _insertTask(
+      database,
+      id: 'task-archived-1',
+      title: '已归档任务',
+      status: RecordStatus.archived,
+      dueTime: now,
+    );
+    await _insertTask(
+      database,
+      id: 'task-active-1',
+      title: '联系王总',
+      status: RecordStatus.confirmed,
+      dueTime: now,
+    );
+
+    final package = await builder.buildTaskUpdateResolution(
+      database: database,
+      now: now,
+    );
+
+    expect(package.candidates.map((c) => c.title), ['联系王总']);
+    expect(package.excludedReasonCounts['archived'], greaterThanOrEqualTo(1));
+  });
+
+  test('task update resolution candidate has only minimal fields', () async {
+    await _insertTask(
+      database,
+      id: 'task-active-1',
+      title: '联系王总',
+      status: RecordStatus.confirmed,
+      dueTime: now,
+    );
+
+    final package = await builder.buildTaskUpdateResolution(
+      database: database,
+      now: now,
+    );
+
+    final candidate = package.candidates.single;
+    expect(candidate.id, 'task-active-1');
+    expect(candidate.title, '联系王总');
+    expect(candidate.priority, 'medium');
+    expect(candidate.dueTime?.toUtc(), now);
+    expect(candidate.dueTimeText, null);
+  });
+
+  test('task update resolution debug json excludes raw text', () async {
+    await _insertSensitiveRawInput(database, now: now);
+    await _insertTask(
+      database,
+      id: 'task-active-1',
+      title: '联系王总',
+      status: RecordStatus.confirmed,
+      dueTime: now,
+    );
+
+    final package = await builder.buildTaskUpdateResolution(
+      database: database,
+      now: now,
+    );
+    final debugText = jsonEncode(package.toDebugJson());
+
+    expect(debugText, contains('candidate_count'));
+    expect(debugText, contains('excluded_reason_counts'));
+    expect(debugText, isNot(contains('我的银行卡密码')));
+    expect(debugText, isNot(contains('联系王总')));
+  });
+
   test(
     'current suggestion package matches existing home suggestion context',
     () async {

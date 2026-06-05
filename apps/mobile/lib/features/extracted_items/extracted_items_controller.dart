@@ -9,6 +9,7 @@ import '../../domain/extracted_item.dart';
 import '../../domain/item_type.dart';
 import '../../domain/parse_result.dart';
 import '../../domain/record_status.dart';
+import '../context/context_builder.dart';
 
 class SubmitInputResult {
   const SubmitInputResult({
@@ -44,17 +45,20 @@ class ExtractedItemsController {
   ExtractedItemsController({
     required this.database,
     required this.parserClient,
+    ContextBuilder? contextBuilder,
     String Function()? rawInputIdFactory,
     String Function()? parseResultIdFactory,
     String Function()? officialRecordIdFactory,
     DateTime Function()? nowProvider,
-  }) : rawInputIdFactory = rawInputIdFactory ?? const Uuid().v4,
+  }) : contextBuilder = contextBuilder ?? const ContextBuilder(),
+       rawInputIdFactory = rawInputIdFactory ?? const Uuid().v4,
        parseResultIdFactory = parseResultIdFactory ?? const Uuid().v4,
        officialRecordIdFactory = officialRecordIdFactory ?? const Uuid().v4,
        nowProvider = nowProvider ?? DateTime.now;
 
   final db.AppDatabase database;
   final ParserClient parserClient;
+  final ContextBuilder contextBuilder;
   final String Function() rawInputIdFactory;
   final String Function() parseResultIdFactory;
   final String Function() officialRecordIdFactory;
@@ -628,7 +632,12 @@ class ExtractedItemsController {
   Future<TaskUpdateIntent> _resolveTaskUpdateIntent(
     TaskUpdateIntent taskUpdateIntent,
   ) async {
-    final activeTasks = await database.getActiveTasks();
+    final package = await contextBuilder.buildTaskUpdateResolution(
+      database: database,
+      now: nowProvider(),
+    );
+    final activeTaskCandidates = package.candidates;
+
     final targetQuery =
         taskUpdateIntent.targetTaskTitle ??
         taskUpdateIntent.targetText ??
@@ -643,21 +652,21 @@ class ExtractedItemsController {
     }
 
     final exactMatches = [
-      for (final task in activeTasks)
-        if (_normalizeTaskText(task.title) == normalizedQuery)
+      for (final candidate in activeTaskCandidates)
+        if (_normalizeTaskText(candidate.title) == normalizedQuery)
           TaskUpdateCandidate(
-            id: task.id,
-            title: task.title,
-            dueTimeText: task.dueTimeText,
+            id: candidate.id,
+            title: candidate.title,
+            dueTimeText: candidate.dueTimeText,
           ),
     ];
     final containsMatches = [
-      for (final task in activeTasks)
-        if (_normalizeTaskText(task.title).contains(normalizedQuery))
+      for (final candidate in activeTaskCandidates)
+        if (_normalizeTaskText(candidate.title).contains(normalizedQuery))
           TaskUpdateCandidate(
-            id: task.id,
-            title: task.title,
-            dueTimeText: task.dueTimeText,
+            id: candidate.id,
+            title: candidate.title,
+            dueTimeText: candidate.dueTimeText,
           ),
     ];
     final matches = exactMatches.isNotEmpty ? exactMatches : containsMatches;
