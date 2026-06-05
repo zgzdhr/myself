@@ -24,12 +24,14 @@ class ExtractedItemCard extends StatelessWidget {
     final title = item.title ?? item.content ?? item.sourceText;
     final isAutoSaved = item.status == RecordStatus.confirmed;
     final taskUpdateIntent = item.taskUpdateIntent;
-    final isTaskUpdate = item.type == ItemType.taskUpdate && taskUpdateIntent != null;
+    final isTaskUpdate =
+        item.type == ItemType.taskUpdate && taskUpdateIntent != null;
     final taskUpdateButtonLabel = switch (taskUpdateIntent?.resolution) {
       TaskUpdateResolution.needsSelection => '选择任务',
       _ => '确认更新',
     };
-    final taskUpdateRejectLabel = taskUpdateIntent?.resolution == TaskUpdateResolution.noMatch
+    final taskUpdateRejectLabel =
+        taskUpdateIntent?.resolution == TaskUpdateResolution.noMatch
         ? '关闭'
         : '拒绝';
 
@@ -48,12 +50,18 @@ class ExtractedItemCard extends StatelessWidget {
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
-            if (item.content != null && item.content != title) ...[
+            if (!isTaskUpdate &&
+                item.content != null &&
+                item.content != title) ...[
               const SizedBox(height: 8),
               Text(item.content!),
             ],
             const SizedBox(height: 8),
             Text('来源：${item.sourceText}'),
+            if (isTaskUpdate) ...[
+              const SizedBox(height: 10),
+              _TaskUpdateResolutionPanel(intent: taskUpdateIntent),
+            ],
             if (item.tags.isNotEmpty) ...[
               const SizedBox(height: 8),
               Wrap(
@@ -125,6 +133,87 @@ class ExtractedItemCard extends StatelessWidget {
     final month = local.month.toString().padLeft(2, '0');
     final day = local.day.toString().padLeft(2, '0');
     return '${local.year}-$month-$day';
+  }
+}
+
+class _TaskUpdateResolutionPanel extends StatelessWidget {
+  const _TaskUpdateResolutionPanel({required this.intent});
+
+  final TaskUpdateIntent intent;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F3EC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE6DDD1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: switch (intent.resolution) {
+          TaskUpdateResolution.ready => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '我理解你想更新：${intent.targetLabel}',
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(_readyActionText(intent)),
+            ],
+          ),
+          TaskUpdateResolution.needsSelection => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '你说的是哪一个任务？',
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              for (final candidate in intent.candidates)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(candidate.title),
+                      if (candidate.dueTimeText != null &&
+                          candidate.dueTimeText!.isNotEmpty)
+                        Text(
+                          '当前时间：${candidate.dueTimeText}',
+                          style: textTheme.bodySmall,
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          TaskUpdateResolution.noMatch => const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('我没有找到对应任务。', style: TextStyle(fontWeight: FontWeight.w700)),
+              SizedBox(height: 6),
+              Text('这次不会修改任何任务。'),
+            ],
+          ),
+        },
+      ),
+    );
+  }
+
+  String _readyActionText(TaskUpdateIntent intent) {
+    return switch (intent.action) {
+      TaskUpdateAction.complete => '将标记为已完成',
+      TaskUpdateAction.cancel => '将取消这个任务',
+      TaskUpdateAction.delay => '将延期到 ${intent.dueTimeText ?? '新的时间'}',
+      TaskUpdateAction.edit => '将更新这个任务',
+    };
   }
 }
 

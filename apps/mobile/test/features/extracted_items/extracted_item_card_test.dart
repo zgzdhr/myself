@@ -73,6 +73,105 @@ void main() {
     expect(find.text('确认'), findsNothing);
   });
 
+  testWidgets('ready task update card explains target and action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.taskUpdate,
+            title: '联系王总',
+            content: '将标记为已完成',
+            sourceText: '联系王总已经完成了',
+            taskUpdateIntent: TaskUpdateIntent(
+              action: TaskUpdateAction.complete,
+              targetTaskTitle: '联系王总',
+              targetText: '联系王总',
+              candidates: const [
+                TaskUpdateCandidate(id: 'task-1', title: '联系王总'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('任务更新'), findsOneWidget);
+    expect(find.text('我理解你想更新：联系王总'), findsOneWidget);
+    expect(find.text('将标记为已完成'), findsOneWidget);
+    expect(find.text('确认更新'), findsOneWidget);
+    expect(find.text('拒绝'), findsOneWidget);
+  });
+
+  testWidgets('ambiguous task update card asks the user to choose', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.taskUpdate,
+            title: '联系王总',
+            content: '请选择要更新的任务',
+            sourceText: '把联系王总改到后天',
+            taskUpdateIntent: TaskUpdateIntent(
+              action: TaskUpdateAction.delay,
+              targetText: '联系王总',
+              dueTimeText: '后天',
+              candidates: const [
+                TaskUpdateCandidate(
+                  id: 'task-a',
+                  title: '联系王总-上海',
+                  dueTimeText: '今天上午',
+                ),
+                TaskUpdateCandidate(
+                  id: 'task-b',
+                  title: '联系王总-北京',
+                  dueTimeText: '今天下午',
+                ),
+              ],
+              resolution: TaskUpdateResolution.needsSelection,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('你说的是哪一个任务？'), findsOneWidget);
+    expect(find.text('联系王总-上海'), findsWidgets);
+    expect(find.text('联系王总-北京'), findsWidgets);
+    expect(find.text('选择任务'), findsOneWidget);
+  });
+
+  testWidgets('no match task update card explains nothing will change', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.taskUpdate,
+            title: '联系李总',
+            content: '没找到对应任务',
+            sourceText: '联系李总已经完成了',
+            taskUpdateIntent: TaskUpdateIntent(
+              action: TaskUpdateAction.complete,
+              targetTaskTitle: '联系李总',
+              targetText: '联系李总',
+              resolution: TaskUpdateResolution.noMatch,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('我没有找到对应任务。'), findsOneWidget);
+    expect(find.text('这次不会修改任何任务。'), findsOneWidget);
+    expect(find.text('关闭'), findsOneWidget);
+    expect(find.text('确认更新'), findsNothing);
+  });
+
   testWidgets('input screen submits text and stores pending extracted items', (
     tester,
   ) async {
@@ -166,10 +265,7 @@ void main() {
     await tester.tap(find.text('整理'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Flutter 是一个跨平台 UI 开发框架，适合先做这类 MVP。'),
-      findsOneWidget,
-    );
+    expect(find.text('Flutter 是一个跨平台 UI 开发框架，适合先做这类 MVP。'), findsOneWidget);
     expect(find.text('待确认内容'), findsNothing);
     expect(find.text('普通问答'), findsNothing);
     expect(find.text('确认'), findsNothing);
@@ -185,67 +281,70 @@ void main() {
     expect(profiles, isEmpty);
   });
 
-  testWidgets('mixed answer and memory result shows reply plus saveable cards', (
-    tester,
-  ) async {
-    final database = db.AppDatabase(
-      DatabaseConnection(
-        NativeDatabase.memory(),
-        closeStreamsSynchronously: true,
-      ),
-    );
-    addTearDown(database.close);
-
-    final controller = ExtractedItemsController(
-      database: database,
-      parserClient: _StaticParserClient(
-        ParseResult(
-          userReply: '我先回答你，也顺手帮你整理出一个任务。',
-          inputSummary: '用户既在提问，也提到一个明天要做的动作。',
-          intentTypes: const [ItemType.generalAnswer, ItemType.taskCreate],
-          items: [
-            ParsedExtractedItem(
-              localId: 'parsed:0',
-              type: ItemType.generalAnswer,
-              content: '可以先做一个最小可运行版本。',
-              sourceText: '我应该怎么开始做？',
-              tags: const ['qa'],
-              confidence: 0.95,
-              needUserConfirm: false,
-              parsedAt: DateTime.utc(2026, 5, 31),
-            ),
-            ParsedExtractedItem(
-              localId: 'parsed:1',
-              type: ItemType.taskCreate,
-              title: '联系王总',
-              sourceText: '明天上午联系王总',
-              tags: const ['work'],
-              confidence: 0.91,
-              needUserConfirm: true,
-              parsedAt: DateTime.utc(2026, 5, 31),
-            ),
-          ],
+  testWidgets(
+    'mixed answer and memory result shows reply plus saveable cards',
+    (tester) async {
+      final database = db.AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
         ),
-      ),
-      rawInputIdFactory: () => 'raw-mixed-1',
-      parseResultIdFactory: () => 'parse-mixed-1',
-      nowProvider: () => DateTime.utc(2026, 5, 31),
-    );
+      );
+      addTearDown(database.close);
 
-    await tester.pumpWidget(_wrap(InputScreen(controller: controller)));
-    await tester.enterText(find.byType(TextField), '我应该怎么开始做？明天上午联系王总。');
-    await tester.tap(find.text('整理'));
-    await tester.pumpAndSettle();
+      final controller = ExtractedItemsController(
+        database: database,
+        parserClient: _StaticParserClient(
+          ParseResult(
+            userReply: '我先回答你，也顺手帮你整理出一个任务。',
+            inputSummary: '用户既在提问，也提到一个明天要做的动作。',
+            intentTypes: const [ItemType.generalAnswer, ItemType.taskCreate],
+            items: [
+              ParsedExtractedItem(
+                localId: 'parsed:0',
+                type: ItemType.generalAnswer,
+                content: '可以先做一个最小可运行版本。',
+                sourceText: '我应该怎么开始做？',
+                tags: const ['qa'],
+                confidence: 0.95,
+                needUserConfirm: false,
+                parsedAt: DateTime.utc(2026, 5, 31),
+              ),
+              ParsedExtractedItem(
+                localId: 'parsed:1',
+                type: ItemType.taskCreate,
+                title: '联系王总',
+                sourceText: '明天上午联系王总',
+                tags: const ['work'],
+                confidence: 0.91,
+                needUserConfirm: true,
+                parsedAt: DateTime.utc(2026, 5, 31),
+              ),
+            ],
+          ),
+        ),
+        rawInputIdFactory: () => 'raw-mixed-1',
+        parseResultIdFactory: () => 'parse-mixed-1',
+        nowProvider: () => DateTime.utc(2026, 5, 31),
+      );
 
-    expect(find.text('我先回答你，也顺手帮你整理出一个任务。'), findsOneWidget);
-    expect(find.text('待确认内容'), findsOneWidget);
-    expect(find.text('联系王总'), findsOneWidget);
-    expect(find.text('普通问答'), findsNothing);
+      await tester.pumpWidget(_wrap(InputScreen(controller: controller)));
+      await tester.enterText(find.byType(TextField), '我应该怎么开始做？明天上午联系王总。');
+      await tester.tap(find.text('整理'));
+      await tester.pumpAndSettle();
 
-    final extractedItems = await database.select(database.extractedItems).get();
-    expect(extractedItems, hasLength(1));
-    expect(extractedItems.single.type, ItemType.taskCreate.apiValue);
-  });
+      expect(find.text('我先回答你，也顺手帮你整理出一个任务。'), findsOneWidget);
+      expect(find.text('待确认内容'), findsOneWidget);
+      expect(find.text('联系王总'), findsOneWidget);
+      expect(find.text('普通问答'), findsNothing);
+
+      final extractedItems = await database
+          .select(database.extractedItems)
+          .get();
+      expect(extractedItems, hasLength(1));
+      expect(extractedItems.single.type, ItemType.taskCreate.apiValue);
+    },
+  );
 
   testWidgets('input results appear before afterInput home content', (
     tester,
@@ -360,7 +459,7 @@ void main() {
     await tester.tap(find.text('整理'));
     await tester.pumpAndSettle();
 
-    expect(find.text('请选择要更新的任务'), findsOneWidget);
+    expect(find.text('你说的是哪一个任务？'), findsOneWidget);
     expect(find.text('选择任务'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -300));
@@ -368,10 +467,10 @@ void main() {
     await tester.tap(find.text('选择任务'));
     await tester.pumpAndSettle();
 
-    expect(find.text('联系王总-上海'), findsOneWidget);
-    expect(find.text('联系王总-北京'), findsOneWidget);
+    expect(find.text('联系王总-上海'), findsWidgets);
+    expect(find.text('联系王总-北京'), findsWidgets);
 
-    await tester.tap(find.text('联系王总-北京'));
+    await tester.tap(find.text('联系王总-北京').last);
     await tester.pumpAndSettle();
 
     final updatedTask = await _getTask(database, 'task-b');
@@ -380,7 +479,7 @@ void main() {
     expect(updatedTask.dueTimeText, '后天');
     expect(updatedTask.dueTime!.toUtc(), DateTime.utc(2026, 6, 2, 9));
     expect(untouchedTask.dueTime!.toUtc(), DateTime.utc(2026, 5, 31, 9));
-    expect(find.text('请选择要更新的任务'), findsNothing);
+    expect(find.text('你说的是哪一个任务？'), findsNothing);
   });
 
   test(
@@ -454,55 +553,64 @@ Future<void> _insertConfirmedTask(
   required String title,
   required DateTime dueTime,
 }) async {
-  await database.into(database.rawInputs).insert(
-    db.RawInputsCompanion.insert(
-      id: 'raw-$id',
-      inputText: title,
-      createdAt: DateTime.utc(2026, 5, 31),
-    ),
-  );
-  await database.into(database.aiParseResults).insert(
-    db.AiParseResultsCompanion.insert(
-      id: 'parse-$id',
-      rawInputId: 'raw-$id',
-      rawJson: '{}',
-      validationState: 'valid',
-      createdAt: DateTime.utc(2026, 5, 31),
-    ),
-  );
-  await database.into(database.extractedItems).insert(
-    db.ExtractedItemsCompanion.insert(
-      id: 'item-$id',
-      rawInputId: 'raw-$id',
-      aiParseResultId: 'parse-$id',
-      type: ItemType.taskCreate.apiValue,
-      title: Value(title),
-      sourceText: title,
-      confidence: 0.9,
-      needUserConfirm: true,
-      status: RecordStatus.confirmed.value,
-      createdAt: DateTime.utc(2026, 5, 31),
-      updatedAt: DateTime.utc(2026, 5, 31),
-    ),
-  );
-  await database.into(database.tasks).insert(
-    db.TasksCompanion.insert(
-      id: id,
-      sourceRawInputId: 'raw-$id',
-      sourceExtractedItemId: 'item-$id',
-      title: title,
-      dueTimeText: const Value('今天'),
-      dueTime: Value(dueTime),
-      status: RecordStatus.confirmed.value,
-      createdAt: DateTime.utc(2026, 5, 31),
-      updatedAt: DateTime.utc(2026, 5, 31),
-    ),
-  );
+  await database
+      .into(database.rawInputs)
+      .insert(
+        db.RawInputsCompanion.insert(
+          id: 'raw-$id',
+          inputText: title,
+          createdAt: DateTime.utc(2026, 5, 31),
+        ),
+      );
+  await database
+      .into(database.aiParseResults)
+      .insert(
+        db.AiParseResultsCompanion.insert(
+          id: 'parse-$id',
+          rawInputId: 'raw-$id',
+          rawJson: '{}',
+          validationState: 'valid',
+          createdAt: DateTime.utc(2026, 5, 31),
+        ),
+      );
+  await database
+      .into(database.extractedItems)
+      .insert(
+        db.ExtractedItemsCompanion.insert(
+          id: 'item-$id',
+          rawInputId: 'raw-$id',
+          aiParseResultId: 'parse-$id',
+          type: ItemType.taskCreate.apiValue,
+          title: Value(title),
+          sourceText: title,
+          confidence: 0.9,
+          needUserConfirm: true,
+          status: RecordStatus.confirmed.value,
+          createdAt: DateTime.utc(2026, 5, 31),
+          updatedAt: DateTime.utc(2026, 5, 31),
+        ),
+      );
+  await database
+      .into(database.tasks)
+      .insert(
+        db.TasksCompanion.insert(
+          id: id,
+          sourceRawInputId: 'raw-$id',
+          sourceExtractedItemId: 'item-$id',
+          title: title,
+          dueTimeText: const Value('今天'),
+          dueTime: Value(dueTime),
+          status: RecordStatus.confirmed.value,
+          createdAt: DateTime.utc(2026, 5, 31),
+          updatedAt: DateTime.utc(2026, 5, 31),
+        ),
+      );
 }
 
 Future<db.Task> _getTask(db.AppDatabase database, String id) {
-  return (database.select(database.tasks)..where((task) => task.id.equals(id)))
-      .getSingle();
+  return (database.select(
+    database.tasks,
+  )..where((task) => task.id.equals(id))).getSingle();
 }
 
 ExtractedItem _item({
@@ -512,6 +620,7 @@ ExtractedItem _item({
   String? content,
   RecordStatus status = RecordStatus.pending,
   DateTime? expiresAt,
+  TaskUpdateIntent? taskUpdateIntent,
 }) {
   return ExtractedItem(
     localId: 'item-1',
@@ -527,5 +636,6 @@ ExtractedItem _item({
     createdAt: DateTime.utc(2026, 5, 31),
     updatedAt: DateTime.utc(2026, 5, 31),
     expiresAt: expiresAt,
+    taskUpdateIntent: taskUpdateIntent,
   );
 }
