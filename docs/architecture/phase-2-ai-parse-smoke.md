@@ -111,6 +111,40 @@ The smoke runner now catches errors per sample instead of aborting the entire
 run. A single HTTP failure, JSON parse error, or schema validation failure is
 recorded for that sample and the loop continues to the next one.
 
+## Phase 3 A4 Parser Failure Fallbacks
+
+### DeepSeek Fetch Timeout
+
+The DeepSeek fetch call now includes an `AbortController` timeout (default 20s).
+If DeepSeek hangs or does not respond within the timeout window, the parser throws
+`ParserServiceError("deepseek_request_failed", 503)`. Each retry attempt gets its
+own AbortController.
+
+### Input Length Validation
+
+The `/parse` endpoint rejects requests where `text` exceeds 2000 characters
+(`parseRequestSchema` enforces `z.string().max(2000)`).
+
+The mobile `ExtractedItemsController.submitInput` also validates input length
+before sending to the API, throwing `ParserFailure(code: "input_too_long")`.
+
+### Existing Failure Coverage
+
+| Failure Path | API | Mobile |
+|---|---|---|
+| API key missing | `ParserServiceError("missing_api_key", 503)` | Generic failure message |
+| DeepSeek timeout | `ParserServiceError("deepseek_request_failed", 503)` | Generic failure message |
+| DeepSeek HTTP error | `ParserServiceError("deepseek_http_error", 502/503)` | Generic failure message |
+| JSON parse failure | Retry once, then 502 | `ParserFailure("invalid_response")` |
+| Schema validation failure | Retry once, then 502 | `ParserFailure("invalid_response")` |
+| Mobile network error | N/A | `ParserFailure("network_error")` |
+| Empty input | `400 invalid_request` | `ParserFailure("empty_input")` |
+| Input too long | `400 invalid_request` | `ParserFailure("input_too_long")` |
+
+User-facing failure message: "这次我没能稳定解析成可保存的数据。你可以重试，或者先手动记录。"
+
+## Mobile Smoke
+
 iOS simulator uses the API proxy at `http://127.0.0.1:8787`.
 Android emulator uses `http://10.0.2.2:8787`.
 

@@ -10,7 +10,7 @@ export const itemTypes = [
 ] as const;
 
 export const parseRequestSchema = z.object({
-  text: z.string().trim().min(1),
+  text: z.string().trim().min(1).max(2000),
   timezone: z.string().trim().min(1),
 });
 

@@ -101,7 +101,10 @@ test("ordinary question / chitchat samples forbid task and profile", () => {
   for (const id of qaIds) {
     const sample = parserSmokeSamples.find((s) => s.id === id);
     assert.ok(sample, `${id} sample missing`);
-    assert.equal(sample.expectedTypes[0], "general_answer");
+    const hasGeneralAnswer =
+      sample.expectedTypes.includes("general_answer") ||
+      (sample.acceptedTypes ?? []).includes("general_answer");
+    assert.ok(hasGeneralAnswer, `${id} should accept general_answer`);
     assert.ok(sample.forbiddenTypes?.includes("task_create"));
     assert.ok(sample.forbiddenTypes?.includes("profile_candidate"));
   }

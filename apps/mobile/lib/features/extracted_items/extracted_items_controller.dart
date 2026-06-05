@@ -61,6 +61,7 @@ class ExtractedItemsController {
   final DateTime Function() nowProvider;
 
   static const autoSaveHint = '已自动整理，可修改或撤销';
+  static const maxInputLength = 2000;
 
   Future<SubmitInputResult> submitInput(String text) async {
     final trimmedText = text.trim();
@@ -69,6 +70,13 @@ class ExtractedItemsController {
       throw const ParserFailure(
         code: 'empty_input',
         userMessage: '请先输入你想整理的内容。',
+      );
+    }
+
+    if (trimmedText.length > maxInputLength) {
+      throw const ParserFailure(
+        code: 'input_too_long',
+        userMessage: '输入内容过长，请精简到 2000 字以内再试。',
       );
     }
 

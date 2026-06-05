@@ -15,6 +15,7 @@ type DeepSeekParserConfig = {
   baseUrl?: string;
   model?: string;
   fetchFn?: FetchLike;
+  timeoutMs?: number;
 };
 
 type DeepSeekChatResponse = {
@@ -79,17 +80,35 @@ export function createDeepSeekParser(config: DeepSeekParserConfig = {}) {
     );
     const model =
       config.model ?? process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash";
+    const timeoutMs = config.timeoutMs ?? 20_000;
 
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= 2; attempt += 1) {
-      const content = await callDeepSeek({
-        apiKey,
-        baseUrl,
-        fetchFn,
-        model,
-        request,
-      });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      let content: string;
+      try {
+        content = await callDeepSeek({
+          apiKey,
+          baseUrl,
+          fetchFn,
+          model,
+          request,
+          signal: controller.signal,
+        });
+      } catch (error) {
+        if (error instanceof ParserServiceError) throw error;
+        throw new ParserServiceError(
+          "deepseek_request_failed",
+          503,
+          "DeepSeek API request failed before a response was received.",
+        );
+      } finally {
+        clearTimeout(timer);
+      }
+
       const parsedJson = tryParseJson(content);
 
       if (!parsedJson.success) {
@@ -137,18 +156,21 @@ async function callDeepSeek({
   fetchFn,
   model,
   request,
+  signal,
 }: {
   apiKey: string;
   baseUrl: string;
   fetchFn: FetchLike;
   model: string;
   request: ParseRequest;
+  signal?: AbortSignal;
 }): Promise<string> {
   let response: Response;
 
   try {
     response = await fetchFn(`${baseUrl}/chat/completions`, {
       method: "POST",
+      ...(signal ? { signal } : {}),
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,

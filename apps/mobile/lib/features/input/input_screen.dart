@@ -154,7 +154,7 @@ class _InputScreenState extends State<InputScreen> {
 
       setState(() {
         _assistantReply = null;
-        _errorMessage = error.code == 'empty_input'
+        _errorMessage = (error.code == 'empty_input' || error.code == 'input_too_long')
             ? error.userMessage
             : parserFailureDisplayMessage;
       });

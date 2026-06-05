@@ -47,6 +47,36 @@ void main() {
 
     expect(find.text('这次我没能稳定解析成可保存的数据。你可以重试，或者先手动记录。'), findsOneWidget);
   });
+
+  testWidgets('input screen rejects input that is too long', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: const _FailingParserClient(),
+      rawInputIdFactory: () => 'raw-length-1',
+      parseResultIdFactory: () => 'parse-length-1',
+      nowProvider: () => DateTime.utc(2026, 6, 1),
+    );
+    final longText = '测试' * 1001; // 2002 chars
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: InputScreen(controller: controller)),
+      ),
+    );
+    await tester.enterText(find.byType(TextField), longText);
+    await tester.tap(find.text('整理'));
+    await tester.pumpAndSettle();
+
+    // The error message should be user-friendly and not expose raw text
+    expect(
+      find.textContaining('输入内容过长'),
+      findsOneWidget,
+    );
+  });
 }
 
 class _FailingParserClient implements ParserClient {
