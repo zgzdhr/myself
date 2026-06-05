@@ -119,3 +119,64 @@ cd /Users/mac/projects/cc/myself/apps/mobile
 flutter analyze
 flutter test
 ```
+
+## Phase 3 A5 Real DeepSeek + iOS Manual Smoke
+
+Date: 2026-06-05
+Scope: iOS simulator with real DeepSeek API via local proxy
+
+### P0: Latin-1 Encoding Bug
+
+Found and fixed during A5 manual smoke. Root cause:
+
+`HttpParserClient._defaultPostJson` used `request.write(body)` which defaults
+to **Latin-1 encoding**. Any Chinese text in the JSON body caused
+`UnicodeSubsetEncoder.convert` to throw `Invalid argument: Contains invalid
+characters`, which was caught as a generic `network_error` showing the
+user-facing failure message.
+
+Fix: `request.add(utf8.encode(body))` — explicit UTF-8 encoding.
+
+Additionally, `NSAppTransportSecurity.NSAllowsLocalNetworking` was added to
+`ios/Runner/Info.plist` to allow HTTP requests to `127.0.0.1:8787` from the
+iOS simulator (ATS blocks non-standard HTTP ports by default).
+
+### Manual Smoke Observations
+
+App built and launched on iPhone 17 iOS simulator, connected to live DeepSeek
+API proxy at `http://127.0.0.1:8787`. After the encoding fix, parser requests
+succeeded and extracted item cards appeared.
+
+User-reported issues during manual smoke:
+
+| Input | Result | Notes |
+|---|---|---|
+| 上午要和领导吃饭，很难受 | ✓ task_create + short_term_state | Multi-intent correctly parsed |
+| 不和领导吃饭了，取消了 | ✗ No task_update triggered | Should match and cancel the original task |
+
+### Known Quality Gap: task_update Matching
+
+"不和领导吃饭了，取消了" should trigger `task_update` (cancel action) but
+the DeepSeek parser did not classify it as such. Two layers involved:
+
+1. **Parser classification** — DeepSeek needs to recognize取消/不...了/etc.
+   as task_update cancel semantics. The parser sample set already has cancel
+   examples (`task_update_cancel`), but real-world phrasing varies.
+2. **Task matching** — Even if correctly classified, the cancel action must
+   find the target task ("上午要和领导吃饭"). This is the job of
+   `ExtractedItemsController.applyTaskUpdate` and ContextBuilder.
+
+These issues will be addressed in Phase 3 **B phase** (B1-B4: task_update
+rule tightening and ContextBuilder expansion), not in the A phase.
+
+### A5 Verification
+
+```bash
+cd /Users/mac/projects/cc/myself/apps/mobile
+flutter analyze  # No issues found
+flutter test     # 69 pass / 0 fail
+
+cd /Users/mac/projects/cc/myself/apps/api
+npm run typecheck  # pass
+npm test           # 45 pass / 0 fail
+```

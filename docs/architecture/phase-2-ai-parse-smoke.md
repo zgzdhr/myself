@@ -143,6 +143,14 @@ before sending to the API, throwing `ParserFailure(code: "input_too_long")`.
 
 User-facing failure message: "这次我没能稳定解析成可保存的数据。你可以重试，或者先手动记录。"
 
+## Phase 3 A5: Mobile Latin-1 Encoding Fix
+
+iOS `_defaultPostJson` used `request.write(body)` (Latin-1) instead of
+`request.add(utf8.encode(body))`. Any Chinese character in the request body
+caused `UnicodeSubsetEncoder.convert` to fail, showing the generic network
+error message. Fixed with explicit UTF-8 encoding. `NSAllowsLocalNetworking`
+was also added to `Info.plist`.
+
 ## Mobile Smoke
 
 iOS simulator uses the API proxy at `http://127.0.0.1:8787`.

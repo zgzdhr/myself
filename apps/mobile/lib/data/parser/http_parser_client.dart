@@ -103,7 +103,7 @@ class HttpParserClient implements ParserClient {
     try {
       final request = await httpClient.postUrl(uri);
       headers.forEach(request.headers.set);
-      request.write(body);
+      request.add(utf8.encode(body));
 
       final response = await request.close();
       final responseBody = await response.transform(utf8.decoder).join();
