@@ -10,6 +10,7 @@ import '../../data/parser/parser_client.dart';
 import '../extracted_items/extracted_items_controller.dart';
 import 'home_suggestion_service.dart';
 import '../input/input_screen.dart';
+import '../memory/memory_screen.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
@@ -94,6 +95,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             return _HomeFollowUp(
               suggestions: suggestions,
               contextData: contextData,
+              database: database,
             );
           },
         ),
@@ -158,10 +160,15 @@ class _HomeGreeting extends StatelessWidget {
 }
 
 class _HomeFollowUp extends StatelessWidget {
-  const _HomeFollowUp({required this.suggestions, required this.contextData});
+  const _HomeFollowUp({
+    required this.suggestions,
+    required this.contextData,
+    required this.database,
+  });
 
   final List<HomeSuggestion> suggestions;
   final HomeSuggestionContext contextData;
+  final AppDatabase database;
 
   @override
   Widget build(BuildContext context) {
@@ -211,6 +218,7 @@ class _HomeFollowUp extends StatelessWidget {
         _MemoryEntryPanel(
           stateCount: contextData.shortTermStates.length,
           profileCount: contextData.profileItems.length,
+          database: database,
         ),
       ],
     );
@@ -293,58 +301,73 @@ class _MemoryEntryPanel extends StatelessWidget {
   const _MemoryEntryPanel({
     required this.stateCount,
     required this.profileCount,
+    required this.database,
   });
 
   final int stateCount;
   final int profileCount;
+  final AppDatabase database;
 
   @override
   Widget build(BuildContext context) {
     return _SurfacePanel(
       padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF0EC),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFD5DFD8)),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => MemoryScreen(database: database),
             ),
-            child: const Icon(
-              Icons.bookmark_border_rounded,
-              color: Color(0xFF53736A),
+          );
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF0EC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFD5DFD8)),
+              ),
+              child: const Icon(
+                Icons.bookmark_border_rounded,
+                color: Color(0xFF53736A),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '记忆入口',
-                  style: TextStyle(
-                    color: Color(0xFF1D1D1F),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '记忆入口',
+                    style: TextStyle(
+                      color: Color(0xFF1D1D1F),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '状态 $stateCount 条 · 长期画像 $profileCount 条',
-                  style: const TextStyle(
-                    color: Color(0xFF8A8278),
-                    fontSize: 14,
-                    height: 1.35,
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(height: 4),
+                  Text(
+                    '状态 $stateCount 条 · 长期画像 $profileCount 条',
+                    style: const TextStyle(
+                      color: Color(0xFF8A8278),
+                      fontSize: 14,
+                      height: 1.35,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF8A8278)),
-        ],
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Color(0xFF8A8278),
+            ),
+          ],
+        ),
       ),
     );
   }

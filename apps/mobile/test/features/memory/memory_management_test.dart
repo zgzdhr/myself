@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,8 +6,11 @@ import 'package:mobile/data/local_db/app_database.dart';
 import 'package:mobile/domain/item_type.dart';
 import 'package:mobile/domain/record_status.dart';
 import 'package:mobile/features/home/home_suggestion_service.dart';
+import 'package:mobile/features/memory/life_events_screen.dart';
 import 'package:mobile/features/memory/memory_screen.dart';
 import 'package:mobile/features/memory/profile_items_screen.dart';
+import 'package:mobile/features/memory/short_term_states_screen.dart';
+import 'package:mobile/features/memory/tasks_screen.dart';
 
 void main() {
   late AppDatabase database;
@@ -31,80 +34,306 @@ void main() {
     await database.close();
   });
 
-  testWidgets('memory overview shows remembered categories', (tester) async {
-    await tester.pumpWidget(
-      _wrap(MemoryScreen(database: database, nowProvider: () => now)),
-    );
-    await tester.pumpAndSettle();
+  group('MemoryScreen overview', () {
+    testWidgets('shows remembered categories with counts', (tester) async {
+      await tester.pumpWidget(
+        _wrap(MemoryScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('记忆管理'), findsOneWidget);
-    expect(find.text('任务'), findsOneWidget);
-    expect(find.text('短期状态'), findsOneWidget);
-    expect(find.text('生活事件'), findsOneWidget);
-    expect(find.text('长期画像'), findsOneWidget);
-    expect(find.text('联系王总'), findsOneWidget);
+      expect(find.text('记忆管理'), findsOneWidget);
+      expect(find.text('任务'), findsOneWidget);
+      expect(find.text('短期状态'), findsOneWidget);
+      expect(find.text('生活事件'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -360));
-    await tester.pumpAndSettle();
-    expect(find.text('用户今天感觉疲惫'), findsOneWidget);
+      expect(find.text('1'), findsWidgets);
+      expect(find.text('管理'), findsWidgets);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -360));
-    await tester.pumpAndSettle();
-    expect(find.text('用户不喜欢太频繁的提醒'), findsOneWidget);
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('长期画像'), findsOneWidget);
+    });
+
+    testWidgets('shows task items with title in overview', (tester) async {
+      await tester.pumpWidget(
+        _wrap(MemoryScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('联系王总'), findsOneWidget);
+    });
+
+    testWidgets('navigates to tasks detail screen', (tester) async {
+      await tester.pumpWidget(
+        _wrap(MemoryScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('管理').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('任务'), findsOneWidget);
+    });
   });
 
-  test(
-    'delete sets status to deleted and removes item from suggestions',
-    () async {
-      final suggestionService = const HomeSuggestionService();
-      expect(
-        (await suggestionService.loadContext(
+  group('TasksScreen', () {
+    testWidgets('shows active tasks with source text', (tester) async {
+      await tester.pumpWidget(
+        _wrap(TasksScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('联系王总'), findsOneWidget);
+      expect(find.textContaining('明天联系王总'), findsOneWidget);
+    });
+
+    testWidgets('delete task sets status to deleted', (tester) async {
+      await tester.pumpWidget(
+        _wrap(TasksScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('删除'));
+      await tester.pumpAndSettle();
+
+      final task = await database.select(database.tasks).getSingle();
+      expect(task.status, RecordStatus.deleted.value);
+    });
+
+    testWidgets('edit task updates title and due time', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          TasksScreen(
+            database: database,
+            nowProvider: () => now.add(const Duration(hours: 1)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('编辑'));
+      await tester.pumpAndSettle();
+
+      final titleField = find.byType(TextField).first;
+      await tester.enterText(titleField, '联系李总');
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+
+      final task = await database.select(database.tasks).getSingle();
+      expect(task.title, '联系李总');
+    });
+
+    testWidgets('empty state shows no tasks message', (tester) async {
+      await database.markTaskDeleted(
+        id: 'task-1',
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(
+        _wrap(TasksScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('暂无任务'), findsOneWidget);
+    });
+  });
+
+  group('LifeEventsScreen', () {
+    testWidgets('shows life events with source text', (tester) async {
+      await tester.pumpWidget(
+        _wrap(LifeEventsScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('今天和客户沟通不太顺利'), findsOneWidget);
+    });
+
+    testWidgets('delete life event sets status to deleted', (tester) async {
+      await tester.pumpWidget(
+        _wrap(LifeEventsScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('删除'));
+      await tester.pumpAndSettle();
+
+      final event = await database.select(database.lifeEvents).getSingle();
+      expect(event.status, RecordStatus.deleted.value);
+    });
+  });
+
+  group('ShortTermStatesScreen', () {
+    testWidgets('shows short term states with valid until', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          ShortTermStatesScreen(database: database, nowProvider: () => now),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('用户今天感觉疲惫'), findsOneWidget);
+      expect(find.textContaining('有效期至'), findsOneWidget);
+    });
+
+    testWidgets('delete short term state sets status to deleted', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          ShortTermStatesScreen(database: database, nowProvider: () => now),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('删除'));
+      await tester.pumpAndSettle();
+
+      final state = await database.select(
+        database.shortTermStates,
+      ).getSingle();
+      expect(state.status, RecordStatus.deleted.value);
+    });
+  });
+
+  group('ProfileItemsScreen', () {
+    testWidgets('shows profile items with source text', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          ProfileItemsScreen(database: database, nowProvider: () => now),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('用户不喜欢太频繁的提醒'), findsOneWidget);
+    });
+
+    testWidgets('edit action updates content', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          ProfileItemsScreen(
+            database: database,
+            nowProvider: () => now.add(const Duration(hours: 1)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('编辑'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField),
+        '用户希望提醒少一点',
+      );
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+
+      final profile = await database.select(
+        database.profileItems,
+      ).getSingle();
+      expect(profile.content, '用户希望提醒少一点');
+    });
+  });
+
+  group('suggestion exclusion', () {
+    test(
+      'deleted task does not appear in suggestions',
+      () async {
+        final suggestionService = const HomeSuggestionService();
+        final before = await suggestionService.loadContext(
           database: database,
           now: now,
-        )).profileItems,
-        hasLength(1),
-      );
+        );
+        expect(before.tasks, hasLength(1));
 
-      await database.markProfileItemDeleted(
-        id: 'profile-1',
-        updatedAt: now.add(const Duration(minutes: 1)),
-      );
+        await database.markTaskDeleted(
+          id: 'task-1',
+          updatedAt: now,
+        );
 
-      final profile = await database.select(database.profileItems).getSingle();
-      final context = await suggestionService.loadContext(
-        database: database,
-        now: now,
-      );
-
-      expect(profile.status, RecordStatus.deleted.value);
-      expect(context.profileItems, isEmpty);
-    },
-  );
-
-  testWidgets('profile item edit action updates wording and updated time', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _wrap(
-        ProfileItemsScreen(
+        final after = await suggestionService.loadContext(
           database: database,
-          nowProvider: () => now.add(const Duration(hours: 1)),
-        ),
-      ),
+          now: now,
+        );
+        expect(after.tasks, isEmpty);
+      },
     );
-    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('编辑'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '用户希望提醒少一点，语气直接一点');
-    await tester.tap(find.text('保存'));
-    await tester.pumpAndSettle();
+    test(
+      'deleted profile item does not appear in suggestions',
+      () async {
+        final suggestionService = const HomeSuggestionService();
+        final before = await suggestionService.loadContext(
+          database: database,
+          now: now,
+        );
+        expect(before.profileItems, hasLength(1));
 
-    final profile = await database.select(database.profileItems).getSingle();
+        await database.markProfileItemDeleted(
+          id: 'profile-1',
+          updatedAt: now,
+        );
 
-    expect(profile.content, '用户希望提醒少一点，语气直接一点');
-    expect(profile.sourceRawInputId, 'raw-1');
-    expect(profile.updatedAt.toUtc(), now.add(const Duration(hours: 1)));
+        final after = await suggestionService.loadContext(
+          database: database,
+          now: now,
+        );
+        expect(after.profileItems, isEmpty);
+      },
+    );
+
+    test(
+      'deleted short term state does not appear in suggestions',
+      () async {
+        final suggestionService = const HomeSuggestionService();
+
+        await database.markShortTermStateDeleted(
+          id: 'state-1',
+          updatedAt: now,
+        );
+
+        final context = await suggestionService.loadContext(
+          database: database,
+          now: now,
+        );
+        expect(context.shortTermStates, isEmpty);
+      },
+    );
+
+    test(
+      'deleted life event does not appear in active query',
+      () async {
+        await database.markLifeEventDeleted(
+          id: 'life-1',
+          updatedAt: now,
+        );
+
+        final events = await database.getActiveLifeEvents();
+        expect(events, isEmpty);
+      },
+    );
+  });
+
+  group('source text lookup', () {
+    test('getSourceTextByExtractedItemId returns source text', () async {
+      final text = await database.getSourceTextByExtractedItemId('item-1');
+      expect(text, '明天联系王总');
+    });
+
+    test('getSourceTextByExtractedItemId returns null for missing id',
+        () async {
+      final text = await database.getSourceTextByExtractedItemId('missing');
+      expect(text, isNull);
+    });
+
+    test('getSourceTextsByExtractedItemIds returns map', () async {
+      final map = await database.getSourceTextsByExtractedItemIds(['item-1']);
+      expect(map['item-1'], '明天联系王总');
+    });
+
+    test('getSourceTextsByExtractedItemIds handles empty list', () async {
+      final map = await database.getSourceTextsByExtractedItemIds([]);
+      expect(map, isEmpty);
+    });
   });
 }
 

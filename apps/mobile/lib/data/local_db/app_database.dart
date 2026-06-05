@@ -333,4 +333,22 @@ class AppDatabase extends _$AppDatabase {
         ))
         .get();
   }
+
+  Future<String?> getSourceTextByExtractedItemId(String extractedItemId) {
+    final query = select(extractedItems)
+      ..where((item) => item.id.equals(extractedItemId));
+    return query.map((item) => item.sourceText).getSingleOrNull();
+  }
+
+  Future<Map<String, String>> getSourceTextsByExtractedItemIds(
+    List<String> ids,
+  ) async {
+    if (ids.isEmpty) return {};
+    final rows = await (select(extractedItems)
+          ..where((item) => item.id.isIn(ids)))
+        .get();
+    return {
+      for (final row in rows) row.id: row.sourceText,
+    };
+  }
 }
