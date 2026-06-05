@@ -6,8 +6,8 @@ Scope: Task 9 Android / iOS smoke verification
 ## Summary
 
 - **iOS result**: PASS
-- **Android result**: not tested (iOS was the primary target this session)
-- Flutter project status: iOS app builds and launches successfully on iPhone 17 Pro simulator
+- **Android result**: PASS
+- Flutter project status: App builds and launches successfully on both iOS simulator and Android emulator
 - All 59 widget tests pass, covering the full mock parser loop
 
 ## Environment
@@ -17,7 +17,8 @@ Scope: Task 9 Android / iOS smoke verification
 | Flutter | 3.44.0 (stable) |
 | Xcode | 26.5 |
 | iOS Simulator | iPhone 17 Pro (iOS 26.5) |
-| Android SDK | 36.1.0 (installed but not tested this session) |
+| Android Emulator | Pixel 9 (Android 16 / API 36) |
+| Android SDK | 36.1.0 |
 | Dart defines | `PARSER_MODE=mock` |
 
 ## Commands Run
@@ -30,6 +31,9 @@ flutter doctor
 
 # Build for iOS simulator (debug mode, mock parser)
 flutter run -d "iPhone 17 Pro" --dart-define=PARSER_MODE=mock
+
+# Build for Android emulator (debug mode, mock parser)
+flutter run -d emulator-5554 --dart-define=PARSER_MODE=mock
 ```
 
 ## Results
@@ -39,7 +43,16 @@ flutter run -d "iPhone 17 Pro" --dart-define=PARSER_MODE=mock
 - **Build**: Succeeded (Xcode build: 26.6s)
 - **Launch**: Succeeded (fast sync: 159ms)
 - **Hot reload**: Available
-- **Dart VM Service**: Available at `http://127.0.0.1:64462/`
+- **Dart VM Service**: Available
+
+### Android Emulator (Pixel 9, API 36)
+
+- **Build**: Succeeded (APK build and install)
+- **Launch**: Succeeded (`MainActivity` is foreground)
+- **Device**: `sdk gphone64 arm64` at `emulator-5554`
+- **ABI**: `arm64-v8a`
+- **System image**: Google APIs ARM 64 v8a (standard 4KB page size)
+- **Graphics**: gfxstream (software GL)
 
 ### Widget Tests (all pass)
 
@@ -76,4 +89,5 @@ The following manual flow was verified via widget tests:
 - Build for physical iOS device requires Apple Developer Program signing, which is not configured.
 - The mock parser mode does not require the API server to be running. It returns hardcoded data directly in the Dart client.
 - Full end-to-end testing with real AI parsing requires the API server (`cd apps/api && npm run dev`) and an actual DeepSeek API key.
-- Android verification was not performed in this session because the iOS simulator environment was available and sufficient for the smoke test.
+- Android emulator uses API 36 (Android 16 "Baklava") with Google APIs arm64-v8a — no compatibility issues observed.
+- `sqlite3_flutter_libs: ^0.6.0+eol` is a deprecated package but works fine on API 36 with 4KB page size. An upgrade to `sqlite3: ^3.x` is recommended before targeting 16KB page size devices.
