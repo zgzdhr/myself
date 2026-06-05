@@ -160,9 +160,10 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
   },
   {
     id: "chitchat_weather",
-    label: "闲聊天气",
+    label: "闲聊天气（可能无记忆价值）",
     text: "今天天气真好啊，适合出去走走。",
-    expectedTypes: ["general_answer"],
+    expectedTypes: [],
+    acceptedTypes: ["general_answer"],
     forbiddenTypes: ["task_create", "profile_candidate"],
   },
   {
