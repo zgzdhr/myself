@@ -74,7 +74,42 @@ npm run typecheck
 npm test
 ```
 
-## Mobile Smoke
+## Phase 3 A3 Enhanced Smoke Assertions
+
+The `npm run smoke:parse` command now performs per-sample rule checks beyond type
+matching. Each sample result includes a `ruleFailures` list and the output shows
+a summary breakdown.
+
+### Rule Checks
+
+| Rule | Failure Condition |
+|---|---|
+| `profile_candidate.need_user_confirm` | Any `profile_candidate` item with `need_user_confirm !== true` |
+| `source_text` non-empty | Any item with empty or whitespace-only `source_text` |
+| `confidence` range | Any item with `confidence < 0` or `confidence > 1` |
+| Vague time ISO fabrication | Sample id/label contains "vague"/"模糊" and item has `due_time_iso` for a vague `due_time_text` |
+| General answer saves nothing | `general_answer` sample produces `task_create`, `short_term_state`, `life_event`, or `profile_candidate` |
+
+### Output Format
+
+```
+PASS sample_id (label) -> type1, type2
+REVW sample_id (label) -> type1, type2   ← type checks pass but rule failures
+FAIL sample_id (label) -> actual_types   ← missing or forbidden types
+ERR  sample_id (label) -> error details  ← schema / HTTP / JSON error
+
+33 samples checked
+28 pass
+3 need review
+1 type mismatch
+1 schema error
+```
+
+### Per-Sample Error Resilience
+
+The smoke runner now catches errors per sample instead of aborting the entire
+run. A single HTTP failure, JSON parse error, or schema validation failure is
+recorded for that sample and the loop continues to the next one.
 
 iOS simulator uses the API proxy at `http://127.0.0.1:8787`.
 Android emulator uses `http://10.0.2.2:8787`.

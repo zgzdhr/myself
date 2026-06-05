@@ -103,6 +103,16 @@ npm run dev
 npm run smoke:parse
 ```
 
+## Enhanced Smoke Assertions (Phase 3 A3)
+
+The smoke runner now checks rules beyond type matching and reports per-sample
+results with a summary breakdown:
+
+- **Type checks**: `expectedTypes`, `acceptedTypes`, `forbiddenTypes`
+- **Rule checks**: `profile_candidate.need_user_confirm === true`, `source_text` non-empty, `confidence` ∈ [0,1], vague time ISO fabrication, general answer producing saveable items
+- **Error resilience**: Per-sample catch for HTTP errors, JSON parse failures, and schema validation errors (does not abort the entire run)
+- **Output**: `PASS` / `REVW` (review) / `FAIL` (type mismatch) / `ERR` (schema/http error), plus summary counts
+
 ## Notes
 
 - No API key changes were needed — the existing `.env` configuration works.
