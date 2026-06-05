@@ -1,16 +1,17 @@
 # Current Verification
 
-Date: 2026-06-05 14:52:27 CST  
-Scope: Task 2 current verification
+Date: 2026-06-05 19:31 CST  
+Scope: Task 10/11 docs and first minimal `current_suggestion` ContextBuilder
 
 ## Summary
 
 - Result: Pass.
 - Mobile static verification: `flutter analyze` passed.
 - Mobile automated verification: `flutter test` passed.
-- API static verification: `npm run typecheck` passed.
-- API automated verification: `npm test` passed.
-- New features added in this task: none.
+- API static verification: not rerun in this task.
+- API automated verification: not rerun in this task.
+- New docs added: `summary-system-design.md` and `context-builder-design.md`.
+- New feature added: minimal Flutter ContextBuilder for `current_suggestion`.
 - Unresolved blocking problems: none in the automated verification layer.
 
 ## Commands Run
@@ -31,6 +32,10 @@ npm run typecheck
 npm test
 ```
 
+API commands above were part of the earlier full verification record. The latest
+Task 10/11 + ContextBuilder implementation only changed Flutter/docs files, so
+the latest rerun focused on `apps/mobile`.
+
 ## Results
 
 ### Mobile
@@ -41,19 +46,32 @@ npm test
 
 - Command: `flutter test`
 - Result: Pass
-- Notes: 28 tests passed. Coverage includes parser contract, local database, extracted item confirmation flow, home suggestion service, memory management, privacy failure handling, and widget shell rendering.
+- Notes: 66 tests passed. Coverage includes parser contract, local database, extracted item confirmation flow, ContextBuilder, home suggestion service, memory management, privacy failure handling, and widget shell rendering.
 
 ### API
 
 - Command: `npm run typecheck`
-- Result: Pass
-- Notes: TypeScript completed with no emit errors.
+- Result: Not rerun in the latest ContextBuilder task.
+- Notes: Last recorded full verification passed.
 
 - Command: `npm test`
-- Result: Pass
-- Notes: 20 tests passed. Coverage includes DeepSeek parser service, schema validation, parser prompt rules, sample set expectations, smoke script behavior, and privacy-safe logging.
+- Result: Not rerun in the latest ContextBuilder task.
+- Notes: Last recorded full verification passed.
+
+## Latest ContextBuilder Coverage
+
+- `apps/mobile/lib/features/context/context_builder.dart` implements only `current_suggestion`.
+- `apps/mobile/lib/features/home/home_suggestion_service.dart` now reuses ContextBuilder for home suggestion context.
+- `apps/mobile/test/features/context/context_builder_test.dart` verifies:
+  - deleted records are excluded.
+  - expired short-term states are excluded.
+  - confirmed profile items are included.
+  - pending extracted items are not treated as truth.
+  - debug output includes excluded reason counts without raw text.
+  - current suggestion context matches existing home suggestion behavior.
+  - intent detection is rule-based and only recognizes current suggestion.
 
 ## Notes
 
-- During the first attempt, `flutter test` was started in parallel with `flutter analyze` and hit the Flutter startup lock. The test command was rerun after `flutter analyze` completed, and the second run passed cleanly.
-- This task intentionally verified the current intended behavior only. It did not run Android/iOS simulator smoke flows or real DeepSeek end-to-end parse smoke; those remain separate tasks.
+- During an earlier verification attempt, `flutter test` was started in parallel with `flutter analyze` and hit the Flutter startup lock. Later test runs were executed sequentially.
+- Android/iOS simulator smoke and real DeepSeek smoke remain documented separately in `mobile-smoke-test.md` and `phase-2-ai-parse-smoke.md`.

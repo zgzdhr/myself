@@ -17,6 +17,8 @@
 - Mock Parser 与 HTTP Parser Client，移动端可以先跑 mock，也可以通过本地 API proxy 调真实解析。
 - TypeScript API proxy，包含 `/parse` route、Zod schema 校验、DeepSeek parser service、prompt、sample set 和隐私日志测试。
 - Phase 2 DeepSeek smoke workflow，用于验证真实模型能返回符合 schema 的结构化 JSON。
+- Task 10/11 架构设计文档，覆盖小总结机制和受控 Context Builder。
+- 第一版最小 ContextBuilder，当前只支持 `current_suggestion`，并被首页建议复用。
 - 基础测试覆盖，包括 Flutter analyze/test 目标、API typecheck/test 目标，以及 parser、数据库、确认流、记忆管理和隐私失败处理测试。
 
 优先阅读：
@@ -26,6 +28,9 @@
 - `docs/superpowers/plans/2026-05-31-personal-memory-action-system-mvp.md`：MVP 实施计划。
 - `docs/architecture/phase-2-ai-parse-smoke.md`：真实 DeepSeek 解析 smoke 流程说明。
 - `docs/architecture/mobile-smoke-test.md`：移动端 smoke 验证记录。
+- `docs/architecture/current-verification.md`：当前自动化验证结果。
+- `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
+- `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
 
 ## Apps
 
@@ -41,6 +46,7 @@
 → 生成 extracted items
 → 用户确认 / 修改 / 拒绝
 → 写入本地数据库
+→ ContextBuilder 选择 current_suggestion 所需上下文
 → 首页基于今日任务、短期状态、已确认长期画像给简单建议
 ```
 
@@ -59,13 +65,20 @@
 - 今日任务和短期状态可以在规则明确时自动整理，但必须可见、可修改、可删除、可撤销。
 - 向量检索和行为模式推断先不做，等 MVP 真实测试证明需要再补。
 
+## 当前 ContextBuilder 边界
+
+- 已实现：`apps/mobile/lib/features/context/context_builder.dart`
+- 当前只支持：`current_suggestion`
+- 复用位置：`apps/mobile/lib/features/home/home_suggestion_service.dart`
+- 测试位置：`apps/mobile/test/features/context/context_builder_test.dart`
+- 排除日志：只记录原因数量，不记录 raw input 或敏感正文。
+- 后置能力：复盘、复杂个人问答、记忆编辑、summary 注入、向量检索、LLM rerank。
+
 ## 下一阶段
 
 下一阶段先做稳定化，不扩大成完整 AI Agent：
 
-- 跑当前验证并记录结果。
-- 复核 DeepSeek 真实解析 smoke。
-- 复核 Android / iOS 模拟器 smoke。
-- 清理 parser flow 里的 rawInputId 归属。
-- 分离 `general_answer` 和可保存记忆卡片。
-- 完善记忆管理页面和任务更新最小闭环。
+- 基于当前 `current_suggestion` ContextBuilder 做小步扩展。
+- 优先补解释性 UI 或 `task_update` 上下文匹配。
+- `daily_review`、`weekly_review`、复杂个人问答和记忆编辑后置。
+- 不做完整 Agent，不做向量检索，不做行为模式推断。

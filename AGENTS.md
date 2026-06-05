@@ -14,7 +14,7 @@
 
 ## 当前规划状态
 
-截至 2026-06-05，项目已经进入 MVP 骨架稳定阶段，Flutter App、API proxy、本地数据库、解析链路和基础确认流程已经存在，不再是空项目或纯规划阶段。
+截至 2026-06-05，项目已经进入 MVP 骨架稳定阶段，Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、Task 10/11 设计文档和第一版最小 `current_suggestion` ContextBuilder 已经存在，不再是空项目或纯规划阶段。
 
 已确认的核心链路：
 
@@ -25,6 +25,7 @@
 → 生成 extracted items
 → 用户确认 / 修改 / 拒绝
 → 写入本地数据库
+→ ContextBuilder 选择 current_suggestion 所需上下文
 → 首页基于今日任务、短期状态、已确认长期画像给简单建议
 ```
 
@@ -35,6 +36,7 @@
 - `apps/mobile/lib/features/input/input_screen.dart`：万能输入页。
 - `apps/mobile/lib/features/extracted_items/`：待确认卡片、编辑弹层、确认 / 修改 / 拒绝控制器。
 - `apps/mobile/lib/features/home/`：首页 UI 和基础建议服务。
+- `apps/mobile/lib/features/context/context_builder.dart`：第一版最小 ContextBuilder，目前只支持 `current_suggestion`。
 - `apps/mobile/lib/features/memory/`：记忆入口、隐私页、短期状态 / 生活事件 / 长期画像页面。
 - `apps/mobile/lib/data/local_db/`：Drift / SQLite schema 和本地数据库访问。
 - `apps/mobile/lib/data/parser/`：Mock Parser、HTTP Parser Client、ParserClient 抽象。
@@ -49,15 +51,34 @@
 当前已经落地的验证资产：
 
 - `apps/mobile/test/`：移动端数据库、parser contract、确认流、首页建议、记忆管理和 widget 测试。
+- `apps/mobile/test/features/context/context_builder_test.dart`：`current_suggestion` ContextBuilder 的边界测试。
 - `apps/api/test/`：API schema、DeepSeek parser、prompt、sample set、隐私日志和 smoke 脚本测试。
 - `docs/architecture/phase-2-ai-parse-smoke.md`：真实 DeepSeek 解析 smoke 说明。
 - `docs/architecture/mobile-smoke-test.md`：移动端 smoke 验证记录。
+- `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
+- `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
+- `docs/architecture/current-verification.md`：当前自动化验证结果。
 
 重要源文档：
 
 - `README.md`：项目入口说明。
 - `AI_personal_memory_action_system_design_v0.2.md`：ChatGPT 生成的产品与系统设计讨论稿。
 - `docs/superpowers/plans/2026-05-31-personal-memory-action-system-mvp.md`：Codex 整理的 MVP 开发实施计划。
+- `docs/architecture/summary-system-design.md`：未来 summary / compressed context 的边界。
+- `docs/architecture/context-builder-design.md`：未来 Context Builder 的整体设计。
+
+新窗口 / 新 session 建议阅读顺序：
+
+1. `AGENTS.md`：先了解当前项目状态、边界和协作规则。
+2. `README.md`：快速看项目入口、目录和当前能力。
+3. `docs/architecture/current-verification.md`：确认最近一次自动化验证状态。
+4. `docs/architecture/mobile-smoke-test.md`：确认 Android / iOS smoke 状态。
+5. `docs/architecture/phase-2-ai-parse-smoke.md`：确认真实 DeepSeek parse smoke 流程。
+6. `docs/architecture/summary-system-design.md`：理解 Task 10 小总结机制。
+7. `docs/architecture/context-builder-design.md`：理解 Task 11 Context Builder 总设计。
+8. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的最小 `current_suggestion` ContextBuilder。
+9. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
+10. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
 
 ## 目标平台与技术方向
 
@@ -104,6 +125,8 @@ MVP 暂不做：
 - 行为模式自动总结。
 - 自动画像自进化。
 - 向量检索。
+- 自动 summary 生成。
+- 复杂 Context Builder intent。
 - 复杂复盘模块。
 - 健康趋势分析。
 - CRM / 项目管理。
@@ -338,6 +361,15 @@ MVP 首页建议不做复杂检索，也不做行为模式分析。
 - 未过期短期状态。
 - 已确认的少量长期画像。
 
+当前实现边界：
+
+- `ContextBuilder` 已经作为首页建议的上下文选择入口。
+- 目前只支持 `current_suggestion`。
+- intent 先用简单规则判断。
+- 排除日志只记录原因数量，例如 `deleted`、`pending`、`expired`，不记录 raw input 或敏感正文。
+- `HomeSuggestionService` 仍负责把上下文转成首页建议文案。
+- 不要在这个阶段加入复盘、复杂个人问答、记忆编辑、summary 注入、向量检索或 LLM rerank。
+
 建议输出应该克制：
 
 - 给 1-3 个建议。
@@ -485,12 +517,10 @@ myself/
 
 ## 当前下一步
 
-下一阶段应该先做稳定化，而不是继续扩大能力：
+下一阶段应该继续沿着“受控上下文 + 可解释记忆”推进，不要扩大成完整 AI Agent：
 
-1. 跑当前验证并记录结果。
-2. 复核 DeepSeek 真实解析 smoke。
-3. 复核 Android / iOS 模拟器 smoke。
-4. 清理 parser flow 里的 rawInputId 归属。
-5. 分离 `general_answer` 和可保存记忆卡片。
-6. 完善记忆管理页面。
-7. 再做自动写入策略和 `task_update` 最小闭环。
+1. 先基于现有 `current_suggestion` ContextBuilder 评估是否需要 UI 层展示“用了哪些记录”。
+2. 再考虑 `task_update` 的上下文匹配收窄和解释。
+3. 之后再做 `daily_review` / `weekly_review`，并明确它们不能生成自动长期画像。
+4. 更复杂的个人问答、记忆编辑、summary 注入、向量检索、LLM rerank 都后置。
+5. 每次新增 intent 前，先写设计边界和测试，不要一次性做完整 Agent。
