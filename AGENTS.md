@@ -28,6 +28,31 @@
 → 首页基于今日任务、短期状态、已确认长期画像给简单建议
 ```
 
+当前已经落地的代码能力：
+
+- `apps/mobile`：Flutter Android/iOS App 骨架。
+- `apps/mobile/lib/app/app_shell.dart`：Riverpod App Shell 和页面入口。
+- `apps/mobile/lib/features/input/input_screen.dart`：万能输入页。
+- `apps/mobile/lib/features/extracted_items/`：待确认卡片、编辑弹层、确认 / 修改 / 拒绝控制器。
+- `apps/mobile/lib/features/home/`：首页 UI 和基础建议服务。
+- `apps/mobile/lib/features/memory/`：记忆入口、隐私页、短期状态 / 生活事件 / 长期画像页面。
+- `apps/mobile/lib/data/local_db/`：Drift / SQLite schema 和本地数据库访问。
+- `apps/mobile/lib/data/parser/`：Mock Parser、HTTP Parser Client、ParserClient 抽象。
+- `apps/mobile/lib/domain/`：解析结果、结构化条目、类型和状态模型。
+- `apps/api`：TypeScript API proxy。
+- `apps/api/src/routes/parse.ts`：`POST /parse` 接口。
+- `apps/api/src/schemas/parseResultSchema.ts`：AI 返回 JSON 的 Zod schema。
+- `apps/api/src/services/deepseekParser.ts`：DeepSeek 调用与解析服务。
+- `apps/api/src/services/parserPrompt.ts`：结构化解析 prompt。
+- `apps/api/scripts/smokeParseSamples.ts`：真实解析 smoke 脚本。
+
+当前已经落地的验证资产：
+
+- `apps/mobile/test/`：移动端数据库、parser contract、确认流、首页建议、记忆管理和 widget 测试。
+- `apps/api/test/`：API schema、DeepSeek parser、prompt、sample set、隐私日志和 smoke 脚本测试。
+- `docs/architecture/phase-2-ai-parse-smoke.md`：真实 DeepSeek 解析 smoke 说明。
+- `docs/architecture/mobile-smoke-test.md`：移动端 smoke 验证记录。
+
 重要源文档：
 
 - `README.md`：项目入口说明。
@@ -449,6 +474,8 @@ myself/
 ## 后续开发协作规则
 
 - 不要一上来做大而全功能。
+- 不要重复创建 `apps/mobile` 或 `apps/api`，这两个项目已经存在。
+- 开始新任务前先看当前 `main` 分支和 `git status --short --branch`，确认不是在旧主线或错误分支上执行。
 - 每一阶段都要能独立运行和验证。
 - 涉及数据结构时，优先保护用户可查看、可修改、可删除。
 - 涉及 AI 输出时，永远先校验 JSON，再写数据库。
@@ -458,10 +485,12 @@ myself/
 
 ## 当前下一步
 
-正式开发前，下一步应该是：
+下一阶段应该先做稳定化，而不是继续扩大能力：
 
-1. 确认 Flutter + Node.js API proxy 的技术选型。
-2. 创建 `apps/mobile` 和 `apps/api` 项目骨架。
-3. 先做本地数据库和 mock parser，不急着接 DeepSeek。
-4. 再接入真实 DeepSeek 解析接口。
-5. 最后做首页建议与记忆管理页面。
+1. 跑当前验证并记录结果。
+2. 复核 DeepSeek 真实解析 smoke。
+3. 复核 Android / iOS 模拟器 smoke。
+4. 清理 parser flow 里的 rawInputId 归属。
+5. 分离 `general_answer` 和可保存记忆卡片。
+6. 完善记忆管理页面。
+7. 再做自动写入策略和 `task_update` 最小闭环。
