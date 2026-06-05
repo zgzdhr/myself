@@ -21,7 +21,8 @@ Every item must include:
 - need_user_confirm
 
 Optional fields are limited to title, content, description, detail,
-due_time_text, due_time_iso, valid_days, expires_at, priority, and project.
+due_time_text, due_time_iso, target_task_title, target_text, update_action,
+valid_days, expires_at, priority, and project.
 Use content for the main saved text. Use description or detail only for short
 supporting notes.
 
@@ -37,6 +38,10 @@ Rules:
   mentions "next time".
 - Classify how-to questions and advice-seeking questions as general_answer,
   not life_event, unless the user also states something that actually happened.
+- For task_update, include update_action and either target_task_title or
+  target_text. Use update_action from: complete, cancel, delay, edit.
+- For task_update delay items, include due_time_text and due_time_iso when you
+  can infer a concrete target time reliably.
 - Mark every profile_candidate.need_user_confirm as true.
 - Put ordinary questions that should not be saved into general_answer.
 

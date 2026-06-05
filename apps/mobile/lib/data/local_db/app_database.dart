@@ -147,6 +147,18 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> markTaskArchived({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(tasks)..where((task) => task.id.equals(id))).write(
+      TasksCompanion(
+        status: Value(RecordStatus.archived.value),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
   Future<void> markTaskDeletedBySourceExtractedItemId({
     required String extractedItemId,
     required DateTime updatedAt,
@@ -236,6 +248,27 @@ class AppDatabase extends _$AppDatabase {
             updatedAt: Value(updatedAt),
           ),
         );
+  }
+
+  Future<void> updateTaskById({
+    required String id,
+    String? title,
+    String? description,
+    String? dueTimeText,
+    DateTime? dueTime,
+    String? status,
+    required DateTime updatedAt,
+  }) {
+    return (update(tasks)..where((task) => task.id.equals(id))).write(
+      TasksCompanion(
+        title: title == null ? const Value.absent() : Value(title),
+        description: Value(description),
+        dueTimeText: Value(dueTimeText),
+        dueTime: Value(dueTime),
+        status: status == null ? const Value.absent() : Value(status),
+        updatedAt: Value(updatedAt),
+      ),
+    );
   }
 
   Future<void> updateShortTermStateBySourceExtractedItemId({

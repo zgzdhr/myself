@@ -72,6 +72,30 @@ test("accepts DeepSeek detail field on life event items", () => {
   assert.equal(result.success, true);
 });
 
+test("accepts structured task_update fields", () => {
+  const result = parseResultSchema.safeParse({
+    ...validParseResult,
+    intent_types: ["task_update"],
+    items: [
+      {
+        type: "task_update",
+        title: "联系王总",
+        source_text: "把联系王总改到后天",
+        tags: ["task"],
+        confidence: 0.9,
+        need_user_confirm: true,
+        target_task_title: "联系王总",
+        target_text: "联系王总",
+        update_action: "delay",
+        due_time_text: "后天",
+        due_time_iso: "2026-06-02T09:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(result.success, true);
+});
+
 test("rejects unknown item types", () => {
   const result = parseResultSchema.safeParse({
     ...validParseResult,

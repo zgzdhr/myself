@@ -24,6 +24,22 @@ class SubmitInputResult {
   final List<ExtractedItem> items;
 }
 
+enum TaskUpdateExecutionState {
+  applied,
+  needsSelection,
+  noMatch,
+}
+
+class TaskUpdateExecutionResult {
+  const TaskUpdateExecutionResult({
+    required this.state,
+    this.candidates = const [],
+  });
+
+  final TaskUpdateExecutionState state;
+  final List<TaskUpdateCandidate> candidates;
+}
+
 class ExtractedItemsController {
   ExtractedItemsController({
     required this.database,
@@ -76,7 +92,7 @@ class ExtractedItemsController {
         for (final item in parseResult.items)
           if (item.type != ItemType.generalAnswer) item,
       ];
-      final persistedItems = _toPersistedItems(
+      final persistedItems = await _toPersistedItems(
         items: saveableParsedItems,
         rawInputId: rawInputId,
         now: now,
@@ -260,6 +276,81 @@ class ExtractedItemsController {
     );
   }
 
+  Future<TaskUpdateExecutionResult> applyTaskUpdate({
+    required ExtractedItem item,
+    String? selectedTaskId,
+  }) async {
+    final intent = item.taskUpdateIntent;
+    if (item.type != ItemType.taskUpdate || intent == null) {
+      throw StateError('Task update metadata is required to apply task updates.');
+    }
+
+    final resolvedTask = switch (intent.resolution) {
+      TaskUpdateResolution.noMatch => null,
+      TaskUpdateResolution.needsSelection =>
+        selectedTaskId == null
+            ? null
+            : _firstTaskUpdateCandidate(
+                intent.candidates,
+                selectedTaskId,
+              ),
+      TaskUpdateResolution.ready => _firstCandidateOrNull(intent.candidates),
+    };
+
+    if (intent.resolution == TaskUpdateResolution.noMatch) {
+      return const TaskUpdateExecutionResult(
+        state: TaskUpdateExecutionState.noMatch,
+      );
+    }
+
+    if (intent.resolution == TaskUpdateResolution.needsSelection &&
+        resolvedTask == null) {
+      return TaskUpdateExecutionResult(
+        state: TaskUpdateExecutionState.needsSelection,
+        candidates: intent.candidates,
+      );
+    }
+
+    if (resolvedTask == null) {
+      return const TaskUpdateExecutionResult(
+        state: TaskUpdateExecutionState.noMatch,
+      );
+    }
+
+    final now = nowProvider();
+    await database.transaction(() async {
+      switch (intent.action) {
+        case TaskUpdateAction.complete:
+          await database.markTaskArchived(id: resolvedTask.id, updatedAt: now);
+        case TaskUpdateAction.cancel:
+          await database.markTaskDeleted(id: resolvedTask.id, updatedAt: now);
+        case TaskUpdateAction.delay:
+          await database.updateTaskById(
+            id: resolvedTask.id,
+            dueTimeText: intent.dueTimeText,
+            dueTime: intent.dueTime,
+            updatedAt: now,
+          );
+        case TaskUpdateAction.edit:
+          await database.updateTaskById(
+            id: resolvedTask.id,
+            title: item.content ?? item.title ?? resolvedTask.title,
+            updatedAt: now,
+          );
+      }
+
+      await database.updateExtractedItemStatus(
+        id: item.localId,
+        status: RecordStatus.confirmed,
+        updatedAt: now,
+      );
+    });
+
+    return const TaskUpdateExecutionResult(
+      state: TaskUpdateExecutionState.applied,
+    );
+  }
+
   Future<void> undoAutoSavedExtractedItem({
     required String extractedItemId,
   }) async {
@@ -418,22 +509,43 @@ class ExtractedItemsController {
       'confidence': item.confidence,
       'need_user_confirm': item.needUserConfirm,
       'expires_at': item.expiresAt?.toIso8601String(),
+      'target_task_title': item.taskUpdateIntent?.targetTaskTitle,
+      'target_text': item.taskUpdateIntent?.targetText,
+      'update_action': item.taskUpdateIntent == null
+          ? null
+          : _taskUpdateActionToApiValue(item.taskUpdateIntent!.action),
+      'due_time_text': item.taskUpdateIntent?.dueTimeText,
+      'due_time_iso': item.taskUpdateIntent?.dueTime?.toIso8601String(),
     };
   }
 
-  List<ExtractedItem> _toPersistedItems({
+  Future<List<ExtractedItem>> _toPersistedItems({
     required List<ParsedExtractedItem> items,
     required String rawInputId,
     required DateTime now,
-  }) {
-    return [
-      for (final (index, item) in items.indexed)
+  }) async {
+    final persistedItems = <ExtractedItem>[];
+
+    for (final item in items) {
+      final resolvedTaskUpdateIntent = item.taskUpdateIntent == null
+          ? null
+          : await _resolveTaskUpdateIntent(item.taskUpdateIntent!);
+      persistedItems.add(
         ExtractedItem(
-          localId: '$rawInputId:$index',
+          localId: _persistedLocalId(
+            parsedLocalId: item.localId,
+            rawInputId: rawInputId,
+          ),
           rawInputId: rawInputId,
           type: item.type,
-          title: item.title,
-          content: item.content,
+          title: _resolvePersistedTitle(
+            item: item,
+            taskUpdateIntent: resolvedTaskUpdateIntent,
+          ),
+          content: _resolvePersistedContent(
+            item: item,
+            taskUpdateIntent: resolvedTaskUpdateIntent,
+          ),
           sourceText: item.sourceText,
           tags: item.tags,
           confidence: item.confidence,
@@ -450,8 +562,12 @@ class ExtractedItemsController {
           createdAt: now,
           updatedAt: now,
           expiresAt: item.expiresAt,
+          taskUpdateIntent: resolvedTaskUpdateIntent,
         ),
-    ];
+      );
+    }
+
+    return persistedItems;
   }
 
   Future<db.ExtractedItem> _getExtractedItem(String id) {
@@ -499,6 +615,124 @@ class ExtractedItemsController {
       ItemType.generalAnswer ||
       ItemType.profileCandidate => false,
     };
+  }
+
+  Future<TaskUpdateIntent> _resolveTaskUpdateIntent(
+    TaskUpdateIntent taskUpdateIntent,
+  ) async {
+    final activeTasks = await database.getActiveTasks();
+    final targetQuery =
+        taskUpdateIntent.targetTaskTitle ??
+        taskUpdateIntent.targetText ??
+        '';
+    final normalizedQuery = _normalizeTaskText(targetQuery);
+
+    if (normalizedQuery.isEmpty) {
+      return taskUpdateIntent.copyWith(
+        candidates: const [],
+        resolution: TaskUpdateResolution.noMatch,
+      );
+    }
+
+    final exactMatches = [
+      for (final task in activeTasks)
+        if (_normalizeTaskText(task.title) == normalizedQuery)
+          TaskUpdateCandidate(
+            id: task.id,
+            title: task.title,
+            dueTimeText: task.dueTimeText,
+          ),
+    ];
+    final containsMatches = [
+      for (final task in activeTasks)
+        if (_normalizeTaskText(task.title).contains(normalizedQuery))
+          TaskUpdateCandidate(
+            id: task.id,
+            title: task.title,
+            dueTimeText: task.dueTimeText,
+          ),
+    ];
+    final matches = exactMatches.isNotEmpty ? exactMatches : containsMatches;
+
+    return taskUpdateIntent.copyWith(
+      candidates: matches,
+      resolution: switch (matches.length) {
+        0 => TaskUpdateResolution.noMatch,
+        1 => TaskUpdateResolution.ready,
+        _ => TaskUpdateResolution.needsSelection,
+      },
+    );
+  }
+
+  String _persistedLocalId({
+    required String parsedLocalId,
+    required String rawInputId,
+  }) {
+    final parseIndex = parsedLocalId.split(':').last;
+    return '$rawInputId:$parseIndex';
+  }
+
+  String? _resolvePersistedTitle({
+    required ParsedExtractedItem item,
+    required TaskUpdateIntent? taskUpdateIntent,
+  }) {
+    if (item.type != ItemType.taskUpdate) {
+      return item.title;
+    }
+
+    return taskUpdateIntent?.targetLabel ?? item.title ?? item.sourceText;
+  }
+
+  String? _resolvePersistedContent({
+    required ParsedExtractedItem item,
+    required TaskUpdateIntent? taskUpdateIntent,
+  }) {
+    if (item.type != ItemType.taskUpdate || taskUpdateIntent == null) {
+      return item.content;
+    }
+
+    return switch (taskUpdateIntent.resolution) {
+      TaskUpdateResolution.noMatch => '没找到对应任务',
+      TaskUpdateResolution.needsSelection => '请选择要更新的任务',
+      TaskUpdateResolution.ready => switch (taskUpdateIntent.action) {
+        TaskUpdateAction.complete => '将标记为已完成',
+        TaskUpdateAction.cancel => '将取消这个任务',
+        TaskUpdateAction.delay =>
+          '将延期到 ${taskUpdateIntent.dueTimeText ?? '新的时间'}',
+        TaskUpdateAction.edit => '将更新这个任务',
+      },
+    };
+  }
+
+  String _normalizeTaskText(String value) {
+    return value.trim().replaceAll(' ', '').toLowerCase();
+  }
+
+  String _taskUpdateActionToApiValue(TaskUpdateAction action) {
+    return switch (action) {
+      TaskUpdateAction.complete => 'complete',
+      TaskUpdateAction.cancel => 'cancel',
+      TaskUpdateAction.delay => 'delay',
+      TaskUpdateAction.edit => 'edit',
+    };
+  }
+
+  TaskUpdateCandidate? _firstCandidateOrNull(
+    List<TaskUpdateCandidate> candidates,
+  ) {
+    return candidates.isEmpty ? null : candidates.first;
+  }
+
+  TaskUpdateCandidate? _firstTaskUpdateCandidate(
+    List<TaskUpdateCandidate> candidates,
+    String id,
+  ) {
+    for (final candidate in candidates) {
+      if (candidate.id == id) {
+        return candidate;
+      }
+    }
+    return null;
   }
 
   Future<void> _createOfficialRecordFromExtractedItem({

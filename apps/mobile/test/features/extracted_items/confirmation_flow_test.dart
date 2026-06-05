@@ -197,6 +197,214 @@ void main() {
     expect(extractedItem.status, RecordStatus.rejected.value);
     expect(await database.getActiveProfileItems(), isEmpty);
   });
+
+  test('completes a matched task after confirmation', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-existing-1',
+      title: '联系王总',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '联系王总',
+        sourceText: '联系王总已经完成了',
+        tags: const ['task'],
+        confidence: 0.93,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: TaskUpdateIntent(
+          action: TaskUpdateAction.complete,
+          targetTaskTitle: '联系王总',
+          targetText: '联系王总',
+        ),
+      ),
+    );
+
+    final result = await taskUpdateController.submitInput('联系王总已经完成了');
+    final updateResult = await taskUpdateController.applyTaskUpdate(
+      item: result.items.single,
+    );
+    final updatedTask = await _getTask(database, 'task-existing-1');
+    final extractedItem = await _getExtractedItem(database, 'raw-3:0');
+
+    expect(updateResult.state, TaskUpdateExecutionState.applied);
+    expect(updatedTask.status, RecordStatus.archived.value);
+    expect(extractedItem.status, RecordStatus.confirmed.value);
+  });
+
+  test('delays a matched task after confirmation', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-existing-2',
+      title: '准备方案',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '准备方案',
+        sourceText: '把准备方案延期到明天上午',
+        tags: const ['task'],
+        confidence: 0.94,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: TaskUpdateIntent(
+          action: TaskUpdateAction.delay,
+          targetTaskTitle: '准备方案',
+          targetText: '准备方案',
+          dueTimeText: '明天上午',
+          dueTime: DateTime.utc(2026, 6, 1, 9),
+        ),
+      ),
+    );
+
+    final result = await taskUpdateController.submitInput('把准备方案延期到明天上午');
+    final updateResult = await taskUpdateController.applyTaskUpdate(
+      item: result.items.single,
+    );
+    final updatedTask = await _getTask(database, 'task-existing-2');
+
+    expect(updateResult.state, TaskUpdateExecutionState.applied);
+    expect(updatedTask.status, RecordStatus.confirmed.value);
+    expect(updatedTask.dueTimeText, '明天上午');
+    expect(updatedTask.dueTime!.toUtc(), DateTime.utc(2026, 6, 1, 9));
+  });
+
+  test('cancels a matched task after confirmation', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-existing-3',
+      title: '客户资料',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '客户资料',
+        sourceText: '那个客户资料不用做了',
+        tags: const ['task'],
+        confidence: 0.92,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: TaskUpdateIntent(
+          action: TaskUpdateAction.cancel,
+          targetTaskTitle: '客户资料',
+          targetText: '客户资料',
+        ),
+      ),
+    );
+
+    final result = await taskUpdateController.submitInput('那个客户资料不用做了');
+    final updateResult = await taskUpdateController.applyTaskUpdate(
+      item: result.items.single,
+    );
+    final updatedTask = await _getTask(database, 'task-existing-3');
+
+    expect(updateResult.state, TaskUpdateExecutionState.applied);
+    expect(updatedTask.status, RecordStatus.deleted.value);
+  });
+
+  test('ambiguous task update requires selection before applying', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-existing-4',
+      title: '联系王总-上海',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    await _insertConfirmedTask(
+      database,
+      id: 'task-existing-5',
+      title: '联系王总-北京',
+      dueTime: DateTime.utc(2026, 5, 31, 10),
+    );
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '联系王总',
+        sourceText: '把联系王总改到后天',
+        tags: const ['task'],
+        confidence: 0.9,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: TaskUpdateIntent(
+          action: TaskUpdateAction.delay,
+          targetText: '联系王总',
+          dueTimeText: '后天',
+          dueTime: DateTime.utc(2026, 6, 2, 9),
+        ),
+      ),
+    );
+
+    final result = await taskUpdateController.submitInput('把联系王总改到后天');
+    final pendingResult = await taskUpdateController.applyTaskUpdate(
+      item: result.items.single,
+    );
+    final appliedResult = await taskUpdateController.applyTaskUpdate(
+      item: result.items.single,
+      selectedTaskId: 'task-existing-5',
+    );
+    final untouchedTask = await _getTask(database, 'task-existing-4');
+    final updatedTask = await _getTask(database, 'task-existing-5');
+
+    expect(pendingResult.state, TaskUpdateExecutionState.needsSelection);
+    expect(pendingResult.candidates.map((task) => task.id), [
+      'task-existing-4',
+      'task-existing-5',
+    ]);
+    expect(appliedResult.state, TaskUpdateExecutionState.applied);
+    expect(untouchedTask.dueTime!.toUtc(), DateTime.utc(2026, 5, 31, 9));
+    expect(updatedTask.dueTimeText, '后天');
+    expect(updatedTask.dueTime!.toUtc(), DateTime.utc(2026, 6, 2, 9));
+  });
+
+  test('no match task update creates no official change', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-existing-6',
+      title: '联系张总',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '联系李总',
+        sourceText: '联系李总已经完成了',
+        tags: const ['task'],
+        confidence: 0.89,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: TaskUpdateIntent(
+          action: TaskUpdateAction.complete,
+          targetTaskTitle: '联系李总',
+          targetText: '联系李总',
+        ),
+      ),
+    );
+
+    final result = await taskUpdateController.submitInput('联系李总已经完成了');
+    final updateResult = await taskUpdateController.applyTaskUpdate(
+      item: result.items.single,
+    );
+    final existingTask = await _getTask(database, 'task-existing-6');
+    final extractedItem = await _getExtractedItem(database, 'raw-3:0');
+
+    expect(updateResult.state, TaskUpdateExecutionState.noMatch);
+    expect(existingTask.status, RecordStatus.confirmed.value);
+    expect(existingTask.title, '联系张总');
+    expect(extractedItem.status, RecordStatus.pending.value);
+  });
 }
 
 Future<db.ExtractedItem> _getExtractedItem(db.AppDatabase database, String id) {
@@ -233,6 +441,84 @@ ExtractedItemsController _buildPendingTaskController(db.AppDatabase database) {
     officialRecordIdFactory: () => 'official-pending-task',
     nowProvider: () => DateTime.utc(2026, 5, 31),
   );
+}
+
+ExtractedItemsController _buildTaskUpdateController(
+  db.AppDatabase database, {
+  required ParsedExtractedItem parsedItem,
+}) {
+  return ExtractedItemsController(
+    database: database,
+    parserClient: _StaticParserClient(
+      ParseResult(
+        userReply: '我先整理出这条任务更新。',
+        inputSummary: '用户提到更新已有任务。',
+        intentTypes: const [ItemType.taskUpdate],
+        items: [parsedItem],
+      ),
+    ),
+    rawInputIdFactory: () => 'raw-3',
+    parseResultIdFactory: () => 'parse-3',
+    officialRecordIdFactory: () => 'official-task-update',
+    nowProvider: () => DateTime.utc(2026, 5, 31),
+  );
+}
+
+Future<void> _insertConfirmedTask(
+  db.AppDatabase database, {
+  required String id,
+  required String title,
+  required DateTime dueTime,
+}) async {
+  await database.into(database.rawInputs).insert(
+    db.RawInputsCompanion.insert(
+      id: 'raw-$id',
+      inputText: title,
+      createdAt: DateTime.utc(2026, 5, 31),
+    ),
+  );
+  await database.into(database.aiParseResults).insert(
+    db.AiParseResultsCompanion.insert(
+      id: 'parse-$id',
+      rawInputId: 'raw-$id',
+      rawJson: '{}',
+      validationState: 'valid',
+      createdAt: DateTime.utc(2026, 5, 31),
+    ),
+  );
+  await database.into(database.extractedItems).insert(
+    db.ExtractedItemsCompanion.insert(
+      id: 'item-$id',
+      rawInputId: 'raw-$id',
+      aiParseResultId: 'parse-$id',
+      type: ItemType.taskCreate.apiValue,
+      title: Value(title),
+      sourceText: title,
+      confidence: 0.9,
+      needUserConfirm: true,
+      status: RecordStatus.confirmed.value,
+      createdAt: DateTime.utc(2026, 5, 31),
+      updatedAt: DateTime.utc(2026, 5, 31),
+    ),
+  );
+  await database.into(database.tasks).insert(
+    db.TasksCompanion.insert(
+      id: id,
+      sourceRawInputId: 'raw-$id',
+      sourceExtractedItemId: 'item-$id',
+      title: title,
+      dueTimeText: Value('今天'),
+      dueTime: Value(dueTime),
+      status: RecordStatus.confirmed.value,
+      createdAt: DateTime.utc(2026, 5, 31),
+      updatedAt: DateTime.utc(2026, 5, 31),
+    ),
+  );
+}
+
+Future<db.Task> _getTask(db.AppDatabase database, String id) {
+  return (database.select(database.tasks)..where((task) => task.id.equals(id)))
+      .getSingle();
 }
 
 class _StaticParserClient implements ParserClient {

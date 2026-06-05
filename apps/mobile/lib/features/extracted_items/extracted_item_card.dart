@@ -23,6 +23,15 @@ class ExtractedItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = item.title ?? item.content ?? item.sourceText;
     final isAutoSaved = item.status == RecordStatus.confirmed;
+    final taskUpdateIntent = item.taskUpdateIntent;
+    final isTaskUpdate = item.type == ItemType.taskUpdate && taskUpdateIntent != null;
+    final taskUpdateButtonLabel = switch (taskUpdateIntent?.resolution) {
+      TaskUpdateResolution.needsSelection => '选择任务',
+      _ => '确认更新',
+    };
+    final taskUpdateRejectLabel = taskUpdateIntent?.resolution == TaskUpdateResolution.noMatch
+        ? '关闭'
+        : '拒绝';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -39,6 +48,10 @@ class ExtractedItemCard extends StatelessWidget {
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
+            if (item.content != null && item.content != title) ...[
+              const SizedBox(height: 8),
+              Text(item.content!),
+            ],
             const SizedBox(height: 8),
             Text('来源：${item.sourceText}'),
             if (item.tags.isNotEmpty) ...[
@@ -72,17 +85,32 @@ class ExtractedItemCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                if (!isAutoSaved)
+                if (isTaskUpdate &&
+                    taskUpdateIntent.resolution != TaskUpdateResolution.noMatch)
+                  FilledButton(
+                    onPressed: onConfirm,
+                    child: Text(taskUpdateButtonLabel),
+                  ),
+                if (!isTaskUpdate && !isAutoSaved)
                   FilledButton(onPressed: onConfirm, child: const Text('确认')),
-                if (!isAutoSaved) const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: onEdit,
-                  child: Text(isAutoSaved ? '修改' : '编辑'),
-                ),
+                if ((isTaskUpdate &&
+                        taskUpdateIntent.resolution !=
+                            TaskUpdateResolution.noMatch) ||
+                    (!isTaskUpdate && !isAutoSaved))
+                  const SizedBox(width: 8),
+                if (!isTaskUpdate)
+                  OutlinedButton(
+                    onPressed: onEdit,
+                    child: Text(isAutoSaved ? '修改' : '编辑'),
+                  ),
                 const SizedBox(width: 8),
                 TextButton(
                   onPressed: onReject,
-                  child: Text(isAutoSaved ? '撤销' : '拒绝'),
+                  child: Text(
+                    isTaskUpdate
+                        ? taskUpdateRejectLabel
+                        : (isAutoSaved ? '撤销' : '拒绝'),
+                  ),
                 ),
               ],
             ),

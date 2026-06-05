@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/parser/parser_client.dart';
 import '../../domain/extracted_item.dart';
+import '../../domain/item_type.dart';
 import '../../domain/record_status.dart';
 import '../extracted_items/edit_extracted_item_sheet.dart';
 import '../extracted_items/extracted_item_card.dart';
@@ -167,6 +168,11 @@ class _InputScreenState extends State<InputScreen> {
   }
 
   Future<void> _confirm(ExtractedItem item) async {
+    if (item.type == ItemType.taskUpdate) {
+      await _confirmTaskUpdate(item);
+      return;
+    }
+
     if (item.status == RecordStatus.confirmed) {
       return;
     }
@@ -174,6 +180,49 @@ class _InputScreenState extends State<InputScreen> {
     await widget.controller.confirmExtractedItem(extractedItemId: item.localId);
     _removeItem(item);
     widget.onRecordsChanged?.call();
+  }
+
+  Future<void> _confirmTaskUpdate(ExtractedItem item) async {
+    final firstResult = await widget.controller.applyTaskUpdate(item: item);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (firstResult.state == TaskUpdateExecutionState.applied) {
+      _removeItem(item);
+      widget.onRecordsChanged?.call();
+      return;
+    }
+
+    if (firstResult.state == TaskUpdateExecutionState.noMatch) {
+      return;
+    }
+
+    final selectedTask = await showModalBottomSheet<TaskUpdateCandidate>(
+      context: context,
+      builder: (context) => _TaskUpdateSelectionSheet(
+        candidates: firstResult.candidates,
+      ),
+    );
+
+    if (selectedTask == null) {
+      return;
+    }
+
+    final finalResult = await widget.controller.applyTaskUpdate(
+      item: item,
+      selectedTaskId: selectedTask.id,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (finalResult.state == TaskUpdateExecutionState.applied) {
+      _removeItem(item);
+      widget.onRecordsChanged?.call();
+    }
   }
 
   Future<void> _edit(ExtractedItem item) async {
@@ -252,6 +301,43 @@ class _AssistantReplyPanel extends StatelessWidget {
             color: const Color(0xFF1D1D1F),
             height: 1.5,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskUpdateSelectionSheet extends StatelessWidget {
+  const _TaskUpdateSelectionSheet({required this.candidates});
+
+  final List<TaskUpdateCandidate> candidates;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '请选择要更新的任务',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            for (final candidate in candidates)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(candidate.title),
+                subtitle: candidate.dueTimeText == null
+                    ? null
+                    : Text('当前时间：${candidate.dueTimeText}'),
+                onTap: () => Navigator.of(context).pop(candidate),
+              ),
+          ],
         ),
       ),
     );

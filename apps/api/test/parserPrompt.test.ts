@@ -28,3 +28,12 @@ test("parser prompt keeps how-to questions out of saved memories", () => {
   assert.match(prompt, /general_answer/);
   assert.match(prompt, /not life_event/i);
 });
+
+test("parser prompt defines structured task_update fields", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /task_update/);
+  assert.match(prompt, /update_action/);
+  assert.match(prompt, /target_task_title/);
+  assert.match(prompt, /target_text/);
+});

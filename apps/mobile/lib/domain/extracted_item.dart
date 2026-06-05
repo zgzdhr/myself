@@ -1,6 +1,83 @@
 import 'item_type.dart';
 import 'record_status.dart';
 
+enum TaskUpdateAction {
+  complete,
+  cancel,
+  delay,
+  edit;
+
+  static TaskUpdateAction fromApiValue(String value) {
+    return switch (value) {
+      'complete' => TaskUpdateAction.complete,
+      'cancel' => TaskUpdateAction.cancel,
+      'delay' => TaskUpdateAction.delay,
+      'edit' => TaskUpdateAction.edit,
+      _ => throw FormatException('Unsupported task update action: $value'),
+    };
+  }
+}
+
+enum TaskUpdateResolution {
+  ready,
+  needsSelection,
+  noMatch,
+}
+
+class TaskUpdateCandidate {
+  const TaskUpdateCandidate({
+    required this.id,
+    required this.title,
+    this.dueTimeText,
+  });
+
+  final String id;
+  final String title;
+  final String? dueTimeText;
+}
+
+class TaskUpdateIntent {
+  const TaskUpdateIntent({
+    required this.action,
+    this.targetTaskTitle,
+    this.targetText,
+    this.dueTimeText,
+    this.dueTime,
+    this.candidates = const [],
+    this.resolution = TaskUpdateResolution.ready,
+  });
+
+  final TaskUpdateAction action;
+  final String? targetTaskTitle;
+  final String? targetText;
+  final String? dueTimeText;
+  final DateTime? dueTime;
+  final List<TaskUpdateCandidate> candidates;
+  final TaskUpdateResolution resolution;
+
+  String get targetLabel => targetTaskTitle ?? targetText ?? '任务更新';
+
+  TaskUpdateIntent copyWith({
+    TaskUpdateAction? action,
+    String? targetTaskTitle,
+    String? targetText,
+    String? dueTimeText,
+    DateTime? dueTime,
+    List<TaskUpdateCandidate>? candidates,
+    TaskUpdateResolution? resolution,
+  }) {
+    return TaskUpdateIntent(
+      action: action ?? this.action,
+      targetTaskTitle: targetTaskTitle ?? this.targetTaskTitle,
+      targetText: targetText ?? this.targetText,
+      dueTimeText: dueTimeText ?? this.dueTimeText,
+      dueTime: dueTime ?? this.dueTime,
+      candidates: candidates ?? this.candidates,
+      resolution: resolution ?? this.resolution,
+    );
+  }
+}
+
 List<String> _readTags(Object? value) {
   if (value == null) {
     return const [];
@@ -38,6 +115,7 @@ class ParsedExtractedItem {
     this.title,
     this.content,
     this.expiresAt,
+    this.taskUpdateIntent,
   });
 
   final String localId;
@@ -50,6 +128,7 @@ class ParsedExtractedItem {
   final bool needUserConfirm;
   final DateTime parsedAt;
   final DateTime? expiresAt;
+  final TaskUpdateIntent? taskUpdateIntent;
 
   bool get hasExpiry => expiresAt != null;
 
@@ -74,6 +153,23 @@ class ParsedExtractedItem {
       needUserConfirm: needUserConfirm,
       parsedAt: parsedAt,
       expiresAt: _readExpiresAt(json: json, parsedAt: parsedAt),
+      taskUpdateIntent: _readTaskUpdateIntent(json),
+    );
+  }
+
+  static TaskUpdateIntent? _readTaskUpdateIntent(Map<String, Object?> json) {
+    final actionValue = json['update_action'] as String?;
+    if (actionValue == null) {
+      return null;
+    }
+
+    final dueTimeIso = json['due_time_iso'] as String?;
+    return TaskUpdateIntent(
+      action: TaskUpdateAction.fromApiValue(actionValue),
+      targetTaskTitle: json['target_task_title'] as String?,
+      targetText: json['target_text'] as String?,
+      dueTimeText: json['due_time_text'] as String?,
+      dueTime: dueTimeIso == null ? null : DateTime.parse(dueTimeIso),
     );
   }
 }
@@ -93,6 +189,7 @@ class ExtractedItem {
     this.title,
     this.content,
     this.expiresAt,
+    this.taskUpdateIntent,
   });
 
   final String localId;
@@ -108,6 +205,7 @@ class ExtractedItem {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? expiresAt;
+  final TaskUpdateIntent? taskUpdateIntent;
 
   bool get hasExpiry => expiresAt != null;
 }

@@ -27,6 +27,11 @@ export const parseResultItemSchema = z
     need_user_confirm: z.boolean(),
     due_time_text: z.string().nullable().optional(),
     due_time_iso: z.string().nullable().optional(),
+    target_task_title: z.string().nullable().optional(),
+    target_text: z.string().nullable().optional(),
+    update_action: z
+      .enum(["complete", "cancel", "delay", "edit"])
+      .optional(),
     valid_days: z.number().int().positive().optional(),
     expires_at: z.string().datetime().optional(),
     priority: z.enum(["low", "medium", "high"]).optional(),

@@ -247,6 +247,89 @@ void main() {
     expect(extractedItems.single.type, ItemType.taskCreate.apiValue);
   });
 
+  testWidgets('ambiguous task update lets user select which task to update', (
+    tester,
+  ) async {
+    final database = db.AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+    await _insertConfirmedTask(
+      database,
+      id: 'task-a',
+      title: '联系王总-上海',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    await _insertConfirmedTask(
+      database,
+      id: 'task-b',
+      title: '联系王总-北京',
+      dueTime: DateTime.utc(2026, 5, 31, 10),
+    );
+
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: _StaticParserClient(
+        ParseResult(
+          userReply: '我先整理出这条任务更新。',
+          inputSummary: '用户提到把联系王总改到后天。',
+          intentTypes: const [ItemType.taskUpdate],
+          items: [
+            ParsedExtractedItem(
+              localId: 'parsed:0',
+              type: ItemType.taskUpdate,
+              title: '联系王总',
+              sourceText: '把联系王总改到后天',
+              tags: const ['task'],
+              confidence: 0.91,
+              needUserConfirm: true,
+              parsedAt: DateTime.utc(2026, 5, 31),
+              taskUpdateIntent: TaskUpdateIntent(
+                action: TaskUpdateAction.delay,
+                targetText: '联系王总',
+                dueTimeText: '后天',
+                dueTime: DateTime.utc(2026, 6, 2, 9),
+              ),
+            ),
+          ],
+        ),
+      ),
+      rawInputIdFactory: () => 'raw-task-update-ui',
+      parseResultIdFactory: () => 'parse-task-update-ui',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    await tester.pumpWidget(_wrap(InputScreen(controller: controller)));
+    await tester.enterText(find.byType(TextField), '把联系王总改到后天');
+    await tester.tap(find.text('整理'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请选择要更新的任务'), findsOneWidget);
+    expect(find.text('选择任务'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('选择任务'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('联系王总-上海'), findsOneWidget);
+    expect(find.text('联系王总-北京'), findsOneWidget);
+
+    await tester.tap(find.text('联系王总-北京'));
+    await tester.pumpAndSettle();
+
+    final updatedTask = await _getTask(database, 'task-b');
+    final untouchedTask = await _getTask(database, 'task-a');
+
+    expect(updatedTask.dueTimeText, '后天');
+    expect(updatedTask.dueTime!.toUtc(), DateTime.utc(2026, 6, 2, 9));
+    expect(untouchedTask.dueTime!.toUtc(), DateTime.utc(2026, 5, 31, 9));
+    expect(find.text('请选择要更新的任务'), findsNothing);
+  });
+
   test(
     'controller records parser failures without creating extracted items',
     () async {
@@ -310,6 +393,63 @@ class _StaticParserClient implements ParserClient {
   Future<ParseResult> parseInput(String text) async {
     return result;
   }
+}
+
+Future<void> _insertConfirmedTask(
+  db.AppDatabase database, {
+  required String id,
+  required String title,
+  required DateTime dueTime,
+}) async {
+  await database.into(database.rawInputs).insert(
+    db.RawInputsCompanion.insert(
+      id: 'raw-$id',
+      inputText: title,
+      createdAt: DateTime.utc(2026, 5, 31),
+    ),
+  );
+  await database.into(database.aiParseResults).insert(
+    db.AiParseResultsCompanion.insert(
+      id: 'parse-$id',
+      rawInputId: 'raw-$id',
+      rawJson: '{}',
+      validationState: 'valid',
+      createdAt: DateTime.utc(2026, 5, 31),
+    ),
+  );
+  await database.into(database.extractedItems).insert(
+    db.ExtractedItemsCompanion.insert(
+      id: 'item-$id',
+      rawInputId: 'raw-$id',
+      aiParseResultId: 'parse-$id',
+      type: ItemType.taskCreate.apiValue,
+      title: Value(title),
+      sourceText: title,
+      confidence: 0.9,
+      needUserConfirm: true,
+      status: RecordStatus.confirmed.value,
+      createdAt: DateTime.utc(2026, 5, 31),
+      updatedAt: DateTime.utc(2026, 5, 31),
+    ),
+  );
+  await database.into(database.tasks).insert(
+    db.TasksCompanion.insert(
+      id: id,
+      sourceRawInputId: 'raw-$id',
+      sourceExtractedItemId: 'item-$id',
+      title: title,
+      dueTimeText: const Value('今天'),
+      dueTime: Value(dueTime),
+      status: RecordStatus.confirmed.value,
+      createdAt: DateTime.utc(2026, 5, 31),
+      updatedAt: DateTime.utc(2026, 5, 31),
+    ),
+  );
+}
+
+Future<db.Task> _getTask(db.AppDatabase database, String id) {
+  return (database.select(database.tasks)..where((task) => task.id.equals(id)))
+      .getSingle();
 }
 
 ExtractedItem _item({
