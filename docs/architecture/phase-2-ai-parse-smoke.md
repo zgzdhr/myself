@@ -34,7 +34,7 @@ Expected:
 {"ok":true}
 ```
 
-## Run The 8-Sample Parse Smoke
+## Run The 33-Sample Parse Smoke
 
 In another terminal:
 
@@ -43,9 +43,13 @@ cd /Users/mac/projects/cc/myself/apps/api
 npm run smoke:parse
 ```
 
-The smoke command sends the fixed Phase 2 Chinese sample set to `/parse` and
-checks that each response contains the expected MVP item types and avoids known
-bad classifications, such as turning a one-off emotion into a long-term profile.
+The smoke command sends the expanded Phase 3 Chinese sample set (33 entries) to
+`/parse` and checks that each response contains the expected MVP item types and
+avoids known bad classifications, such as turning a one-off emotion into a
+long-term profile. The sample set covers task_create, task_update (complete /
+cancel / delay / edit), short_term_state, life_event, general_answer,
+profile_candidate, multi-intent, vague time, business trip scenarios, and
+edge cases around profile_candidate boundaries.
 
 ## Mobile Smoke
 

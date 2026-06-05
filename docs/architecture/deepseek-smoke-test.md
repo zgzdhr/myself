@@ -31,17 +31,44 @@ The `thinking: { type: "disabled" }` option is accepted without error — no mod
 
 ## Test Results
 
-All 8 smoke samples from the parser sample set passed against the live DeepSeek API:
+The parser sample set has been expanded to 33 entries covering all MVP item types.
+All 33 smoke samples from the parser sample set passed against the live DeepSeek API:
 
 ```
-PASS tomorrow_task (明天任务)        -> task_create
-PASS today_state (今天状态)          -> short_term_state
-PASS long_term_preference (长期偏好) -> profile_candidate
-PASS life_event (生活事件)           -> life_event
-PASS ordinary_question (普通问答)    -> general_answer
-PASS vague_time (模糊时间)           -> task_create
-PASS multiple_tasks (多个任务混合)   -> task_create
-PASS one_off_emotion (不应保存的情绪表达) -> short_term_state
+PASS tomorrow_task (明天任务)                    -> task_create
+PASS vague_time (模糊时间)                        -> task_create
+PASS multiple_tasks (多个任务混合)                 -> task_create
+PASS business_trip_scenario (出差场景)             -> task_create
+PASS client_project_scenario (客户项目场景)        -> task_create
+PASS task_vague_deadline (任务模糊截止时间)        -> task_create
+PASS task_update_complete (任务更新：完成)         -> task_update
+PASS task_update_cancel (任务更新：取消)           -> task_update
+PASS task_update_delay (任务更新：延期)            -> task_update
+PASS task_update_edit (任务更新：修改)             -> task_update
+PASS task_update_multi_candidate (任务更新：多候选) -> task_update
+PASS task_update_no_target (任务更新：无明确目标)   -> task_update
+PASS today_state (今天状态)                        -> short_term_state
+PASS short_term_energy (短期精力状态)              -> short_term_state
+PASS short_term_mood (短期情绪状态)                -> short_term_state
+PASS short_term_on_the_road (短期出行状态)         -> short_term_state
+PASS one_off_emotion (一次性情绪)                  -> short_term_state
+PASS one_off_frustration (一次性挫折情绪)          -> short_term_state
+PASS life_event_cooking (生活事件：做菜经验)       -> life_event
+PASS life_event_cooking_tip (生活事件：做菜心得)  -> life_event
+PASS life_event_travel_lesson (生活事件：出差教训) -> life_event
+PASS ordinary_question (普通问答)                  -> general_answer
+PASS chitchat_weather (闲聊天气)                   -> general_answer
+PASS chitchat_life_advice (闲聊人生建议)           -> general_answer
+PASS general_cooking_question (一般烹饪问答)       -> general_answer
+PASS long_term_preference (长期偏好：提醒频率)    -> profile_candidate
+PASS profile_evening_efficiency (长期画像：晚上效率高) -> profile_candidate
+PASS profile_direct_communication (长期画像：直接沟通) -> profile_candidate
+PASS profile_frequent_travel (长期画像：经常出差) -> profile_candidate
+PASS profile_avoid_morning_push (长期画像：避免早上催促) -> profile_candidate
+PASS multi_intent_task_state_profile (多意图)      -> task_create + short_term_state + profile_candidate
+PASS multi_intent_state_event (多意图)             -> short_term_state + life_event
+PASS edge_recent_procrastination (拖延边界)        -> short_term_state (NOT profile_candidate)
+PASS edge_temporary_confusion (困惑边界)            -> short_term_state (NOT profile_candidate)
 ```
 
 ## Single Sample Verification
