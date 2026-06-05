@@ -25,11 +25,7 @@ class SubmitInputResult {
   final List<ExtractedItem> items;
 }
 
-enum TaskUpdateExecutionState {
-  applied,
-  needsSelection,
-  noMatch,
-}
+enum TaskUpdateExecutionState { applied, needsSelection, noMatch }
 
 class TaskUpdateExecutionResult {
   const TaskUpdateExecutionResult({
@@ -294,7 +290,9 @@ class ExtractedItemsController {
   }) async {
     final intent = item.taskUpdateIntent;
     if (item.type != ItemType.taskUpdate || intent == null) {
-      throw StateError('Task update metadata is required to apply task updates.');
+      throw StateError(
+        'Task update metadata is required to apply task updates.',
+      );
     }
 
     final resolvedTask = switch (intent.resolution) {
@@ -302,10 +300,7 @@ class ExtractedItemsController {
       TaskUpdateResolution.needsSelection =>
         selectedTaskId == null
             ? null
-            : _firstTaskUpdateCandidate(
-                intent.candidates,
-                selectedTaskId,
-              ),
+            : _firstTaskUpdateCandidate(intent.candidates, selectedTaskId),
       TaskUpdateResolution.ready => _firstCandidateOrNull(intent.candidates),
     };
 
@@ -326,6 +321,13 @@ class ExtractedItemsController {
     if (resolvedTask == null) {
       return const TaskUpdateExecutionResult(
         state: TaskUpdateExecutionState.noMatch,
+      );
+    }
+
+    if (_isDelayMissingNewTime(intent)) {
+      return TaskUpdateExecutionResult(
+        state: TaskUpdateExecutionState.needsSelection,
+        candidates: intent.candidates,
       );
     }
 
@@ -562,7 +564,8 @@ class ExtractedItemsController {
           tags: item.tags,
           confidence: item.confidence,
           needUserConfirm: item.needUserConfirm,
-          status: _shouldAutoSaveValues(
+          status:
+              _shouldAutoSaveValues(
                 type: item.type,
                 title: item.title,
                 content: item.content,
@@ -616,8 +619,7 @@ class ExtractedItemsController {
       ItemType.shortTermState => true,
       ItemType.taskCreate =>
         _inferTaskDue(
-              text:
-                  '${title ?? ''} ${content ?? ''} $sourceText',
+              text: '${title ?? ''} ${content ?? ''} $sourceText',
               now: now,
             ).dueTime !=
             null,
@@ -639,12 +641,17 @@ class ExtractedItemsController {
     final activeTaskCandidates = package.candidates;
 
     final targetQuery =
-        taskUpdateIntent.targetTaskTitle ??
-        taskUpdateIntent.targetText ??
-        '';
+        taskUpdateIntent.targetTaskTitle ?? taskUpdateIntent.targetText ?? '';
     final normalizedQuery = _normalizeTaskText(targetQuery);
 
     if (normalizedQuery.isEmpty) {
+      return taskUpdateIntent.copyWith(
+        candidates: const [],
+        resolution: TaskUpdateResolution.noMatch,
+      );
+    }
+
+    if (_isGenericTaskTarget(normalizedQuery)) {
       return taskUpdateIntent.copyWith(
         candidates: const [],
         resolution: TaskUpdateResolution.noMatch,
@@ -670,14 +677,14 @@ class ExtractedItemsController {
           ),
     ];
     final matches = exactMatches.isNotEmpty ? exactMatches : containsMatches;
+    final resolution = _resolveTaskUpdateResolution(
+      intent: taskUpdateIntent,
+      matches: matches,
+    );
 
     return taskUpdateIntent.copyWith(
       candidates: matches,
-      resolution: switch (matches.length) {
-        0 => TaskUpdateResolution.noMatch,
-        1 => TaskUpdateResolution.ready,
-        _ => TaskUpdateResolution.needsSelection,
-      },
+      resolution: resolution,
     );
   }
 
@@ -723,6 +730,44 @@ class ExtractedItemsController {
 
   String _normalizeTaskText(String value) {
     return value.trim().replaceAll(' ', '').toLowerCase();
+  }
+
+  TaskUpdateResolution _resolveTaskUpdateResolution({
+    required TaskUpdateIntent intent,
+    required List<TaskUpdateCandidate> matches,
+  }) {
+    if (matches.isEmpty) {
+      return TaskUpdateResolution.noMatch;
+    }
+
+    if (_isDelayMissingNewTime(intent)) {
+      return TaskUpdateResolution.needsSelection;
+    }
+
+    return matches.length == 1
+        ? TaskUpdateResolution.ready
+        : TaskUpdateResolution.needsSelection;
+  }
+
+  bool _isDelayMissingNewTime(TaskUpdateIntent intent) {
+    return intent.action == TaskUpdateAction.delay &&
+        intent.dueTimeText == null &&
+        intent.dueTime == null;
+  }
+
+  bool _isGenericTaskTarget(String normalizedQuery) {
+    const genericTargets = {
+      '那个事',
+      '这个事',
+      '那件事',
+      '这件事',
+      '这个任务',
+      '那个任务',
+      '刚才那个',
+      '之前那个',
+      '它',
+    };
+    return genericTargets.contains(normalizedQuery);
   }
 
   String _taskUpdateActionToApiValue(TaskUpdateAction action) {

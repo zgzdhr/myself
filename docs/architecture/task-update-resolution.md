@@ -111,6 +111,8 @@ Current MVP condition:
 
 - `targetTaskTitle` and `targetText` are both empty after normalization, or
 - No active task matches the supplied target.
+- The normalized target is only a generic reference such as `那个事`,
+  `这个任务`, or `刚才那个`.
 
 Examples:
 
@@ -195,10 +197,10 @@ MVP boundary:
 
 ### `delay`
 
-Current MVP behavior:
+Pre-B3 MVP behavior:
 
 - `delay` updates `dueTimeText` and `dueTime` on the selected task.
-- If both values are missing, the current code can still apply and effectively
+- If both values are missing, the old code could still apply and effectively
   clear the task due time.
 
 Required B-stage rule:
@@ -207,6 +209,15 @@ Required B-stage rule:
 - If `dueTimeText` and `dueTime` are both missing, do not apply immediately.
 - Prefer `needsSelection` when there are candidates but the update needs user
   clarification; use `noMatch` when there is no safe target.
+
+B3 implementation:
+
+- Delay without `dueTimeText` and `dueTime` resolves to `needsSelection` when
+  one or more active candidates exist.
+- Applying a delay still refuses to write when the new time is missing, even if
+  a candidate has already been selected.
+- This prevents an unclear phrase such as `延期一下` from clearing the task's
+  existing due time.
 
 ### `edit`
 
@@ -289,3 +300,12 @@ When implementation continues after this document:
 - Generic references like `那个事` should not be guessed into a task target.
 - `delay` should not apply without a new time.
 - `deleted` and `archived` tasks should never participate in matching.
+
+Current B3 coverage:
+
+- `archived` tasks do not participate in controller-level task update matching.
+- `deleted` tasks do not participate in controller-level task update matching.
+- Empty task update targets resolve to `noMatch`.
+- Generic-only task update targets resolve to `noMatch`.
+- Delay without a new time returns `needsSelection` and keeps the existing due
+  time unchanged.
