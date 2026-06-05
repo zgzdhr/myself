@@ -51,6 +51,29 @@ cancel / delay / edit), short_term_state, life_event, general_answer,
 profile_candidate, multi-intent, vague time, business trip scenarios, and
 edge cases around profile_candidate boundaries.
 
+## Phase 3 A2 Prompt Boundary Checks
+
+The parser prompt is now tested as part of the API test suite. It must keep
+these boundaries explicit:
+
+- Return JSON only and do not output fields outside the schema-supported fields.
+- Treat `profile_candidate` as a proposal only; it must not become active memory
+  unless the user confirms it, and `profile_candidate.need_user_confirm` must be
+  `true`.
+- Ordinary questions, chitchat, and advice requests should not create saveable
+  memory. Their `items` may be empty or contain only `general_answer`.
+- One-time emotions and one-off events must not become long-term profile.
+- Vague task references such as "那个事" must not invent a target task.
+- `task_update` delay without a clear new time must not invent `due_time_iso`.
+
+Verification:
+
+```bash
+cd /Users/mac/projects/cc/myself/apps/api
+npm run typecheck
+npm test
+```
+
 ## Mobile Smoke
 
 iOS simulator uses the API proxy at `http://127.0.0.1:8787`.
