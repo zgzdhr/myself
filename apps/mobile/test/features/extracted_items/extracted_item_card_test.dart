@@ -247,6 +247,59 @@ void main() {
     expect(extractedItems.single.type, ItemType.taskCreate.apiValue);
   });
 
+  testWidgets('input results appear before afterInput home content', (
+    tester,
+  ) async {
+    final database = db.AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: _StaticParserClient(
+        ParseResult(
+          userReply: '我帮你整理出了一个任务。',
+          inputSummary: '用户提到明天联系王总。',
+          intentTypes: const [ItemType.taskCreate],
+          items: [
+            ParsedExtractedItem(
+              localId: 'parsed:0',
+              type: ItemType.taskCreate,
+              title: '联系王总',
+              sourceText: '明天联系王总',
+              tags: const ['work'],
+              confidence: 0.91,
+              needUserConfirm: true,
+              parsedAt: DateTime.utc(2026, 5, 31),
+            ),
+          ],
+        ),
+      ),
+      rawInputIdFactory: () => 'raw-result-order',
+      parseResultIdFactory: () => 'parse-result-order',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    await tester.pumpWidget(
+      _wrap(
+        InputScreen(
+          controller: controller,
+          afterInput: const Text('HOME_CONTEXT_AFTER_INPUT'),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField), '明天联系王总');
+    await tester.tap(find.text('整理'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('我帮你整理出了一个任务。'), findsOneWidget);
+    expect(find.text('HOME_CONTEXT_AFTER_INPUT'), findsNothing);
+  });
+
   testWidgets('ambiguous task update lets user select which task to update', (
     tester,
   ) async {

@@ -1,6 +1,6 @@
 # Mobile Smoke Test
 
-Date: 2026-06-05  
+Date: 2026-06-05
 Scope: Task 9 Android / iOS smoke verification
 
 ## Summary
@@ -91,3 +91,31 @@ The following manual flow was verified via widget tests:
 - Full end-to-end testing with real AI parsing requires the API server (`cd apps/api && npm run dev`) and an actual DeepSeek API key.
 - Android emulator uses API 36 (Android 16 "Baklava") with Google APIs arm64-v8a — no compatibility issues observed.
 - `sqlite3_flutter_libs: ^0.6.0+eol` is a deprecated package but works fine on API 36 with 4KB page size. An upgrade to `sqlite3: ^3.x` is recommended before targeting 16KB page size devices.
+
+## Phase 3 A5 Real API Debug Note
+
+Date: 2026-06-05
+Scope: iOS simulator real API smoke debugging
+
+Evidence gathered:
+
+- `curl http://127.0.0.1:8787/health` returned `{"ok":true}`.
+- Direct `curl /parse` calls returned valid structured JSON for:
+  - `明天上午联系王总，我今天有点累。`
+  - `我上午效率比较低。`
+  - `番茄炒蛋怎么做会更好吃？`
+- The running Flutter build used `--dart-define=API_BASE_URL=http://127.0.0.1:8787`, while the mobile code previously read only `PARSER_BASE_URL`.
+- The input page rendered `afterInput` home content before parser results, so after tapping `整理`, the assistant reply and extracted cards could appear below the home suggestion cards and look like no result was shown.
+
+Fixes added:
+
+- Mobile parser base URI now accepts both `PARSER_BASE_URL` and `API_BASE_URL`; `PARSER_BASE_URL` remains the preferred name, and `API_BASE_URL` is a compatibility alias for smoke runs.
+- Parser feedback now appears directly below the input panel before home follow-up content.
+
+Verification:
+
+```bash
+cd /Users/mac/projects/cc/myself/apps/mobile
+flutter analyze
+flutter test
+```

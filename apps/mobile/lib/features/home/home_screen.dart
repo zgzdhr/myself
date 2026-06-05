@@ -28,17 +28,23 @@ final parserClientProvider = Provider<ParserClient>((ref) {
     return const MockParserClient();
   }
 
-  return HttpParserClient(baseUri: _defaultParserBaseUri());
+  return HttpParserClient(baseUri: defaultParserBaseUri());
 });
 
-Uri _defaultParserBaseUri() {
-  const parserBaseUrl = String.fromEnvironment('PARSER_BASE_URL');
+Uri defaultParserBaseUri({
+  String parserBaseUrl = const String.fromEnvironment('PARSER_BASE_URL'),
+  String apiBaseUrl = const String.fromEnvironment('API_BASE_URL'),
+  bool? isAndroid,
+}) {
+  final configuredBaseUrl = parserBaseUrl.isNotEmpty
+      ? parserBaseUrl
+      : apiBaseUrl;
 
-  if (parserBaseUrl.isNotEmpty) {
-    return Uri.parse(parserBaseUrl);
+  if (configuredBaseUrl.isNotEmpty) {
+    return Uri.parse(configuredBaseUrl);
   }
 
-  if (Platform.isAndroid) {
+  if (isAndroid ?? Platform.isAndroid) {
     return Uri.parse('http://10.0.2.2:8787');
   }
 

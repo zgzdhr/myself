@@ -73,10 +73,6 @@ class _InputScreenState extends State<InputScreen> {
                 });
               },
             ),
-            if (widget.afterInput != null) ...[
-              const SizedBox(height: 20),
-              widget.afterInput!,
-            ],
             if (_isLoading) ...[
               const SizedBox(height: 12),
               const LinearProgressIndicator(
@@ -113,7 +109,15 @@ class _InputScreenState extends State<InputScreen> {
                   onEdit: () => _edit(item),
                   onReject: () => _reject(item),
                 ),
-            ] else if (!_isLoading && _assistantReply == null) ...[
+            ],
+            if (widget.afterInput != null) ...[
+              const SizedBox(height: 20),
+              widget.afterInput!,
+            ],
+            if (_items.isEmpty &&
+                !_isLoading &&
+                _assistantReply == null &&
+                _errorMessage == null) ...[
               const SizedBox(height: 20),
               const _PendingEmptyPanel(),
             ],

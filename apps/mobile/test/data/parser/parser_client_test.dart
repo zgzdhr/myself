@@ -40,6 +40,17 @@ void main() {
       expect(container.read(parserClientProvider), isA<HttpParserClient>());
     });
 
+    test('default parser base uri accepts API_BASE_URL alias for smoke runs', () {
+      expect(
+        defaultParserBaseUri(
+          parserBaseUrl: '',
+          apiBaseUrl: 'http://127.0.0.1:8787',
+          isAndroid: false,
+        ),
+        Uri.parse('http://127.0.0.1:8787'),
+      );
+    });
+
     test(
       'calls the API proxy parse route and maps JSON into ParseResult',
       () async {
