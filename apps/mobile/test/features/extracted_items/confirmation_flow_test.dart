@@ -737,6 +737,120 @@ void main() {
     // Task data is preserved (title still readable) — not truly deleted
     expect(cancelledTask.title, '不做了的任务');
   });
+
+  // ── C3: auto-save boundary regression ──
+
+  test('taskCreate without time keyword stays pending', () async {
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: _StaticParserClient(
+        ParseResult(
+          userReply: '我帮你整理出了一个任务。',
+          inputSummary: '用户提到整理合同。',
+          intentTypes: const [ItemType.taskCreate],
+          items: [
+            ParsedExtractedItem(
+              localId: 'parsed:0',
+              type: ItemType.taskCreate,
+              title: '整理客户合同',
+              sourceText: '找时间整理客户合同',
+              tags: const ['work'],
+              confidence: 0.82,
+              needUserConfirm: true,
+              parsedAt: DateTime.utc(2026, 5, 31),
+            ),
+          ],
+        ),
+      ),
+      rawInputIdFactory: () => 'raw-no-time',
+      parseResultIdFactory: () => 'parse-no-time',
+      officialRecordIdFactory: () => 'official-no-time',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    final result = await controller.submitInput('找时间整理客户合同');
+
+    expect(result.items.single.status, RecordStatus.pending);
+    expect(await database.getActiveTasks(), isEmpty);
+  });
+
+  test('lifeEvent without memory keyword stays pending', () async {
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: _StaticParserClient(
+        ParseResult(
+          userReply: '我帮你记下这条经验。',
+          inputSummary: '用户提到做菜经验。',
+          intentTypes: const [ItemType.lifeEvent],
+          items: [
+            ParsedExtractedItem(
+              localId: 'parsed:0',
+              type: ItemType.lifeEvent,
+              content: '做番茄炒蛋糖放多了',
+              sourceText: '今天做番茄炒蛋糖放多了，下次少放',
+              tags: const ['cooking'],
+              confidence: 0.78,
+              needUserConfirm: true,
+              parsedAt: DateTime.utc(2026, 5, 31),
+            ),
+          ],
+        ),
+      ),
+      rawInputIdFactory: () => 'raw-life-no-keyword',
+      parseResultIdFactory: () => 'parse-life-no-keyword',
+      officialRecordIdFactory: () => 'official-life-no-keyword',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    final result = await controller.submitInput('今天做番茄炒蛋糖放多了，下次少放');
+
+    expect(result.items.single.status, RecordStatus.pending);
+    expect(await database.getActiveLifeEvents(), isEmpty);
+  });
+
+  test('lifeEvent with 记一下 keyword auto-saves', () async {
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: _StaticParserClient(
+        ParseResult(
+          userReply: '我帮你记下这条经验。',
+          inputSummary: '用户想记住一条教训。',
+          intentTypes: const [ItemType.lifeEvent],
+          items: [
+            ParsedExtractedItem(
+              localId: 'parsed:0',
+              type: ItemType.lifeEvent,
+              content: '会议室B栋空调有问题',
+              sourceText: '记一下，会议室B栋空调有问题，下次订会避开',
+              tags: const ['work', 'facility'],
+              confidence: 0.85,
+              needUserConfirm: true,
+              parsedAt: DateTime.utc(2026, 5, 31),
+            ),
+          ],
+        ),
+      ),
+      rawInputIdFactory: () => 'raw-life-keyword',
+      parseResultIdFactory: () => 'parse-life-keyword',
+      officialRecordIdFactory: () => 'official-life-keyword',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    final result = await controller.submitInput('记一下，会议室B栋空调有问题，下次订会避开');
+
+    expect(result.items.single.status, RecordStatus.confirmed);
+    final events = await database.getActiveLifeEvents();
+    expect(events, hasLength(1));
+    expect(events.single.content, contains('会议室'));
+  });
+
+  test('undone auto-saved task does not appear in active tasks', () async {
+    await controller.submitInput('明天上午联系王总，我今天很累，我不喜欢太频繁的提醒。');
+    await controller.undoAutoSavedExtractedItem(extractedItemId: 'raw-1:0');
+
+    final tasks = await database.getActiveTasks();
+    expect(tasks, isEmpty);
+  });
 }
 
 Future<db.ExtractedItem> _getExtractedItem(db.AppDatabase database, String id) {
