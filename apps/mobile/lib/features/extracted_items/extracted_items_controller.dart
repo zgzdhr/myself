@@ -723,7 +723,7 @@ class ExtractedItemsController {
         TaskUpdateAction.cancel => '将取消这个任务',
         TaskUpdateAction.delay =>
           '将延期到 ${taskUpdateIntent.dueTimeText ?? '新的时间'}',
-        TaskUpdateAction.edit => '将更新这个任务',
+        TaskUpdateAction.edit => item.content ?? '将更新这个任务',
       },
     };
   }

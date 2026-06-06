@@ -592,6 +592,151 @@ void main() {
     expect(updateResult.state, TaskUpdateExecutionState.noMatch);
     expect(existingTask.status, RecordStatus.confirmed.value);
   });
+
+  // ── B5/B6: edit / reject / parser error regression ──
+
+  test('edits a matched task title after confirmation', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-existing-edit',
+      title: '联系王总',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '联系王总',
+        content: '改成联系张总',
+        sourceText: '联系王总改成联系张总',
+        tags: const ['task'],
+        confidence: 0.9,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: TaskUpdateIntent(
+          action: TaskUpdateAction.edit,
+          targetTaskTitle: '联系王总',
+          targetText: '联系王总',
+        ),
+      ),
+    );
+
+    final result = await taskUpdateController.submitInput('联系王总改成联系张总');
+    final updateResult = await taskUpdateController.applyTaskUpdate(
+      item: result.items.single,
+    );
+    final updatedTask = await _getTask(database, 'task-existing-edit');
+
+    expect(updateResult.state, TaskUpdateExecutionState.applied);
+    expect(updatedTask.title, '改成联系张总');
+    expect(updatedTask.status, RecordStatus.confirmed.value);
+  });
+
+  test('rejecting a task_update item leaves the target task unchanged', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-reject-target',
+      title: '准备周报',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '准备周报',
+        sourceText: '准备周报不用做了',
+        tags: const ['task'],
+        confidence: 0.9,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: TaskUpdateIntent(
+          action: TaskUpdateAction.cancel,
+          targetTaskTitle: '准备周报',
+          targetText: '准备周报',
+        ),
+      ),
+    );
+
+    final result = await taskUpdateController.submitInput('准备周报不用做了');
+    await taskUpdateController.rejectExtractedItem(
+      extractedItemId: result.items.single.localId,
+    );
+    final untouchedTask = await _getTask(database, 'task-reject-target');
+    final rejectedItem = await _getExtractedItem(
+      database,
+      result.items.single.localId,
+    );
+
+    expect(untouchedTask.title, '准备周报');
+    expect(untouchedTask.status, RecordStatus.confirmed.value);
+    expect(rejectedItem.status, RecordStatus.rejected.value);
+  });
+
+  test('task_update submit failure does not modify any existing task', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-error-target',
+      title: '整理资料',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    final errorController = ExtractedItemsController(
+      database: database,
+      parserClient: _ErrorParserClient(),
+      rawInputIdFactory: () => 'raw-error',
+      parseResultIdFactory: () => 'parse-error',
+      officialRecordIdFactory: () => 'official-error',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    await expectLater(
+      errorController.submitInput('更新任务'),
+      throwsA(isA<ParserFailure>()),
+    );
+    final untouchedTask = await _getTask(database, 'task-error-target');
+    expect(untouchedTask.title, '整理资料');
+    expect(untouchedTask.status, RecordStatus.confirmed.value);
+  });
+
+  test('cancel action marks task as deleted per MVP status strategy', () async {
+    // B1 documented: complete → archived, cancel → deleted.
+    // This is a temporary schema shortcut tracked in
+    // docs/architecture/task-update-resolution.md.
+    await _insertConfirmedTask(
+      database,
+      id: 'task-cancel-strategy',
+      title: '不做了的任务',
+      dueTime: DateTime.utc(2026, 5, 31, 9),
+    );
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '不做了的任务',
+        sourceText: '不做了的任务取消',
+        tags: const ['task'],
+        confidence: 0.93,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: TaskUpdateIntent(
+          action: TaskUpdateAction.cancel,
+          targetTaskTitle: '不做了的任务',
+          targetText: '不做了的任务',
+        ),
+      ),
+    );
+
+    final result = await taskUpdateController.submitInput('不做了的任务取消');
+    await taskUpdateController.applyTaskUpdate(item: result.items.single);
+    final cancelledTask = await _getTask(database, 'task-cancel-strategy');
+
+    // MVP: cancel → deleted (temporary, will be task_status: cancelled later)
+    expect(cancelledTask.status, RecordStatus.deleted.value);
+    // Task data is preserved (title still readable) — not truly deleted
+    expect(cancelledTask.title, '不做了的任务');
+  });
 }
 
 Future<db.ExtractedItem> _getExtractedItem(db.AppDatabase database, String id) {
@@ -741,5 +886,15 @@ class _StaticParserClient implements ParserClient {
   @override
   Future<ParseResult> parseInput(String text) async {
     return result;
+  }
+}
+
+class _ErrorParserClient implements ParserClient {
+  @override
+  Future<ParseResult> parseInput(String text) async {
+    throw const ParserFailure(
+      code: 'parser_service_error',
+      userMessage: '解析服务暂时不可用。',
+    );
   }
 }
