@@ -84,6 +84,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: InputScreen(
         controller: ref.watch(extractedItemsControllerProvider),
         header: const _HomeGreeting(),
+        onRefresh: () async {
+          setState(() {
+            _refreshVersion += 1;
+          });
+        },
         afterInput: FutureBuilder<HomeSuggestionContext>(
           key: ValueKey(_refreshVersion),
           future: suggestionService.loadContext(

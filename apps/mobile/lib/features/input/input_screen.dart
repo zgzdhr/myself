@@ -14,6 +14,7 @@ class InputScreen extends StatefulWidget {
     this.header,
     this.afterInput,
     this.onRecordsChanged,
+    this.onRefresh,
     super.key,
   });
 
@@ -21,6 +22,7 @@ class InputScreen extends StatefulWidget {
   final Widget? header;
   final Widget? afterInput;
   final VoidCallback? onRecordsChanged;
+  final Future<void> Function()? onRefresh;
 
   @override
   State<InputScreen> createState() => _InputScreenState();
@@ -52,16 +54,13 @@ class _InputScreenState extends State<InputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-        child: ListView(
-          children: [
-            if (widget.header != null) ...[
-              widget.header!,
-              const SizedBox(height: 20),
-            ],
-            _TactileInputPanel(
+    final listView = ListView(
+      children: [
+        if (widget.header != null) ...[
+          widget.header!,
+          const SizedBox(height: 20),
+        ],
+        _TactileInputPanel(
               controller: _textController,
               focusNode: _inputFocusNode,
               isLoading: _isLoading,
@@ -122,7 +121,19 @@ class _InputScreenState extends State<InputScreen> {
               const _PendingEmptyPanel(),
             ],
           ],
-        ),
+    );
+
+    final scrollable = widget.onRefresh != null
+        ? RefreshIndicator(
+            onRefresh: widget.onRefresh!,
+            child: listView,
+          )
+        : listView;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        child: scrollable,
       ),
     );
   }
