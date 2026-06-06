@@ -34,6 +34,121 @@ void main() {
     expect(find.text('拒绝'), findsOneWidget);
   });
 
+  // ── C1: save target display ──
+
+  testWidgets('task_create card shows save target', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.taskCreate,
+            title: '联系王总',
+            sourceText: '明天上午联系王总',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('保存到：任务'), findsOneWidget);
+  });
+
+  testWidgets('short_term_state card shows save target', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.shortTermState,
+            content: '用户今天感觉疲惫',
+            sourceText: '我今天很累',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('保存到：短期状态'), findsOneWidget);
+  });
+
+  testWidgets('life_event card shows save target', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.lifeEvent,
+            content: '做番茄炒蛋糖放多了',
+            sourceText: '今天做番茄炒蛋糖放多了，下次少放一点',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('保存到：生活事件'), findsOneWidget);
+  });
+
+  testWidgets('profile_candidate card shows confirm-required save target', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.profileCandidate,
+            content: '用户不喜欢太频繁的提醒',
+            sourceText: '我不喜欢太频繁的提醒',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('保存到：长期画像；确认后才生效'), findsOneWidget);
+  });
+
+  testWidgets('task_update card shows update-only target', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.taskUpdate,
+            title: '联系王总',
+            content: '将标记为已完成',
+            sourceText: '联系王总已经完成了',
+            taskUpdateIntent: TaskUpdateIntent(
+              action: TaskUpdateAction.complete,
+              targetTaskTitle: '联系王总',
+              targetText: '联系王总',
+              candidates: const [
+                TaskUpdateCandidate(id: 'task-1', title: '联系王总'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('目标：更新已有任务，不新建记忆'), findsOneWidget);
+  });
+
+  testWidgets('auto-saved card shows both save target and auto-save hint', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        ExtractedItemCard(
+          item: _item(
+            type: ItemType.taskCreate,
+            title: '联系王总',
+            sourceText: '明天上午联系王总',
+            status: RecordStatus.confirmed,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('保存到：任务'), findsOneWidget);
+    expect(find.text('已自动整理，可修改或撤销'), findsOneWidget);
+    expect(find.text('撤销'), findsOneWidget);
+    expect(find.text('确认'), findsNothing);
+  });
+
   testWidgets('short-term state card shows expiry', (tester) async {
     await tester.pumpWidget(
       _wrap(

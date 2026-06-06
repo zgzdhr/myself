@@ -43,6 +43,8 @@ class ExtractedItemCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _TypeLabel(item.type),
+            const SizedBox(height: 6),
+            _SaveTarget(item.type),
             const SizedBox(height: 10),
             Text(
               title,
@@ -213,6 +215,33 @@ class _TaskUpdateResolutionPanel extends StatelessWidget {
       TaskUpdateAction.cancel => '将取消这个任务',
       TaskUpdateAction.delay => '将延期到 ${intent.dueTimeText ?? '新的时间'}',
       TaskUpdateAction.edit => '将更新这个任务',
+    };
+  }
+}
+
+class _SaveTarget extends StatelessWidget {
+  const _SaveTarget(this.type);
+
+  final ItemType type;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _text,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: const Color(0xFF8A8278),
+      ),
+    );
+  }
+
+  String get _text {
+    return switch (type) {
+      ItemType.taskCreate => '保存到：任务',
+      ItemType.shortTermState => '保存到：短期状态',
+      ItemType.lifeEvent => '保存到：生活事件',
+      ItemType.profileCandidate => '保存到：长期画像；确认后才生效',
+      ItemType.taskUpdate => '目标：更新已有任务，不新建记忆',
+      ItemType.generalAnswer => '',
     };
   }
 }
