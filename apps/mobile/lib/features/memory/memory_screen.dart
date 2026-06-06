@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
+import '../../domain/item_type.dart';
 import 'life_events_screen.dart';
 import 'privacy_screen.dart';
 import 'profile_items_screen.dart';
@@ -32,14 +33,33 @@ class _MemoryScreenState extends State<MemoryScreen> {
 
   Future<_MemoryOverviewData> _loadData() async {
     final now = widget.nowProvider();
-    return _MemoryOverviewData(
-      tasks: await widget.database.getActiveTasks(),
-      shortTermStates: await widget.database.getActiveShortTermStates(
-        now: now,
-      ),
-      lifeEvents: await widget.database.getActiveLifeEvents(),
-      profileItems: await widget.database.getActiveProfileItems(),
+    final db = widget.database;
+    final tasks = await db.getActiveTasks();
+    final states = await db.getActiveShortTermStates(now: now);
+    final events = await db.getActiveLifeEvents();
+    final profiles = await db.getActiveProfileItems();
+    final pendingTaskCount =
+        await db.countPendingExtractedItemsByType(ItemType.taskCreate.apiValue);
+    final pendingProfileCount = await db.countPendingExtractedItemsByType(
+      ItemType.profileCandidate.apiValue,
     );
+
+    return _MemoryOverviewData(
+      tasks: tasks,
+      shortTermStates: states,
+      lifeEvents: events,
+      profileItems: profiles,
+      taskUpdatedAt: tasks.isNotEmpty ? _latest(tasks.map((t) => t.updatedAt)) : null,
+      stateUpdatedAt: states.isNotEmpty ? _latest(states.map((s) => s.updatedAt)) : null,
+      eventUpdatedAt: events.isNotEmpty ? _latest(events.map((e) => e.updatedAt)) : null,
+      profileUpdatedAt: profiles.isNotEmpty ? _latest(profiles.map((p) => p.updatedAt)) : null,
+      pendingTaskCount: pendingTaskCount,
+      pendingProfileCount: pendingProfileCount,
+    );
+  }
+
+  static DateTime _latest(Iterable<DateTime> dates) {
+    return dates.reduce((a, b) => a.isAfter(b) ? a : b);
   }
 
   @override
@@ -76,6 +96,8 @@ class _MemoryScreenState extends State<MemoryScreen> {
               _Section(
                 title: '任务',
                 count: data.tasks.length,
+                updatedAt: data.taskUpdatedAt,
+                pendingCount: data.pendingTaskCount,
                 onViewAll: () => _navigate(
                   TasksScreen(
                     database: widget.database,
@@ -97,6 +119,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
               _Section(
                 title: '短期状态',
                 count: data.shortTermStates.length,
+                updatedAt: data.stateUpdatedAt,
                 onViewAll: () => _navigate(
                   ShortTermStatesScreen(
                     database: widget.database,
@@ -112,6 +135,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
               _Section(
                 title: '生活事件',
                 count: data.lifeEvents.length,
+                updatedAt: data.eventUpdatedAt,
                 onViewAll: () => _navigate(
                   LifeEventsScreen(
                     database: widget.database,
@@ -127,6 +151,9 @@ class _MemoryScreenState extends State<MemoryScreen> {
               _Section(
                 title: '长期画像',
                 count: data.profileItems.length,
+                updatedAt: data.profileUpdatedAt,
+                pendingCount: data.pendingProfileCount,
+                pendingLabel: '待确认',
                 onViewAll: () => _navigate(
                   ProfileItemsScreen(
                     database: widget.database,
@@ -166,12 +193,24 @@ class _MemoryOverviewData {
     required this.shortTermStates,
     required this.lifeEvents,
     required this.profileItems,
+    this.taskUpdatedAt,
+    this.stateUpdatedAt,
+    this.eventUpdatedAt,
+    this.profileUpdatedAt,
+    this.pendingTaskCount = 0,
+    this.pendingProfileCount = 0,
   });
 
   final List<Task> tasks;
   final List<ShortTermState> shortTermStates;
   final List<LifeEvent> lifeEvents;
   final List<ProfileItem> profileItems;
+  final DateTime? taskUpdatedAt;
+  final DateTime? stateUpdatedAt;
+  final DateTime? eventUpdatedAt;
+  final DateTime? profileUpdatedAt;
+  final int pendingTaskCount;
+  final int pendingProfileCount;
 }
 
 class _Section extends StatelessWidget {
@@ -181,6 +220,9 @@ class _Section extends StatelessWidget {
     required this.children,
     required this.onViewAll,
     required this.onRecordsChanged,
+    this.updatedAt,
+    this.pendingCount,
+    this.pendingLabel,
   });
 
   final String title;
@@ -188,6 +230,19 @@ class _Section extends StatelessWidget {
   final List<Widget> children;
   final VoidCallback onViewAll;
   final VoidCallback onRecordsChanged;
+  final DateTime? updatedAt;
+  final int? pendingCount;
+  final String? pendingLabel;
+
+  static String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(local);
+    if (diff.inMinutes < 60) return '${diff.inMinutes} 分钟前';
+    if (diff.inHours < 24) return '${diff.inHours} 小时前';
+    if (diff.inDays < 7) return '${diff.inDays} 天前';
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -227,6 +282,28 @@ class _Section extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (pendingCount != null && pendingCount! > 0) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3CD),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFFC107)),
+                    ),
+                    child: Text(
+                      '${pendingLabel ?? "待处理"} $pendingCount',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF856404),
+                      ),
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 if (count > 3)
                   InkWell(
@@ -245,6 +322,16 @@ class _Section extends StatelessWidget {
                   ),
               ],
             ),
+            if (updatedAt != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                '最近更新：${_formatDate(updatedAt!)}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF8A8278),
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             if (children.isEmpty)
               const Text('暂无记录', style: TextStyle(color: Color(0xFF8A8278)))

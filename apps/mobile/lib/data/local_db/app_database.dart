@@ -363,4 +363,13 @@ class AppDatabase extends _$AppDatabase {
     )..where((item) => item.id.isIn(ids))).get();
     return {for (final row in rows) row.id: row.sourceText};
   }
+
+  Future<int> countPendingExtractedItemsByType(String type) async {
+    final rows = await (select(extractedItems)
+          ..where(
+            (item) => item.type.equals(type) & item.status.equals('pending'),
+          ))
+        .get();
+    return rows.length;
+  }
 }

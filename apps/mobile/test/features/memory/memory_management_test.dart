@@ -35,7 +35,7 @@ void main() {
   });
 
   group('MemoryScreen overview', () {
-    testWidgets('shows remembered categories with counts', (tester) async {
+    testWidgets('shows remembered categories with counts and update time', (tester) async {
       await tester.pumpWidget(
         _wrap(MemoryScreen(database: database, nowProvider: () => now)),
       );
@@ -45,6 +45,7 @@ void main() {
       expect(find.text('任务'), findsOneWidget);
       expect(find.text('短期状态'), findsOneWidget);
       expect(find.text('生活事件'), findsOneWidget);
+      expect(find.textContaining('最近更新'), findsWidgets);
 
       expect(find.text('1'), findsWidgets);
       expect(find.text('管理'), findsWidgets);
@@ -52,6 +53,32 @@ void main() {
       await tester.drag(find.byType(ListView), const Offset(0, -300));
       await tester.pumpAndSettle();
       expect(find.text('长期画像'), findsOneWidget);
+    });
+
+    testWidgets('shows pending counts when extracted items are pending', (tester) async {
+      await database.into(database.extractedItems).insert(
+        ExtractedItemsCompanion.insert(
+          id: 'pending-profile',
+          rawInputId: 'raw-1',
+          aiParseResultId: 'parse-1',
+          type: 'profile_candidate',
+          sourceText: '我不喜欢提醒',
+          confidence: 0.8,
+          needUserConfirm: true,
+          status: 'pending',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _wrap(MemoryScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('待确认 1'), findsOneWidget);
     });
 
     testWidgets('shows task items with title in overview', (tester) async {
