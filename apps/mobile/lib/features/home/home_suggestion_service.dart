@@ -142,21 +142,34 @@ class HomeSuggestionService {
     required HomeTask task,
     required HomeSuggestionContext context,
   }) {
+    final parts = <String>[];
+    parts.add('基于任务：${task.title}');
+
     final dueTime = task.dueTime;
-
-    if (dueTime == null) {
-      return '这是已确认任务，但目前没有明确时间。';
+    if (dueTime != null && dueTime.isBefore(context.now)) {
+      parts.add('（已逾期）');
+    } else if (dueTime != null && _isSameDay(dueTime, context.now)) {
+      parts.add('（今日）');
+    } else if (dueTime != null) {
+      parts.add('（未来 7 天）');
     }
 
-    if (dueTime.isBefore(context.now)) {
-      return '这个任务已经逾期，优先处理可以减少待办压力。';
+    if (context.shortTermStates.isNotEmpty) {
+      final statesText = context.shortTermStates
+          .map((s) => s.content)
+          .join('，');
+      parts.add('| 当前状态：$statesText');
     }
 
-    if (_isSameDay(dueTime, context.now)) {
-      return '这个任务安排在今天，适合作为当前行动入口。';
+    if (context.profileItems.isNotEmpty) {
+      final profilesText = context.profileItems
+          .map((p) => p.content)
+          .take(2)
+          .join('，');
+      parts.add('| 长期偏好：$profilesText');
     }
 
-    return '这是未来 7 天内的已确认任务，适合提前准备。';
+    return parts.join(' ');
   }
 
   bool _hasLowEnergy(List<HomeShortTermState> states) {

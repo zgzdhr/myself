@@ -172,6 +172,110 @@ void main() {
     expect(suggestions.first.text, isNot(contains('马上')));
   });
 
+  test('reason mentions the specific task title', () {
+    final suggestions = service.buildSuggestions(
+      HomeSuggestionContext(
+        now: now,
+        tasks: [
+          HomeTask(
+            id: 'task-1',
+            title: '联系王总',
+            priority: 'medium',
+            dueTime: now.add(const Duration(hours: 2)),
+          ),
+        ],
+        shortTermStates: const [],
+        profileItems: const [],
+      ),
+    );
+
+    expect(suggestions.first.reason, contains('联系王总'));
+  });
+
+  test('reason mentions short-term state when low energy', () {
+    final suggestions = service.buildSuggestions(
+      HomeSuggestionContext(
+        now: now,
+        tasks: [
+          HomeTask(
+            id: 'task-1',
+            title: '联系王总',
+            priority: 'medium',
+            dueTime: now.add(const Duration(hours: 1)),
+          ),
+        ],
+        shortTermStates: [
+          HomeShortTermState(
+            id: 'state-1',
+            content: '今天有点累',
+            tags: const ['energy'],
+            validUntil: now.add(const Duration(days: 1)),
+          ),
+        ],
+        profileItems: const [],
+      ),
+    );
+
+    expect(suggestions.first.reason, contains('今天有点累'));
+  });
+
+  test('reason mentions profile preference when relevant', () {
+    final suggestions = service.buildSuggestions(
+      HomeSuggestionContext(
+        now: now,
+        tasks: [
+          HomeTask(
+            id: 'task-1',
+            title: '准备周会材料',
+            priority: 'low',
+            dueTime: now.add(const Duration(days: 2)),
+          ),
+        ],
+        shortTermStates: const [],
+        profileItems: const [
+          HomeProfileItem(id: 'profile-1', content: '不喜欢太频繁的提醒'),
+        ],
+      ),
+    );
+
+    expect(suggestions.first.reason, contains('不喜欢太频繁的提醒'));
+  });
+
+  test('reason does not contain raw input text', () {
+    final suggestions = service.buildSuggestions(
+      HomeSuggestionContext(
+        now: now,
+        tasks: [
+          HomeTask(
+            id: 'task-1',
+            title: '联系王总',
+            priority: 'medium',
+            dueTime: now.add(const Duration(hours: 1)),
+          ),
+        ],
+        shortTermStates: const [],
+        profileItems: const [],
+      ),
+    );
+
+    expect(suggestions.first.reason, isNot(contains('raw')));
+    expect(suggestions.first.reason, isNot(contains('source_text')));
+  });
+
+  test('empty tasks suggests adding the most important thing', () {
+    final suggestions = service.buildSuggestions(
+      HomeSuggestionContext(
+        now: now,
+        tasks: const [],
+        shortTermStates: const [],
+        profileItems: const [],
+      ),
+    );
+
+    expect(suggestions.first.text, contains('今天'));
+    expect(suggestions.first.reason, contains('已确认'));
+  });
+
   test('general answer parse rows do not create context for home suggestions', () async {
     final cleanDatabase = AppDatabase(
       DatabaseConnection(
