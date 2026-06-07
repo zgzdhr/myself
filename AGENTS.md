@@ -14,7 +14,9 @@
 
 ## 当前规划状态
 
-截至 2026-06-05，项目已经进入 MVP 骨架稳定阶段，Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、Task 10/11 设计文档和第一版最小 `current_suggestion` ContextBuilder 已经存在，不再是空项目或纯规划阶段。
+截至 2026-06-07，项目已经完成 Phase 3 C 阶段。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、Task 10/11 设计文档、`current_suggestion` ContextBuilder、`task_update_resolution` ContextBuilder、解释性 UI 与用户控制感增强已经存在，不再是空项目或纯规划阶段。
+
+当前下一步是新增的 Phase 3 D0：中文语义边界校准。不要直接跳到 D1；先阅读 `2026-06-07-phase3_d0_guide.md`，把 parser prompt、sample set、smoke 检查建立在新的中文语义规则上。
 
 已确认的核心链路：
 
@@ -25,7 +27,7 @@
 → 生成 extracted items
 → 用户确认 / 修改 / 拒绝
 → 写入本地数据库
-→ ContextBuilder 选择 current_suggestion 所需上下文
+→ ContextBuilder 选择 current_suggestion / task_update_resolution 所需上下文
 → 首页基于今日任务、短期状态、已确认长期画像给简单建议
 ```
 
@@ -36,7 +38,7 @@
 - `apps/mobile/lib/features/input/input_screen.dart`：万能输入页。
 - `apps/mobile/lib/features/extracted_items/`：待确认卡片、编辑弹层、确认 / 修改 / 拒绝控制器。
 - `apps/mobile/lib/features/home/`：首页 UI 和基础建议服务。
-- `apps/mobile/lib/features/context/context_builder.dart`：第一版最小 ContextBuilder，目前只支持 `current_suggestion`。
+- `apps/mobile/lib/features/context/context_builder.dart`：受控 ContextBuilder，目前支持 `current_suggestion` 和 `task_update_resolution`。
 - `apps/mobile/lib/features/memory/`：记忆入口、隐私页、短期状态 / 生活事件 / 长期画像页面。
 - `apps/mobile/lib/data/local_db/`：Drift / SQLite schema 和本地数据库访问。
 - `apps/mobile/lib/data/parser/`：Mock Parser、HTTP Parser Client、ParserClient 抽象。
@@ -47,11 +49,12 @@
 - `apps/api/src/services/deepseekParser.ts`：DeepSeek 调用与解析服务。
 - `apps/api/src/services/parserPrompt.ts`：结构化解析 prompt。
 - `apps/api/scripts/smokeParseSamples.ts`：真实解析 smoke 脚本。
+- `2026-06-07-phase3_d0_guide.md`：Phase 3 D0 中文语义边界校准指导文件。
 
 当前已经落地的验证资产：
 
 - `apps/mobile/test/`：移动端数据库、parser contract、确认流、首页建议、记忆管理和 widget 测试。
-- `apps/mobile/test/features/context/context_builder_test.dart`：`current_suggestion` ContextBuilder 的边界测试。
+- `apps/mobile/test/features/context/context_builder_test.dart`：`current_suggestion` / `task_update_resolution` ContextBuilder 的边界测试。
 - `apps/api/test/`：API schema、DeepSeek parser、prompt、sample set、隐私日志和 smoke 脚本测试。
 - `docs/architecture/phase-2-ai-parse-smoke.md`：真实 DeepSeek 解析 smoke 说明。
 - `docs/architecture/mobile-smoke-test.md`：移动端 smoke 验证记录。
@@ -74,11 +77,12 @@
 3. `docs/architecture/current-verification.md`：确认最近一次自动化验证状态。
 4. `docs/architecture/mobile-smoke-test.md`：确认 Android / iOS smoke 状态。
 5. `docs/architecture/phase-2-ai-parse-smoke.md`：确认真实 DeepSeek parse smoke 流程。
-6. `docs/architecture/summary-system-design.md`：理解 Task 10 小总结机制。
-7. `docs/architecture/context-builder-design.md`：理解 Task 11 Context Builder 总设计。
-8. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的最小 `current_suggestion` ContextBuilder。
-9. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
-10. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
+6. `2026-06-07-phase3_d0_guide.md`：如果要继续当前 D0，先看中文语义边界和执行路线。
+7. `docs/architecture/summary-system-design.md`：理解 Task 10 小总结机制。
+8. `docs/architecture/context-builder-design.md`：理解 Task 11 Context Builder 总设计。
+9. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
+10. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
+11. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
 
 ## 目标平台与技术方向
 
@@ -364,7 +368,7 @@ MVP 首页建议不做复杂检索，也不做行为模式分析。
 当前实现边界：
 
 - `ContextBuilder` 已经作为首页建议的上下文选择入口。
-- 目前只支持 `current_suggestion`。
+- 目前支持 `current_suggestion` 和 `task_update_resolution`。
 - intent 先用简单规则判断。
 - 排除日志只记录原因数量，例如 `deleted`、`pending`、`expired`，不记录 raw input 或敏感正文。
 - `HomeSuggestionService` 仍负责把上下文转成首页建议文案。
@@ -503,6 +507,141 @@ myself/
 - 本地数据库在两端可用。
 - 基础输入与确认流程可用。
 
+## 长期后续任务与产品记忆
+
+以下内容来自 D0 讨论、Claude memory 和 Phase 3 C 阶段后的真实试用反馈。它们不是当前 D0 必须实现的任务，但要保存在项目记忆里，避免后续忘掉。
+
+### 1. prompt-accuracy：中文语义边界要继续校准
+
+已知问题：
+
+- DeepSeek Flash 曾把“晚上同学约我去网吧，我同意了”归为 `life_event`，但在本产品里它更应该是 `task_create`，因为这是未来安排、用户已同意、需要用户行动。
+- parser prompt 和 sample set 需要覆盖社交约定、娱乐安排、客户拜访、生活预约、模糊时间、普通问答和长期画像边界。
+- 分类不能只看关键词。“记得提醒我”可能是任务，但“我记得我读过这本书”不是任务。
+
+后续方向：
+
+- D0 先写 `docs/architecture/chinese-semantic-classification-rules.md`。
+- 再更新 `apps/api/src/services/parserPrompt.ts` 和 `apps/api/src/services/parserSampleSet.ts`。
+- smoke 检查要支持 `expectedTypes`、`forbiddenTypes`、`need_user_confirm`、`source_text`、模糊时间不乱造 `due_time_iso`。
+
+### 2. task-time：时间粒度和提醒系统后置
+
+已知问题：
+
+- 当前移动端 `_inferTaskDue` 时间推断较粗，早期只覆盖“今天 / 明天 / 明天上午 / 明天下午”等有限表达。
+- 用户真实表达会包含“下午三点”“晚上八点”“后天”“下周一”“过会儿”“回头”“有空”“等我到酒店后”等。
+- “过会儿”通常是分钟到数小时；“回头”通常不是 15 分钟内；“有空”更低紧急度。
+
+当前边界：
+
+- D0 只定义语义，不实现完整提醒系统。
+- 模糊时间优先保留 `due_time_text`，不乱填 `due_time_iso`。
+
+后续方向：
+
+- 未来由 parser 返回更准确的 `due_time_iso`。
+- 移动端再扩展中文时间解析和 UI 展示。
+- 真正提醒、稍后提醒、重复提醒另开阶段。
+
+### 3. auto-save：自动保存边界要从关键词升级为语义判断
+
+已知问题：
+
+- `life_event` 自动保存不能只看“记一下”“记住”。真实用户会说“下次注意”“长了个教训”“以后要记住”等。
+- `task_create` 自动保存不能只依赖本地 `_inferTaskDue` 是否识别出有限时间词。
+- 漏掉一个需要提醒的任务，通常比重复提醒一个已完成任务更严重。
+
+当前边界：
+
+- `task_create` 对明确未来行动应更积极，可自动保存但必须可撤销。
+- `profile_candidate` 仍必须用户确认。
+- `general_answer` 当前默认只回答，不保存。
+
+后续方向：
+
+- 让 parser 负责主要语义分类，本地规则只做安全兜底。
+- 自动保存必须坚持可见、可修改、可删除、可撤销。
+
+### 4. 已完成 / 已取消任务的显示与清理
+
+产品方向：
+
+- 任务完成或取消后，不应马上从用户视野里彻底消失。
+- 更合适的体验是划线、灰色、状态标签、来源原文、撤销入口。
+- 未来可以让用户设置自动清理期限，例如 1 天、3 天或手动清理。
+
+当前边界：
+
+- D0 不改数据库和任务 UI。
+- 中期建议引入 `task_status: active / completed / cancelled`，不要长期混用 `record_status` 表达任务业务状态。
+
+### 5. 模糊延期和双提醒
+
+产品方向：
+
+- 对明确延期，可以按新时间更新。
+- 对低置信或时间模糊的延期，未来提醒系统可考虑保留原计划提醒，再加新计划提醒，降低漏提醒风险。
+- 对提前量重要的事项，未来也可以提醒两次。
+
+当前边界：
+
+- D0 只记录规则，不实现提醒系统。
+
+### 6. short_term_state 子类型与覆盖策略
+
+状态不是一律追加，也不是一律覆盖。
+
+后续建议：
+
+- `location_state`：例如在路上、在办公室，最新状态优先，旧位置应失效。
+- `energy_state` / `mood_state`：例如很累、开心、焦虑，可保留当天变化轨迹，但当前建议优先最新。
+- `physical_state`：例如腰酸背疼、身体不舒服，可保留更长短期有效期。
+- `availability_state`：例如不方便接电话、下午不适合重任务，按时间范围失效。
+- `cognitive_state`：例如项目有点乱、注意力不集中，可作为 3-7 天近期状态。
+
+当前边界：
+
+- D0 只定义语义和后续策略，不新增 item type。
+
+### 7. life_event 是未来自进化的重要证据
+
+产品判断：
+
+- `life_event` 表面上像普通记录，但它是未来理解用户生活、工作、习惯和经验的重要素材。
+- 它未来可用于复盘、经验总结、长期画像候选生成、重要建议时调用过往经历。
+
+当前边界：
+
+- 当前不能从单条 `life_event` 自动生成正式长期画像。
+- 即使未来从多条 `life_event` 生成 `profile_candidate`，也必须用户确认后才能生效。
+
+### 8. 深度建议 / 长对话页面后置
+
+产品方向：
+
+- 大多数建议应该短、轻、克制。
+- 但用户未来可能会问重要问题，需要根据长期画像、生活事件、近期状态、任务背景给更深入建议。
+- 这可能需要独立页面和更强模型。
+
+当前边界：
+
+- D0 不做深度建议页。
+- 不做复杂个人问答、向量检索或完整 Agent。
+
+### 9. general_answer 的未来分支
+
+当前原则：
+
+- `general_answer` 默认作为可见回答，不生成保存卡片。
+
+未来需要区分：
+
+- 普通知识问答：像搜索引擎一样回答。
+- 与用户背景相关的问题：未来可调用用户上下文回答。
+- 重要工作/人生建议：未来可进入深度建议页面。
+- 问答中夹带任务、状态、事件：拆出可结构化 item，回答部分仍走 `general_answer`。
+
 ## 后续开发协作规则
 
 - 不要一上来做大而全功能。
@@ -517,10 +656,10 @@ myself/
 
 ## 当前下一步
 
-下一阶段应该继续沿着“受控上下文 + 可解释记忆”推进，不要扩大成完整 AI Agent：
+当前下一步是先执行 Phase 3 D0：中文语义边界校准。不要直接跳到 D1。
 
-1. 先基于现有 `current_suggestion` ContextBuilder 评估是否需要 UI 层展示“用了哪些记录”。
-2. 再考虑 `task_update` 的上下文匹配收窄和解释。
-3. 之后再做 `daily_review` / `weekly_review`，并明确它们不能生成自动长期画像。
-4. 更复杂的个人问答、记忆编辑、summary 注入、向量检索、LLM rerank 都后置。
-5. 每次新增 intent 前，先写设计边界和测试，不要一次性做完整 Agent。
+1. 先读 `2026-06-07-phase3_d0_guide.md`。
+2. 按 D0 指导新增 `docs/architecture/chinese-semantic-classification-rules.md`。
+3. 再更新 parser prompt、sample set 和 smoke 检查。
+4. D0 完成后，再继续 D1：`current_suggestion` 排序和解释优化。
+5. 更复杂的提醒系统、自动画像进化、深度建议、个人问答、summary 注入、向量检索、LLM rerank 都后置。
