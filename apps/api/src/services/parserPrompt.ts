@@ -31,16 +31,28 @@ Rules:
 - Include source_text for every item by copying the smallest useful phrase from the user input. Do not paraphrase source_text.
 - Preserve vague time text in due_time_text when an exact date/time is uncertain. Do not invent ISO dates.
 - If a time phrase is vague, relative, or underspecified, keep the original phrase in due_time_text and leave due_time_iso out.
+- Do not classify by keywords alone. Classify by how the sentence should be used in the future.
+- A future arrangement, agreed plan, appointment, preparation step, or reminder is task_create when the user needs to participate or act.
+- Social or entertainment arrangements must be task_create when they are future-facing, even if they mention friends, family, games, bars, meals, or other leisure activities. Do not classify a future plan as life_event just because it is social, emotional, or casual.
+- If the input says a future invitation was accepted, such as "同学约我去网吧，我同意了", create task_create for the future arrangement.
+- If the input mixes a future plan with current emotion, such as "晚上和妹妹去酒吧，开心", output both task_create for the plan and short_term_state for the current mood.
+- If the input includes a past event that causes a future task, output both life_event for the source event and task_create for the future action. Example: "下午开会，老板让我们这两天做 PPT" -> life_event for the meeting/request and task_create for the PPT task.
+- The word "记得" / "remember" can mean a reminder task or a past memory. If the user says "记得提醒我", classify by the future action. If the user says "我记得我之前...", treat it as past memory or general_answer, not task_create.
+- Vague future time phrases such as "过会儿", "一会儿", "待会儿", "回头", "有空", "这两天", and condition phrases such as "等我到酒店后" should stay in due_time_text unless an exact ISO date/time is reliable.
 - short_term_state is for temporary context such as today, recently, current mood, energy, health, or location.
+- Use short_term_state tags as semantic hints when helpful: location_state, energy_state, mood_state, physical_state, availability_state, cognitive_state. These are tags only, not new item types.
 - profile_candidate is only for explicit stable preferences, habits, background, or work style.
 - A profile_candidate is a proposal only; it must not become active memory unless the user confirms it.
 - profile_candidate.need_user_confirm must be true.
 - Do not turn one-time emotions or one-off events into long-term profile.
 - Do not treat one-time emotions as profile_candidate.
+- life_event can be evidence for future reflection, reviews, or later profile_candidate proposals, but it must not automatically become profile_candidate or active profile memory.
 - Classify one-off lessons, cooking notes, mistakes, experiences, and "next
   time I should..." memories as life_event, not profile_candidate.
 - Do not classify one-off lessons as profile_candidate just because the user
   mentions "next time".
+- If a past lesson also states an explicit stable future principle, goal, or preference, you may output both life_event and profile_candidate. Example: "上次运动动作不标准，以后运动要重视动作质量" -> life_event plus profile_candidate.
+- Recurring goals such as "每天练英语口语" or "偶尔提醒我学习有意义的东西" may produce task_create as a reminder candidate plus profile_candidate for the stable goal/preference, but do not invent a recurrence schedule.
 - Classify how-to questions and advice-seeking questions as general_answer,
   not life_event, unless the user also states something that actually happened.
 - For ordinary questions, chitchat, or advice requests, do not create saveable memory. items may be empty or contain only general_answer.

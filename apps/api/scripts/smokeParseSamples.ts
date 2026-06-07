@@ -31,7 +31,19 @@ type SchemaErrorEntry = {
   error: string;
 };
 
-const VAGUE_PHRASES = ["最近", "有空", "这两天", "这几天", "过几天", "找个时间"];
+const VAGUE_PHRASES = [
+  "最近",
+  "有空",
+  "这两天",
+  "这几天",
+  "过几天",
+  "找个时间",
+  "过会儿",
+  "一会儿",
+  "待会儿",
+  "回头",
+  "等我到酒店后",
+];
 const SAVEABLE_TYPES: ParserItemType[] = [
   "task_create",
   "short_term_state",

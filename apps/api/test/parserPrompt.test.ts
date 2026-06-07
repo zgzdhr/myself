@@ -64,3 +64,34 @@ test("parser prompt prevents vague task updates and vague delay times from being
   assert.match(prompt, /delay.*without a new time/i);
   assert.match(prompt, /do not fill due_time_iso/i);
 });
+
+test("parser prompt contains D0 semantic classification principles instead of keyword-only rules", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /Do not classify by keywords alone/i);
+  assert.match(prompt, /future arrangement/i);
+  assert.match(prompt, /social or entertainment/i);
+  assert.match(prompt, /task_create/);
+  assert.match(prompt, /记得/);
+  assert.match(prompt, /remember/i);
+  assert.match(prompt, /past memory/i);
+});
+
+test("parser prompt explains life_event evidence cannot become active profile automatically", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /life_event/);
+  assert.match(prompt, /evidence/i);
+  assert.match(prompt, /must not automatically become profile_candidate/i);
+});
+
+test("parser prompt documents D0 short-term state subtypes as tags or semantic hints", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /location_state/);
+  assert.match(prompt, /energy_state/);
+  assert.match(prompt, /mood_state/);
+  assert.match(prompt, /physical_state/);
+  assert.match(prompt, /availability_state/);
+  assert.match(prompt, /cognitive_state/);
+});

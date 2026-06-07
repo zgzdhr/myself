@@ -277,6 +277,40 @@ test("vague time without ISO is acceptable", () => {
   assert.equal(res.ok, true);
 });
 
+test("D0 vague time phrases reject fabricated ISO dates", () => {
+  const vaguePhrases = ["过会儿", "一会儿", "待会儿", "回头", "有空", "等我到酒店后"];
+
+  for (const phrase of vaguePhrases) {
+    const res = evaluateSampleResult(
+      sample({
+        id: `vague_time_${phrase}`,
+        label: `模糊时间：${phrase}`,
+        text: `${phrase}提醒我给客户发消息`,
+        expectedTypes: ["task_create"],
+      }),
+      result({
+        items: [
+          {
+            type: "task_create",
+            title: "给客户发消息",
+            source_text: `${phrase}提醒我给客户发消息`,
+            tags: ["work"],
+            confidence: 0.8,
+            need_user_confirm: true,
+            due_time_text: phrase,
+            due_time_iso: "2026-06-08T00:00:00Z",
+          },
+        ],
+      }),
+    );
+    assert.equal(res.ok, false, `${phrase} should not allow fabricated ISO`);
+    assert.ok(
+      res.ruleFailures.some((failure) => failure.includes("due_time_iso")),
+      `${phrase} should report a due_time_iso rule failure`,
+    );
+  }
+});
+
 test("general_answer sample producing saveable items causes rule failure", () => {
   const res = evaluateSampleResult(
     sample({

@@ -34,6 +34,27 @@ The `thinking: { type: "disabled" }` option is accepted without error — no mod
 Date: 2026-06-05. 34 samples checked against live DeepSeek API. Result: 32 pass,
 1 type mismatch, 1 HTTP error. Overall pass rate 94%.
 
+Note: Phase 3 D0 later expanded the local sample set to 44 entries and added
+Chinese semantic calibration cases for social arrangements, "记得" boundaries,
+vague time phrases, recurring goals, and multi-intent lifestyle inputs.
+
+## Test Results (Phase 3 D0 live DeepSeek run)
+
+Date: 2026-06-07. A fresh API proxy was started with the current D0 prompt on
+`API_PORT=8791`, then `API_BASE_URL=http://127.0.0.1:8791 npm run smoke:parse`
+was run. Result: 44 samples checked, 44 pass, 0 need review, 0 type mismatch,
+0 schema error.
+
+Important D0 confirmations:
+
+- Future social/entertainment arrangements now parse as `task_create`.
+- Mixed future plan + current mood inputs parse as `task_create` plus
+  `short_term_state`.
+- Past event + future task inputs parse as `life_event` plus `task_create`.
+- The "记得" past-memory boundary does not become `task_create`.
+- Recurring goal inputs remain task/profile candidates without implementing
+  recurrence scheduling.
+
 ```
 PASS tomorrow_task (明天任务) -> task_create
 PASS vague_time (模糊时间) -> task_create

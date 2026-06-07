@@ -34,7 +34,7 @@ Expected:
 {"ok":true}
 ```
 
-## Run The 33-Sample Parse Smoke
+## Run The 44-Sample Parse Smoke
 
 In another terminal:
 
@@ -43,13 +43,36 @@ cd /Users/mac/projects/cc/myself/apps/api
 npm run smoke:parse
 ```
 
-The smoke command sends the expanded Phase 3 Chinese sample set (33 entries) to
+The smoke command sends the expanded Phase 3 Chinese sample set (44 entries) to
 `/parse` and checks that each response contains the expected MVP item types and
 avoids known bad classifications, such as turning a one-off emotion into a
 long-term profile. The sample set covers task_create, task_update (complete /
 cancel / delay / edit), short_term_state, life_event, general_answer,
 profile_candidate, multi-intent, vague time, business trip scenarios, and
 edge cases around profile_candidate boundaries.
+
+## Phase 3 D0 Chinese Semantic Calibration
+
+D0 adds Chinese lifestyle and work-language boundary samples before continuing
+to D1/D2. These samples protect the parser against keyword-only classification.
+
+New D0 coverage includes:
+
+- Future social/entertainment arrangements such as "晚上同学约我去网吧，我同意了"
+  must be `task_create`, not `life_event`.
+- "记得" is context-sensitive: "记得提醒我..." can be a future task, while
+  "我记得我之前..." is past memory or ordinary answer, not `task_create`.
+- Vague time phrases such as "过会儿", "一会儿", "待会儿", "回头", "有空",
+  and "等我到酒店后" must preserve `due_time_text` and must not fabricate
+  `due_time_iso`.
+- Long real inputs may split into multiple items, such as `life_event` for a
+  meeting source plus `task_create` for the resulting PPT task.
+- Recurring goals such as "每天练英语口语" remain task/profile candidates only;
+  D0 does not implement recurrence scheduling.
+
+The D0 API unit tests cover the new prompt rules, sample set requirements, and
+smoke rule checks. A live DeepSeek smoke run should be performed separately when
+the API proxy and `DEEPSEEK_API_KEY` are available.
 
 ## Phase 3 A2 Prompt Boundary Checks
 
@@ -98,7 +121,7 @@ REVW sample_id (label) -> type1, type2   ← type checks pass but rule failures
 FAIL sample_id (label) -> actual_types   ← missing or forbidden types
 ERR  sample_id (label) -> error details  ← schema / HTTP / JSON error
 
-33 samples checked
+44 samples checked
 28 pass
 3 need review
 1 type mismatch

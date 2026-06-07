@@ -14,9 +14,9 @@
 
 ## 当前规划状态
 
-截至 2026-06-07，项目已经完成 Phase 3 C 阶段。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、Task 10/11 设计文档、`current_suggestion` ContextBuilder、`task_update_resolution` ContextBuilder、解释性 UI 与用户控制感增强已经存在，不再是空项目或纯规划阶段。
+截至 2026-06-07，项目已经完成 Phase 3 D0 阶段。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、Task 10/11 设计文档、`current_suggestion` ContextBuilder、`task_update_resolution` ContextBuilder、解释性 UI、用户控制感增强、中文语义边界校准文档、D0 parser prompt/sample/smoke 增强已经存在，不再是空项目或纯规划阶段。
 
-当前下一步是新增的 Phase 3 D0：中文语义边界校准。不要直接跳到 D1；先阅读 `2026-06-07-phase3_d0_guide.md`，把 parser prompt、sample set、smoke 检查建立在新的中文语义规则上。
+当前下一步是 Phase 3 D1：`current_suggestion` 排序和解释优化。D2 也相对独立，可以在 D1 后交给另一个 Agent 继续执行；不要回头重复做 D0。
 
 已确认的核心链路：
 
@@ -50,6 +50,7 @@
 - `apps/api/src/services/parserPrompt.ts`：结构化解析 prompt。
 - `apps/api/scripts/smokeParseSamples.ts`：真实解析 smoke 脚本。
 - `2026-06-07-phase3_d0_guide.md`：Phase 3 D0 中文语义边界校准指导文件。
+- `docs/architecture/chinese-semantic-classification-rules.md`：D0 中文语义分类规则文档。
 
 当前已经落地的验证资产：
 
@@ -77,12 +78,13 @@
 3. `docs/architecture/current-verification.md`：确认最近一次自动化验证状态。
 4. `docs/architecture/mobile-smoke-test.md`：确认 Android / iOS smoke 状态。
 5. `docs/architecture/phase-2-ai-parse-smoke.md`：确认真实 DeepSeek parse smoke 流程。
-6. `2026-06-07-phase3_d0_guide.md`：如果要继续当前 D0，先看中文语义边界和执行路线。
-7. `docs/architecture/summary-system-design.md`：理解 Task 10 小总结机制。
-8. `docs/architecture/context-builder-design.md`：理解 Task 11 Context Builder 总设计。
-9. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
-10. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
-11. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
+6. `2026-06-07-phase3_d0_guide.md`：了解 D0 已完成的中文语义边界校准。
+7. `docs/architecture/chinese-semantic-classification-rules.md`：查看 D0 正式语义规则。
+8. `docs/architecture/summary-system-design.md`：理解 Task 10 小总结机制。
+9. `docs/architecture/context-builder-design.md`：理解 Task 11 Context Builder 总设计。
+10. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
+11. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
+12. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
 
 ## 目标平台与技术方向
 
@@ -656,10 +658,9 @@ myself/
 
 ## 当前下一步
 
-当前下一步是先执行 Phase 3 D0：中文语义边界校准。不要直接跳到 D1。
+当前下一步是执行 Phase 3 D1：`current_suggestion` 排序和解释优化。
 
-1. 先读 `2026-06-07-phase3_d0_guide.md`。
-2. 按 D0 指导新增 `docs/architecture/chinese-semantic-classification-rules.md`。
-3. 再更新 parser prompt、sample set 和 smoke 检查。
-4. D0 完成后，再继续 D1：`current_suggestion` 排序和解释优化。
-5. 更复杂的提醒系统、自动画像进化、深度建议、个人问答、summary 注入、向量检索、LLM rerank 都后置。
+1. 先读 `2026-06-05-phase3_副本.md` 中 D1。
+2. 再看 `apps/mobile/lib/features/context/context_builder.dart` 和 `apps/mobile/lib/features/home/home_suggestion_service.dart`。
+3. D1 完成后继续 D2：`memory_explanation` 设计，先规则解释，不接 LLM。
+4. 更复杂的提醒系统、自动画像进化、深度建议、个人问答、summary 注入、向量检索、LLM rerank 都后置。

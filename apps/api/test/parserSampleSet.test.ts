@@ -129,3 +129,83 @@ test("profile_candidate samples appear in the set", () => {
   );
   assert.ok(profileSamples.length >= 2);
 });
+
+test("D0 semantic calibration samples cover real Chinese lifestyle boundaries", () => {
+  const requiredSampleIds = [
+    "d0_social_entertainment_future_agreement",
+    "d0_social_bar_plan_with_mood",
+    "d0_remember_past_book_is_not_task",
+    "d0_short_vague_customer_reminder",
+    "d0_callback_after_hotel_condition",
+    "d0_meeting_ppt_work_multi_intent",
+    "d0_shandong_customer_visit_preparation",
+    "d0_recurring_english_speaking_goal",
+    "d0_exercise_quality_lesson",
+    "d0_vibe_coding_distraction",
+  ];
+
+  for (const id of requiredSampleIds) {
+    assert.ok(
+      parserSmokeSamples.some((sample) => sample.id === id),
+      `${id} sample missing`,
+    );
+  }
+});
+
+test("D0 social and entertainment future arrangements are tasks, not life events", () => {
+  const socialSamples = [
+    "d0_social_entertainment_future_agreement",
+    "d0_social_bar_plan_with_mood",
+  ];
+
+  for (const id of socialSamples) {
+    const sample = parserSmokeSamples.find((s) => s.id === id);
+    assert.ok(sample, `${id} sample missing`);
+    assert.ok(sample.expectedTypes.includes("task_create"));
+    assert.equal(
+      sample.forbiddenTypes?.includes("life_event"),
+      true,
+      `${id} must forbid life_event because the arrangement is still future-facing`,
+    );
+  }
+});
+
+test("D0 remember-word boundary distinguishes reminders from past memory", () => {
+  const pastMemory = parserSmokeSamples.find(
+    (sample) => sample.id === "d0_remember_past_book_is_not_task",
+  );
+  assert.ok(pastMemory);
+  assert.equal(pastMemory.forbiddenTypes?.includes("task_create"), true);
+  assert.ok(
+    pastMemory.expectedTypes.includes("general_answer") ||
+      (pastMemory.acceptedTypes ?? []).includes("life_event"),
+  );
+
+  const reminder = parserSmokeSamples.find(
+    (sample) => sample.id === "d0_short_vague_customer_reminder",
+  );
+  assert.ok(reminder);
+  assert.equal(reminder.expectedTypes.includes("task_create"), true);
+});
+
+test("D0 recurring goals remain task/profile candidates without pretending recurrence is implemented", () => {
+  const recurringSamples = [
+    "d0_recurring_english_speaking_goal",
+    "d0_vibe_coding_distraction",
+  ];
+
+  for (const id of recurringSamples) {
+    const sample = parserSmokeSamples.find((s) => s.id === id);
+    assert.ok(sample, `${id} sample missing`);
+    assert.ok(
+      sample.expectedTypes.includes("task_create") ||
+        (sample.acceptedTypes ?? []).includes("task_create"),
+      `${id} should include task_create as a reminder/task candidate`,
+    );
+    assert.ok(
+      sample.expectedTypes.includes("profile_candidate") ||
+        (sample.acceptedTypes ?? []).includes("profile_candidate"),
+      `${id} should include profile_candidate for the stable goal/preference part`,
+    );
+  }
+});

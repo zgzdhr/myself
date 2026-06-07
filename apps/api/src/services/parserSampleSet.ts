@@ -49,6 +49,27 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     text: "反正最近有空的时候整理一下那个合同。",
     expectedTypes: ["task_create"],
   },
+  {
+    id: "d0_social_entertainment_future_agreement",
+    label: "D0：社交娱乐未来约定",
+    text: "晚上同学约我去网吧，我同意了。",
+    expectedTypes: ["task_create"],
+    forbiddenTypes: ["life_event", "profile_candidate"],
+  },
+  {
+    id: "d0_short_vague_customer_reminder",
+    label: "D0：过会儿短时间提醒",
+    text: "过会儿提醒我给客户发消息。",
+    expectedTypes: ["task_create"],
+    forbiddenTypes: ["life_event", "profile_candidate"],
+  },
+  {
+    id: "d0_callback_after_hotel_condition",
+    label: "D0：条件型任务",
+    text: "等我到酒店后给王总回电话。",
+    expectedTypes: ["task_create"],
+    forbiddenTypes: ["life_event", "profile_candidate"],
+  },
 
   // ── task_update ──
   {
@@ -114,6 +135,13 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     expectedTypes: ["short_term_state"],
   },
   {
+    id: "d0_social_bar_plan_with_mood",
+    label: "D0：未来娱乐安排和当前心情",
+    text: "哎，晚上可要和妹妹一起去这个酒吧呀，开心爽死啦！",
+    expectedTypes: ["task_create", "short_term_state"],
+    forbiddenTypes: ["life_event", "profile_candidate"],
+  },
+  {
     id: "one_off_emotion",
     label: "一次性情绪，不应变长期画像",
     text: "今天客户说话让我有点不舒服，但可能只是今天这一次。",
@@ -148,6 +176,28 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     label: "生活事件：出差教训",
     text: "这次出差忘了提前订酒店，到了才找很被动，下次要记住。",
     expectedTypes: ["life_event"],
+  },
+  {
+    id: "d0_meeting_ppt_work_multi_intent",
+    label: "D0：会议来源和近期 PPT 任务",
+    text: "今下午开了个会，老板说让我们改方案、重做个PPT，这两天就得把这个PPT做出来。",
+    expectedTypes: ["life_event", "task_create"],
+    forbiddenTypes: ["profile_candidate"],
+  },
+  {
+    id: "d0_exercise_quality_lesson",
+    label: "D0：运动经验和长期原则候选",
+    text: "上次运动我感觉动作太不标准了，之后运动一定要注意动作质量，不能只追求极限重量。",
+    expectedTypes: ["life_event", "profile_candidate"],
+    forbiddenTypes: ["task_create"],
+  },
+  {
+    id: "d0_remember_past_book_is_not_task",
+    label: "D0：记得过去行为不是提醒任务",
+    text: "我记得我之前读过这本书，但具体内容有点忘了。",
+    expectedTypes: [],
+    acceptedTypes: ["general_answer", "life_event"],
+    forbiddenTypes: ["task_create", "profile_candidate"],
   },
 
   // ── general_answer ──
@@ -212,6 +262,19 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     text: "我不太喜欢在早上被催促，更适合下午集中处理重要事情。",
     expectedTypes: ["profile_candidate"],
   },
+  {
+    id: "d0_recurring_english_speaking_goal",
+    label: "D0：长期目标和重复任务候选",
+    text: "英语其实一直很重要，所以每天我也想锻炼一下英语口语。",
+    expectedTypes: ["profile_candidate", "task_create"],
+  },
+  {
+    id: "d0_vibe_coding_distraction",
+    label: "D0：当前学习方向和偶尔提醒",
+    text: "我现在在学Vibe Coding，空闲时间经常刷抖音，我觉得这样不行。你最好偶尔提醒我去学一些有意义的东西。",
+    expectedTypes: ["profile_candidate", "task_create"],
+    acceptedTypes: ["short_term_state", "life_event"],
+  },
 
   // ── 多意图 ──
   {
@@ -225,6 +288,14 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     label: "多意图：短期状态和生活事件",
     text: "今天客户沟通不太顺利，记录一下，我现在有点累。",
     expectedTypes: ["short_term_state", "life_event"],
+  },
+  {
+    id: "d0_shandong_customer_visit_preparation",
+    label: "D0：客户拜访和准备任务",
+    text: "一周之后我要去趟山东拜访客户，这两天先把客户个人信息和资料整理一下，方便之后更好服务他。",
+    expectedTypes: ["task_create"],
+    acceptedTypes: ["life_event"],
+    forbiddenTypes: ["profile_candidate"],
   },
 
   // ── 边界样例 ──
