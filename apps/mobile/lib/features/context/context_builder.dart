@@ -84,6 +84,12 @@ class ContextBuilder {
         for (final profile in profiles)
           ContextProfileItem(id: profile.id, content: profile.content),
       ],
+      memoryExplanations: _buildMemoryExplanations(
+        now: now,
+        tasks: contextTasks,
+        states: states,
+        profiles: profiles,
+      ),
       excludedReasonCounts: excludedReasonCounts,
     );
   }
@@ -197,6 +203,65 @@ class ContextBuilder {
     return decoded.whereType<String>().toList();
   }
 
+  static List<ContextMemoryExplanation> _buildMemoryExplanations({
+    required DateTime now,
+    required List<ContextTask> tasks,
+    required List<ShortTermState> states,
+    required List<ProfileItem> profiles,
+  }) {
+    return [
+      for (final task in tasks)
+        ContextMemoryExplanation(
+          sourceType: 'tasks',
+          sourceId: task.id,
+          label: '已确认任务：${task.title}',
+          reason: _taskExplanationReason(task: task, now: now),
+        ),
+      for (final state in states)
+        ContextMemoryExplanation(
+          sourceType: 'short_term_states',
+          sourceId: state.id,
+          label: '短期状态：${state.content}',
+          reason: '状态仍在有效期内，参与当前建议语气调整。',
+        ),
+      for (final profile in profiles)
+        ContextMemoryExplanation(
+          sourceType: 'profile_items',
+          sourceId: profile.id,
+          label: '长期偏好：${profile.content}',
+          reason: '用户已确认的长期画像，参与当前建议语气调整。',
+        ),
+    ];
+  }
+
+  static String _taskExplanationReason({
+    required ContextTask task,
+    required DateTime now,
+  }) {
+    final dueTime = task.dueTime;
+    if (dueTime == null) {
+      return '没有明确到期时间，但仍是已确认任务，参与当前建议排序。';
+    }
+    if (dueTime.isBefore(now)) {
+      return '已经逾期，参与当前建议排序。';
+    }
+    if (_isSameDay(dueTime, now)) {
+      return '今天到期，参与当前建议排序。';
+    }
+    return '未来 7 天内到期，参与当前建议排序。';
+  }
+
+  static Map<String, int> _countMemoryExplanationsBySourceType(
+    List<ContextMemoryExplanation> explanations,
+  ) {
+    final counts = <String, int>{};
+    for (final explanation in explanations) {
+      counts[explanation.sourceType] =
+          (counts[explanation.sourceType] ?? 0) + 1;
+    }
+    return counts;
+  }
+
   static bool _isSameDay(DateTime left, DateTime right) {
     final leftLocal = left.toLocal();
     final rightLocal = right.toLocal();
@@ -216,6 +281,7 @@ class ContextPackage {
     required this.nextSevenDaysTasks,
     required this.activeShortTermStates,
     required this.confirmedProfileItems,
+    required this.memoryExplanations,
     required this.excludedReasonCounts,
   });
 
@@ -227,6 +293,7 @@ class ContextPackage {
   final List<ContextTask> nextSevenDaysTasks;
   final List<ContextShortTermState> activeShortTermStates;
   final List<ContextProfileItem> confirmedProfileItems;
+  final List<ContextMemoryExplanation> memoryExplanations;
   final Map<String, int> excludedReasonCounts;
 
   Map<String, Object?> toDebugJson() {
@@ -241,6 +308,10 @@ class ContextPackage {
         'confirmed_profile_items': confirmedProfileItems.length,
       },
       'excluded_reason_counts': excludedReasonCounts,
+      'memory_explanation_counts':
+          ContextBuilder._countMemoryExplanationsBySourceType(
+            memoryExplanations,
+          ),
     };
   }
 }
@@ -278,6 +349,20 @@ class ContextProfileItem {
 
   final String id;
   final String content;
+}
+
+class ContextMemoryExplanation {
+  const ContextMemoryExplanation({
+    required this.sourceType,
+    required this.sourceId,
+    required this.label,
+    required this.reason,
+  });
+
+  final String sourceType;
+  final String sourceId;
+  final String label;
+  final String reason;
 }
 
 class ContextTaskUpdatePackage {

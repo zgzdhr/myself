@@ -1,5 +1,46 @@
 # Current Verification
 
+## Latest Verification: Phase 3 D2
+
+Date: 2026-06-08
+Scope: Rule-based `memory_explanation` design and ContextBuilder explanation metadata
+
+### Summary
+
+- Result: Pass.
+- Mobile static verification: `flutter analyze` passed.
+- Mobile automated verification: `flutter test` passed.
+- API static verification: `npm run typecheck` passed.
+- API automated verification: `npm test` passed.
+- New design document: `docs/architecture/memory-explanation-design.md`.
+- New ContextBuilder output: `ContextPackage.memoryExplanations`.
+- Debug output remains count-only and does not include raw input, source text, task titles, short-term state content, or profile content.
+
+### Commands Run
+
+```bash
+cd apps/mobile
+flutter analyze
+flutter test
+
+cd ../api
+npm run typecheck
+npm test
+```
+
+### Results
+
+- `flutter analyze`: Pass, no issues found.
+- `flutter test`: Pass, 105 tests passed.
+- `npm run typecheck`: Pass.
+- `npm test`: Pass, 53 tests passed.
+
+### Notes
+
+- `flutter analyze`, `flutter test`, and the API localhost privacy test required permission mode because the sandbox blocks Flutter SDK cache writes and local server/fetch behavior.
+- Earlier sandboxed API test attempts were cancelled after hanging on `test/privacyLogging.test.ts`; the same full API suite passed in permission mode.
+- D2 is complete. The next project step can be D3/E work depending on the active phase plan.
+
 ## Latest Verification: Phase 3 D0
 
 Date: 2026-06-07

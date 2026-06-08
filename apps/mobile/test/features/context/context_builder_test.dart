@@ -140,6 +140,123 @@ void main() {
     expect(debugText, isNot(contains('用户不喜欢太频繁的提醒')));
   });
 
+  test(
+    'builds rule-based memory explanations from confirmed records',
+    () async {
+      await _insertTask(
+        database,
+        id: 'task-today',
+        title: '联系王总',
+        status: RecordStatus.confirmed,
+        dueTime: now.add(const Duration(hours: 1)),
+      );
+      await _insertState(
+        database,
+        id: 'state-active',
+        content: '今天有点累',
+        status: RecordStatus.confirmed,
+        validUntil: now.add(const Duration(hours: 2)),
+      );
+      await _insertProfile(
+        database,
+        id: 'profile-confirmed',
+        content: '用户不喜欢太频繁的提醒',
+        status: RecordStatus.confirmed,
+      );
+
+      final package = await builder.buildCurrentSuggestion(
+        database: database,
+        now: now,
+      );
+
+      expect(package.memoryExplanations.map((entry) => entry.sourceType), [
+        'tasks',
+        'short_term_states',
+        'profile_items',
+      ]);
+      expect(package.memoryExplanations.map((entry) => entry.label), [
+        '已确认任务：联系王总',
+        '短期状态：今天有点累',
+        '长期偏好：用户不喜欢太频繁的提醒',
+      ]);
+      expect(package.memoryExplanations.map((entry) => entry.reason), [
+        '今天到期，参与当前建议排序。',
+        '状态仍在有效期内，参与当前建议语气调整。',
+        '用户已确认的长期画像，参与当前建议语气调整。',
+      ]);
+    },
+  );
+
+  test(
+    'memory explanation excludes pending, deleted, expired, and raw input',
+    () async {
+      await _insertSensitiveRawInput(database, now: now);
+      await _insertTask(
+        database,
+        id: 'task-deleted',
+        title: '已删除任务不应解释',
+        status: RecordStatus.deleted,
+        dueTime: now,
+      );
+      await _insertState(
+        database,
+        id: 'state-expired',
+        content: '过期状态不应解释',
+        status: RecordStatus.confirmed,
+        validUntil: now.subtract(const Duration(minutes: 1)),
+      );
+      await _insertPendingExtractedProfile(database, now: now);
+
+      final package = await builder.buildCurrentSuggestion(
+        database: database,
+        now: now,
+      );
+      final explanationText = package.memoryExplanations
+          .map((entry) => '${entry.label} ${entry.reason}')
+          .join('\n');
+
+      expect(package.memoryExplanations, isEmpty);
+      expect(explanationText, isNot(contains('我的银行卡密码')));
+      expect(explanationText, isNot(contains('已删除任务不应解释')));
+      expect(explanationText, isNot(contains('过期状态不应解释')));
+      expect(explanationText, isNot(contains('我不喜欢太频繁的提醒')));
+    },
+  );
+
+  test(
+    'memory explanation debug json contains counts, not user text',
+    () async {
+      await _insertSensitiveRawInput(database, now: now);
+      await _insertTask(
+        database,
+        id: 'task-today',
+        title: '联系王总',
+        status: RecordStatus.confirmed,
+        dueTime: now,
+      );
+      await _insertState(
+        database,
+        id: 'state-active',
+        content: '今天有点累',
+        status: RecordStatus.confirmed,
+        validUntil: now.add(const Duration(hours: 2)),
+      );
+
+      final package = await builder.buildCurrentSuggestion(
+        database: database,
+        now: now,
+      );
+      final debugText = jsonEncode(package.toDebugJson());
+
+      expect(debugText, contains('memory_explanation_counts'));
+      expect(debugText, contains('tasks'));
+      expect(debugText, contains('short_term_states'));
+      expect(debugText, isNot(contains('联系王总')));
+      expect(debugText, isNot(contains('今天有点累')));
+      expect(debugText, isNot(contains('我的银行卡密码')));
+    },
+  );
+
   test('task update resolution includes confirmed tasks', () async {
     await _insertTask(
       database,
@@ -161,10 +278,7 @@ void main() {
       now: now,
     );
 
-    expect(package.candidates.map((c) => c.title), [
-      '联系王总',
-      '客户资料',
-    ]);
+    expect(package.candidates.map((c) => c.title), ['联系王总', '客户资料']);
   });
 
   test('task update resolution excludes deleted tasks', () async {
