@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
+import 'delete_confirmation.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({
@@ -28,8 +29,9 @@ class _TasksScreenState extends State<TasksScreen> {
   Future<_TaskViewData> _load() async {
     final tasks = await widget.database.getActiveTasks();
     final ids = tasks.map((t) => t.sourceExtractedItemId).toList();
-    final sourceTexts =
-        await widget.database.getSourceTextsByExtractedItemIds(ids);
+    final sourceTexts = await widget.database.getSourceTextsByExtractedItemIds(
+      ids,
+    );
     return _TaskViewData(tasks: tasks, sourceTexts: sourceTexts);
   }
 
@@ -90,6 +92,15 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Future<void> _delete(Task task) async {
+    final confirmed = await confirmDeleteMemoryRecord(
+      context: context,
+      title: '删除任务？',
+      content: '删除后，这条任务不会再参与首页建议。',
+    );
+    if (!confirmed) {
+      return;
+    }
+
     await widget.database.markTaskDeleted(
       id: task.id,
       updatedAt: widget.nowProvider(),
@@ -153,11 +164,9 @@ class _TaskCard extends StatelessWidget {
                 task.description!,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.color
-                      ?.withValues(alpha: 0.7),
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -165,7 +174,11 @@ class _TaskCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 14, color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     task.dueTimeText!,
@@ -184,11 +197,9 @@ class _TaskCard extends StatelessWidget {
                 '来源：$sourceText',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -196,15 +207,9 @@ class _TaskCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
-                  onPressed: onEdit,
-                  child: const Text('编辑'),
-                ),
+                TextButton(onPressed: onEdit, child: const Text('编辑')),
                 const SizedBox(width: 8),
-                TextButton(
-                  onPressed: onDelete,
-                  child: const Text('删除'),
-                ),
+                TextButton(onPressed: onDelete, child: const Text('删除')),
               ],
             ),
           ],
@@ -241,7 +246,11 @@ class _PriorityBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 12,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -283,10 +292,12 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.initialTitle);
-    _descController =
-        TextEditingController(text: widget.initialDescription ?? '');
-    _dueController =
-        TextEditingController(text: widget.initialDueTimeText ?? '');
+    _descController = TextEditingController(
+      text: widget.initialDescription ?? '',
+    );
+    _dueController = TextEditingController(
+      text: widget.initialDueTimeText ?? '',
+    );
   }
 
   @override
@@ -345,14 +356,12 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
             Navigator.of(context).pop(
               _TaskEditResult(
                 title: title,
-                description:
-                    _descController.text.trim().isEmpty
-                        ? null
-                        : _descController.text.trim(),
-                dueTimeText:
-                    _dueController.text.trim().isEmpty
-                        ? null
-                        : _dueController.text.trim(),
+                description: _descController.text.trim().isEmpty
+                    ? null
+                    : _descController.text.trim(),
+                dueTimeText: _dueController.text.trim().isEmpty
+                    ? null
+                    : _dueController.text.trim(),
               ),
             );
           },

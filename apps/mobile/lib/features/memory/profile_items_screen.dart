@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
+import 'delete_confirmation.dart';
 
 class ProfileItemsScreen extends StatefulWidget {
   const ProfileItemsScreen({
@@ -28,8 +29,9 @@ class _ProfileItemsScreenState extends State<ProfileItemsScreen> {
   Future<_ProfileItemViewData> _load() async {
     final items = await widget.database.getActiveProfileItems();
     final ids = items.map((p) => p.sourceExtractedItemId).toList();
-    final sourceTexts =
-        await widget.database.getSourceTextsByExtractedItemIds(ids);
+    final sourceTexts = await widget.database.getSourceTextsByExtractedItemIds(
+      ids,
+    );
     return _ProfileItemViewData(items: items, sourceTexts: sourceTexts);
   }
 
@@ -85,11 +87,9 @@ class _ProfileItemsScreenState extends State<ProfileItemsScreen> {
                 '来源：$sourceText',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -135,6 +135,15 @@ class _ProfileItemsScreenState extends State<ProfileItemsScreen> {
   }
 
   Future<void> _delete(ProfileItem item) async {
+    final confirmed = await confirmDeleteMemoryRecord(
+      context: context,
+      title: '删除长期画像？',
+      content: '删除后，这条长期画像不会再影响后续建议。',
+    );
+    if (!confirmed) {
+      return;
+    }
+
     await widget.database.markProfileItemDeleted(
       id: item.id,
       updatedAt: widget.nowProvider(),

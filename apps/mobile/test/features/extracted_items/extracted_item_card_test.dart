@@ -316,7 +316,7 @@ void main() {
     await tester.tap(find.text('整理'));
     await tester.pumpAndSettle();
 
-    expect(find.text('联系王总'), findsOneWidget);
+    expect(find.text('联系王总'), findsWidgets);
     await tester.drag(find.byType(ListView), const Offset(0, -700));
     await tester.pumpAndSettle();
     expect(find.text('确认后才会成为长期记忆'), findsOneWidget);
@@ -337,6 +337,97 @@ void main() {
     expect(tasks, hasLength(1));
     expect(find.text('已自动整理，可修改或撤销'), findsNWidgets(2));
   });
+
+  testWidgets(
+    'input screen keeps previous pending batch after another submit',
+    (tester) async {
+      final database = db.AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      addTearDown(database.close);
+
+      var rawInputCounter = 0;
+      var parseResultCounter = 0;
+      final controller = ExtractedItemsController(
+        database: database,
+        parserClient: _SequenceParserClient([
+          ParseResult(
+            userReply: '我先整理出一条任务。',
+            inputSummary: '用户提到联系王总。',
+            intentTypes: const [ItemType.taskCreate],
+            items: [
+              ParsedExtractedItem(
+                localId: 'parsed:0',
+                type: ItemType.taskCreate,
+                title: '联系王总',
+                sourceText: '联系王总',
+                tags: const ['work'],
+                confidence: 0.9,
+                needUserConfirm: true,
+                parsedAt: DateTime.utc(2026, 5, 31, 9),
+              ),
+            ],
+          ),
+          ParseResult(
+            userReply: '我又整理出一条任务。',
+            inputSummary: '用户提到整理合同。',
+            intentTypes: const [ItemType.taskCreate],
+            items: [
+              ParsedExtractedItem(
+                localId: 'parsed:0',
+                type: ItemType.taskCreate,
+                title: '整理合同',
+                sourceText: '整理合同',
+                tags: const ['work'],
+                confidence: 0.9,
+                needUserConfirm: true,
+                parsedAt: DateTime.utc(2026, 5, 31, 10),
+              ),
+            ],
+          ),
+        ]),
+        rawInputIdFactory: () => 'raw-${++rawInputCounter}',
+        parseResultIdFactory: () => 'parse-${++parseResultCounter}',
+        nowProvider: () => DateTime.utc(2026, 5, 31, 9 + rawInputCounter),
+      );
+
+      await tester.pumpWidget(_wrap(InputScreen(controller: controller)));
+
+      await tester.enterText(find.byType(TextField), '联系王总');
+      await tester.tap(find.text('整理'));
+      await tester.pumpAndSettle();
+      expect(find.text('联系王总'), findsWidgets);
+
+      await tester.enterText(find.byType(TextField), '整理合同');
+      await tester.tap(find.text('整理'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('整理合同'), findsWidgets);
+      expect(find.textContaining('整理于'), findsWidgets);
+
+      final pendingBatches = await controller.getRecentPendingBatches();
+      expect(pendingBatches, hasLength(2));
+      expect(
+        pendingBatches.expand((batch) => batch.items).map((item) => item.title),
+        containsAll(['联系王总', '整理合同']),
+      );
+
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+      expect(find.text('联系王总'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, '确认').last);
+      await tester.pumpAndSettle();
+
+      final rows = await database.select(database.extractedItems).get();
+      final statusByTitle = {for (final row in rows) row.title: row.status};
+      expect(statusByTitle['联系王总'], RecordStatus.confirmed.value);
+      expect(statusByTitle['整理合同'], RecordStatus.pending.value);
+    },
+  );
 
   testWidgets('pure general answer shows assistant reply without save cards', (
     tester,
@@ -659,6 +750,21 @@ class _StaticParserClient implements ParserClient {
   @override
   Future<ParseResult> parseInput(String text) async {
     return result;
+  }
+}
+
+class _SequenceParserClient implements ParserClient {
+  _SequenceParserClient(this.results);
+
+  final List<ParseResult> results;
+  var _index = 0;
+
+  @override
+  Future<ParseResult> parseInput(String text) async {
+    if (_index >= results.length) {
+      return results.last;
+    }
+    return results[_index++];
   }
 }
 

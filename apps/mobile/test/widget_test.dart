@@ -42,4 +42,88 @@ void main() {
     expect(find.byIcon(Icons.mic_none_rounded), findsOneWidget);
     expect(find.byIcon(Icons.add), findsNothing);
   });
+
+  testWidgets('debug date switcher changes date-sensitive home context', (
+    WidgetTester tester,
+  ) async {
+    final database = db.AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+
+    final now = DateTime.now();
+    await database
+        .into(database.rawInputs)
+        .insert(
+          db.RawInputsCompanion.insert(
+            id: 'raw-state',
+            inputText: '我今天有点累',
+            createdAt: now,
+          ),
+        );
+    await database
+        .into(database.aiParseResults)
+        .insert(
+          db.AiParseResultsCompanion.insert(
+            id: 'parse-state',
+            rawInputId: 'raw-state',
+            rawJson: '{}',
+            validationState: 'valid',
+            createdAt: now,
+          ),
+        );
+    await database
+        .into(database.extractedItems)
+        .insert(
+          db.ExtractedItemsCompanion.insert(
+            id: 'item-state',
+            rawInputId: 'raw-state',
+            aiParseResultId: 'parse-state',
+            type: 'short_term_state',
+            content: const Value('我今天有点累'),
+            sourceText: '我今天有点累',
+            confidence: 0.9,
+            needUserConfirm: false,
+            status: 'confirmed',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await database
+        .into(database.shortTermStates)
+        .insert(
+          db.ShortTermStatesCompanion.insert(
+            id: 'state-1',
+            sourceRawInputId: 'raw-state',
+            sourceExtractedItemId: 'item-state',
+            content: '我今天有点累',
+            validUntil: now.add(const Duration(hours: 12)),
+            status: 'confirmed',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          parserClientProvider.overrideWithValue(const MockParserClient()),
+        ],
+        child: const AppShell(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('测试日期'), findsOneWidget);
+    expect(find.text('状态 1 条 · 长期画像 0 条'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('后一天'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('状态 0 条 · 长期画像 0 条'), findsOneWidget);
+  });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
+import 'delete_confirmation.dart';
 
 class ShortTermStatesScreen extends StatefulWidget {
   const ShortTermStatesScreen({
@@ -30,8 +31,9 @@ class _ShortTermStatesScreenState extends State<ShortTermStatesScreen> {
       now: widget.nowProvider(),
     );
     final ids = states.map((s) => s.sourceExtractedItemId).toList();
-    final sourceTexts =
-        await widget.database.getSourceTextsByExtractedItemIds(ids);
+    final sourceTexts = await widget.database.getSourceTextsByExtractedItemIds(
+      ids,
+    );
     return _ShortTermStateViewData(states: states, sourceTexts: sourceTexts);
   }
 
@@ -92,11 +94,9 @@ class _ShortTermStatesScreenState extends State<ShortTermStatesScreen> {
               '有效期至：${_formatValidUntil(state.validUntil)}',
               style: TextStyle(
                 fontSize: 13,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withValues(alpha: 0.7),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
               ),
             ),
             if (sourceText != null && sourceText.isNotEmpty) ...[
@@ -105,11 +105,9 @@ class _ShortTermStatesScreenState extends State<ShortTermStatesScreen> {
                 '来源：$sourceText',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -130,6 +128,15 @@ class _ShortTermStatesScreenState extends State<ShortTermStatesScreen> {
   }
 
   Future<void> _delete(ShortTermState state) async {
+    final confirmed = await confirmDeleteMemoryRecord(
+      context: context,
+      title: '删除短期状态？',
+      content: '删除后，这条状态不会再影响当前建议。',
+    );
+    if (!confirmed) {
+      return;
+    }
+
     await widget.database.markShortTermStateDeleted(
       id: state.id,
       updatedAt: widget.nowProvider(),

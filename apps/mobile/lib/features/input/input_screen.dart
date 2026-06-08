@@ -34,13 +34,17 @@ class _InputScreenState extends State<InputScreen> {
   var _isLoading = false;
   String? _errorMessage;
   String? _assistantReply;
-  List<ExtractedItem> _items = const [];
+  List<ExtractedItem> _currentAutoSavedItems = const [];
+  List<PendingExtractedBatch> _pendingBatches = const [];
   var _isInputPressed = false;
 
   @override
   void initState() {
     super.initState();
     _inputFocusNode.addListener(_handleInputFocusChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshPendingBatches();
+    });
   }
 
   @override
@@ -61,73 +65,84 @@ class _InputScreenState extends State<InputScreen> {
           const SizedBox(height: 20),
         ],
         _TactileInputPanel(
-              controller: _textController,
-              focusNode: _inputFocusNode,
-              isLoading: _isLoading,
-              isPressed: _isInputPressed,
-              onSubmit: _submit,
-              onPressChanged: (isPressed) {
-                setState(() {
-                  _isInputPressed = isPressed;
-                });
-              },
+          controller: _textController,
+          focusNode: _inputFocusNode,
+          isLoading: _isLoading,
+          isPressed: _isInputPressed,
+          onSubmit: _submit,
+          onPressChanged: (isPressed) {
+            setState(() {
+              _isInputPressed = isPressed;
+            });
+          },
+        ),
+        if (_isLoading) ...[
+          const SizedBox(height: 12),
+          const LinearProgressIndicator(
+            minHeight: 3,
+            color: Color(0xFF53736A),
+            backgroundColor: Color(0xFFE7E0D6),
+          ),
+        ],
+        if (_errorMessage != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _errorMessage!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+        if (_assistantReply != null) ...[
+          const SizedBox(height: 20),
+          _AssistantReplyPanel(message: _assistantReply!),
+        ],
+        if (_currentAutoSavedItems.isNotEmpty ||
+            _pendingBatches.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(
+            '待确认内容',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: const Color(0xFF1D1D1F),
+              fontWeight: FontWeight.w800,
             ),
-            if (_isLoading) ...[
-              const SizedBox(height: 12),
-              const LinearProgressIndicator(
-                minHeight: 3,
-                color: Color(0xFF53736A),
-                backgroundColor: Color(0xFFE7E0D6),
+          ),
+          const SizedBox(height: 12),
+          for (final item in _currentAutoSavedItems)
+            ExtractedItemCard(
+              item: item,
+              onConfirm: () => _confirm(item),
+              onEdit: () => _edit(item),
+              onReject: () => _reject(item),
+            ),
+          for (final batch in _pendingBatches) ...[
+            _PendingBatchHeader(createdAt: batch.createdAt),
+            const SizedBox(height: 8),
+            for (final item in batch.items)
+              ExtractedItemCard(
+                item: item,
+                onConfirm: () => _confirm(item),
+                onEdit: () => _edit(item),
+                onReject: () => _reject(item),
               ),
-            ],
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _errorMessage!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            if (_assistantReply != null) ...[
-              const SizedBox(height: 20),
-              _AssistantReplyPanel(message: _assistantReply!),
-            ],
-            if (_items.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text(
-                '待确认内容',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: const Color(0xFF1D1D1F),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 12),
-              for (final item in _items)
-                ExtractedItemCard(
-                  item: item,
-                  onConfirm: () => _confirm(item),
-                  onEdit: () => _edit(item),
-                  onReject: () => _reject(item),
-                ),
-            ],
-            if (widget.afterInput != null) ...[
-              const SizedBox(height: 20),
-              widget.afterInput!,
-            ],
-            if (_items.isEmpty &&
-                !_isLoading &&
-                _assistantReply == null &&
-                _errorMessage == null) ...[
-              const SizedBox(height: 20),
-              const _PendingEmptyPanel(),
-            ],
+            const SizedBox(height: 10),
           ],
+        ],
+        if (widget.afterInput != null) ...[
+          const SizedBox(height: 20),
+          widget.afterInput!,
+        ],
+        if (_currentAutoSavedItems.isEmpty &&
+            _pendingBatches.isEmpty &&
+            !_isLoading &&
+            _assistantReply == null &&
+            _errorMessage == null) ...[
+          const SizedBox(height: 20),
+          const _PendingEmptyPanel(),
+        ],
+      ],
     );
 
     final scrollable = widget.onRefresh != null
-        ? RefreshIndicator(
-            onRefresh: widget.onRefresh!,
-            child: listView,
-          )
+        ? RefreshIndicator(onRefresh: widget.onRefresh!, child: listView)
         : listView;
 
     return SafeArea(
@@ -160,8 +175,12 @@ class _InputScreenState extends State<InputScreen> {
 
       setState(() {
         _assistantReply = result.parseResult.userReply;
-        _items = result.items;
+        _currentAutoSavedItems = [
+          for (final item in result.items)
+            if (item.status == RecordStatus.confirmed) item,
+        ];
       });
+      await _refreshPendingBatches();
     } on ParserFailure catch (error) {
       if (!mounted) {
         return;
@@ -169,7 +188,8 @@ class _InputScreenState extends State<InputScreen> {
 
       setState(() {
         _assistantReply = null;
-        _errorMessage = (error.code == 'empty_input' || error.code == 'input_too_long')
+        _errorMessage =
+            (error.code == 'empty_input' || error.code == 'input_too_long')
             ? error.userMessage
             : parserFailureDisplayMessage;
       });
@@ -193,7 +213,7 @@ class _InputScreenState extends State<InputScreen> {
     }
 
     await widget.controller.confirmExtractedItem(extractedItemId: item.localId);
-    _removeItem(item);
+    await _refreshPendingBatches();
     widget.onRecordsChanged?.call();
   }
 
@@ -205,7 +225,7 @@ class _InputScreenState extends State<InputScreen> {
     }
 
     if (firstResult.state == TaskUpdateExecutionState.applied) {
-      _removeItem(item);
+      await _refreshPendingBatches();
       widget.onRecordsChanged?.call();
       return;
     }
@@ -216,9 +236,8 @@ class _InputScreenState extends State<InputScreen> {
 
     final selectedTask = await showModalBottomSheet<TaskUpdateCandidate>(
       context: context,
-      builder: (context) => _TaskUpdateSelectionSheet(
-        candidates: firstResult.candidates,
-      ),
+      builder: (context) =>
+          _TaskUpdateSelectionSheet(candidates: firstResult.candidates),
     );
 
     if (selectedTask == null) {
@@ -235,7 +254,7 @@ class _InputScreenState extends State<InputScreen> {
     }
 
     if (finalResult.state == TaskUpdateExecutionState.applied) {
-      _removeItem(item);
+      await _refreshPendingBatches();
       widget.onRecordsChanged?.call();
     }
   }
@@ -264,7 +283,7 @@ class _InputScreenState extends State<InputScreen> {
         editedContent: editedItem.content,
       );
     }
-    _removeItem(item);
+    await _refreshPendingBatches();
     widget.onRecordsChanged?.call();
   }
 
@@ -273,26 +292,61 @@ class _InputScreenState extends State<InputScreen> {
       await widget.controller.undoAutoSavedExtractedItem(
         extractedItemId: item.localId,
       );
+      _removeCurrentAutoSavedItem(item);
     } else {
       await widget.controller.rejectExtractedItem(
         extractedItemId: item.localId,
       );
     }
-    _removeItem(item);
+    await _refreshPendingBatches();
     widget.onRecordsChanged?.call();
   }
 
-  void _removeItem(ExtractedItem item) {
+  Future<void> _refreshPendingBatches() async {
+    final batches = await widget.controller.getRecentPendingBatches();
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _items = [
-        for (final currentItem in _items)
+      _pendingBatches = batches;
+    });
+  }
+
+  void _removeCurrentAutoSavedItem(ExtractedItem item) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _currentAutoSavedItems = [
+        for (final currentItem in _currentAutoSavedItems)
           if (currentItem.localId != item.localId) currentItem,
       ];
     });
+  }
+}
+
+class _PendingBatchHeader extends StatelessWidget {
+  const _PendingBatchHeader({required this.createdAt});
+
+  final DateTime createdAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final local = createdAt.toLocal();
+    final label =
+        '${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')} '
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+
+    return Text(
+      '整理于 $label',
+      style: const TextStyle(
+        color: Color(0xFF8A8278),
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+      ),
+    );
   }
 }
 

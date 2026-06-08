@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,6 +32,44 @@ final parserClientProvider = Provider<ParserClient>((ref) {
   return HttpParserClient(baseUri: defaultParserBaseUri());
 });
 
+class DebugNowOverride extends Notifier<DateTime?> {
+  @override
+  DateTime? build() => null;
+
+  void setPreviousDay(DateTime current) {
+    state = DateTime(
+      current.year,
+      current.month,
+      current.day - 1,
+      current.hour,
+      current.minute,
+    );
+  }
+
+  void setNextDay(DateTime current) {
+    state = DateTime(
+      current.year,
+      current.month,
+      current.day + 1,
+      current.hour,
+      current.minute,
+    );
+  }
+
+  void clear() {
+    state = null;
+  }
+}
+
+final debugNowOverrideProvider = NotifierProvider<DebugNowOverride, DateTime?>(
+  DebugNowOverride.new,
+);
+
+final appNowProvider = Provider<DateTime Function()>((ref) {
+  final debugNow = ref.watch(debugNowOverrideProvider);
+  return () => debugNow ?? DateTime.now();
+});
+
 Uri defaultParserBaseUri({
   String parserBaseUrl = const String.fromEnvironment('PARSER_BASE_URL'),
   String apiBaseUrl = const String.fromEnvironment('API_BASE_URL'),
@@ -57,6 +96,7 @@ final extractedItemsControllerProvider = Provider<ExtractedItemsController>((
   return ExtractedItemsController(
     database: ref.watch(appDatabaseProvider),
     parserClient: ref.watch(parserClientProvider),
+    nowProvider: ref.watch(appNowProvider),
   );
 });
 
@@ -78,12 +118,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final database = ref.watch(appDatabaseProvider);
     final suggestionService = ref.watch(homeSuggestionServiceProvider);
+    final nowProvider = ref.watch(appNowProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EE),
       body: InputScreen(
         controller: ref.watch(extractedItemsControllerProvider),
-        header: const _HomeGreeting(),
+        header: const _HomeHeader(),
         onRefresh: () async {
           setState(() {
             _refreshVersion += 1;
@@ -93,7 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           key: ValueKey(_refreshVersion),
           future: suggestionService.loadContext(
             database: database,
-            now: DateTime.now(),
+            now: nowProvider(),
           ),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
@@ -107,6 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               suggestions: suggestions,
               contextData: contextData,
               database: database,
+              nowProvider: nowProvider,
             );
           },
         ),
@@ -116,6 +158,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           });
         },
       ),
+    );
+  }
+}
+
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [_HomeGreeting(), _DebugDateSwitcher()],
     );
   }
 }
@@ -170,16 +224,94 @@ class _HomeGreeting extends StatelessWidget {
   }
 }
 
+class _DebugDateSwitcher extends ConsumerWidget {
+  const _DebugDateSwitcher();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!kDebugMode) {
+      return const SizedBox.shrink();
+    }
+
+    final debugNow = ref.watch(debugNowOverrideProvider);
+    final activeDate = debugNow ?? DateTime.now();
+    final local = activeDate.toLocal();
+    final label =
+        '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: _SurfacePanel(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '测试日期',
+              style: TextStyle(
+                color: Color(0xFF1D1D1F),
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                IconButton(
+                  tooltip: '前一天',
+                  onPressed: () {
+                    ref
+                        .read(debugNowOverrideProvider.notifier)
+                        .setPreviousDay(local);
+                  },
+                  icon: const Icon(Icons.chevron_left_rounded),
+                ),
+                Expanded(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF3A3835),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: '后一天',
+                  onPressed: () {
+                    ref
+                        .read(debugNowOverrideProvider.notifier)
+                        .setNextDay(local);
+                  },
+                  icon: const Icon(Icons.chevron_right_rounded),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ref.read(debugNowOverrideProvider.notifier).clear();
+                  },
+                  child: const Text('真实日期'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _HomeFollowUp extends StatelessWidget {
   const _HomeFollowUp({
     required this.suggestions,
     required this.contextData,
     required this.database,
+    required this.nowProvider,
   });
 
   final List<HomeSuggestion> suggestions;
   final HomeSuggestionContext contextData;
   final AppDatabase database;
+  final DateTime Function() nowProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +362,7 @@ class _HomeFollowUp extends StatelessWidget {
           stateCount: contextData.shortTermStates.length,
           profileCount: contextData.profileItems.length,
           database: database,
+          nowProvider: nowProvider,
         ),
       ],
     );
@@ -313,11 +446,13 @@ class _MemoryEntryPanel extends StatelessWidget {
     required this.stateCount,
     required this.profileCount,
     required this.database,
+    required this.nowProvider,
   });
 
   final int stateCount;
   final int profileCount;
   final AppDatabase database;
+  final DateTime Function() nowProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -327,7 +462,8 @@ class _MemoryEntryPanel extends StatelessWidget {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (context) => MemoryScreen(database: database),
+              builder: (context) =>
+                  MemoryScreen(database: database, nowProvider: nowProvider),
             ),
           );
         },
@@ -373,10 +509,7 @@ class _MemoryEntryPanel extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFF8A8278),
-            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8A8278)),
           ],
         ),
       ),

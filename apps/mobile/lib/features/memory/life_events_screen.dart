@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
+import 'delete_confirmation.dart';
 
 class LifeEventsScreen extends StatefulWidget {
   const LifeEventsScreen({
@@ -28,8 +29,9 @@ class _LifeEventsScreenState extends State<LifeEventsScreen> {
   Future<_LifeEventViewData> _load() async {
     final events = await widget.database.getActiveLifeEvents();
     final ids = events.map((e) => e.sourceExtractedItemId).toList();
-    final sourceTexts =
-        await widget.database.getSourceTextsByExtractedItemIds(ids);
+    final sourceTexts = await widget.database.getSourceTextsByExtractedItemIds(
+      ids,
+    );
     return _LifeEventViewData(events: events, sourceTexts: sourceTexts);
   }
 
@@ -86,11 +88,9 @@ class _LifeEventsScreenState extends State<LifeEventsScreen> {
                 '来源：$sourceText',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -111,6 +111,15 @@ class _LifeEventsScreenState extends State<LifeEventsScreen> {
   }
 
   Future<void> _delete(LifeEvent event) async {
+    final confirmed = await confirmDeleteMemoryRecord(
+      context: context,
+      title: '删除生活事件？',
+      content: '删除后，这条生活事件不会再出现在记忆管理中。',
+    );
+    if (!confirmed) {
+      return;
+    }
+
     await widget.database.markLifeEventDeleted(
       id: event.id,
       updatedAt: widget.nowProvider(),

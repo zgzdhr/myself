@@ -25,6 +25,18 @@ class SubmitInputResult {
   final List<ExtractedItem> items;
 }
 
+class PendingExtractedBatch {
+  const PendingExtractedBatch({
+    required this.rawInputId,
+    required this.createdAt,
+    required this.items,
+  });
+
+  final String rawInputId;
+  final DateTime createdAt;
+  final List<ExtractedItem> items;
+}
+
 enum TaskUpdateExecutionState { applied, needsSelection, noMatch }
 
 class TaskUpdateExecutionResult {
@@ -62,6 +74,52 @@ class ExtractedItemsController {
 
   static const autoSaveHint = '已自动整理，可修改或撤销';
   static const maxInputLength = 2000;
+
+  Future<List<PendingExtractedBatch>> getRecentPendingBatches({
+    int batchLimit = 3,
+  }) async {
+    final pendingRows =
+        await (database.select(database.extractedItems)
+              ..where((item) => item.status.equals(RecordStatus.pending.value))
+              ..orderBy([
+                (item) => OrderingTerm(
+                  expression: item.createdAt,
+                  mode: OrderingMode.desc,
+                ),
+              ]))
+            .get();
+
+    final rawInputIds = <String>[];
+    for (final row in pendingRows) {
+      if (!rawInputIds.contains(row.rawInputId)) {
+        rawInputIds.add(row.rawInputId);
+      }
+      if (rawInputIds.length == batchLimit) {
+        break;
+      }
+    }
+
+    final batches = <PendingExtractedBatch>[];
+    for (final rawInputId in rawInputIds) {
+      final rawInput = await (database.select(
+        database.rawInputs,
+      )..where((row) => row.id.equals(rawInputId))).getSingle();
+      final rows = [
+        for (final row in pendingRows)
+          if (row.rawInputId == rawInputId) row,
+      ]..sort((left, right) => left.createdAt.compareTo(right.createdAt));
+
+      batches.add(
+        PendingExtractedBatch(
+          rawInputId: rawInputId,
+          createdAt: rawInput.createdAt,
+          items: [for (final row in rows) await _toDomainExtractedItem(row)],
+        ),
+      );
+    }
+
+    return batches;
+  }
 
   Future<SubmitInputResult> submitInput(String text) async {
     final trimmedText = text.trim();
@@ -589,6 +647,85 @@ class ExtractedItemsController {
     return (database.select(
       database.extractedItems,
     )..where((item) => item.id.equals(id))).getSingle();
+  }
+
+  Future<ExtractedItem> _toDomainExtractedItem(db.ExtractedItem row) async {
+    final type = ItemTypeApiValue.fromApiValue(row.type);
+    final taskUpdateIntent = type == ItemType.taskUpdate
+        ? await _readPersistedTaskUpdateIntent(row)
+        : null;
+
+    return ExtractedItem(
+      localId: row.id,
+      rawInputId: row.rawInputId,
+      type: type,
+      title: row.title,
+      content: row.content,
+      sourceText: row.sourceText,
+      tags: _decodeTags(row.tagsJson),
+      confidence: row.confidence,
+      needUserConfirm: row.needUserConfirm,
+      status: RecordStatusValue.fromValue(row.status),
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      expiresAt: row.expiresAt,
+      taskUpdateIntent: taskUpdateIntent,
+    );
+  }
+
+  Future<TaskUpdateIntent?> _readPersistedTaskUpdateIntent(
+    db.ExtractedItem row,
+  ) async {
+    final parseResult =
+        await (database.select(database.aiParseResults)
+              ..where((parse) => parse.id.equals(row.aiParseResultId)))
+            .getSingleOrNull();
+    if (parseResult == null || parseResult.rawJson.isEmpty) {
+      return null;
+    }
+
+    final itemIndex = int.tryParse(row.id.split(':').last);
+    if (itemIndex == null) {
+      return null;
+    }
+
+    try {
+      final json = jsonDecode(parseResult.rawJson) as Map<String, Object?>;
+      final items = json['items'] as List<Object?>? ?? const [];
+      if (itemIndex >= items.length) {
+        return null;
+      }
+      final itemJson = items[itemIndex] as Map<String, Object?>;
+      final intent = _readTaskUpdateIntentFromJson(itemJson);
+      return intent == null ? null : _resolveTaskUpdateIntent(intent);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<String> _decodeTags(String tagsJson) {
+    try {
+      final decoded = jsonDecode(tagsJson) as List<Object?>;
+      return decoded.whereType<String>().toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  TaskUpdateIntent? _readTaskUpdateIntentFromJson(Map<String, Object?> json) {
+    final actionValue = json['update_action'] as String?;
+    if (actionValue == null) {
+      return null;
+    }
+
+    final dueTimeIso = json['due_time_iso'] as String?;
+    return TaskUpdateIntent(
+      action: TaskUpdateAction.fromApiValue(actionValue),
+      targetTaskTitle: json['target_task_title'] as String?,
+      targetText: json['target_text'] as String?,
+      dueTimeText: json['due_time_text'] as String?,
+      dueTime: dueTimeIso == null ? null : DateTime.parse(dueTimeIso),
+    );
   }
 
   bool _hasEdits({
