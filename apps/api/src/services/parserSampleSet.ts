@@ -85,6 +85,18 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     expectedTypes: ["task_update"],
   },
   {
+    id: "task_update_cancel_concrete_target_with_generic_suffix",
+    label: "任务更新：泛指后缀中的明确目标",
+    text: "参加高考那个事取消了。",
+    expectedTypes: ["task_update"],
+  },
+  {
+    id: "task_update_cancel_with_state",
+    label: "任务更新：取消意图加短期状态",
+    text: "今天好累，健身不想去了。",
+    expectedTypes: ["task_update", "short_term_state"],
+  },
+  {
     id: "task_update_delay",
     label: "任务更新：延期",
     text: "把整理客户资料这件事往后推三天。",

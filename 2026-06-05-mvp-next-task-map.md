@@ -275,6 +275,17 @@ f62bba1 feat: complete phase 4B time fixes
 
 ## 3. Phase 4C：task_update 真实语义增强，当前下一步
 
+执行状态（2026-06-08）：
+
+- 已补 parser prompt 和 sample set：要求取消类表达识别为 `task_update`，并优先抽取同一句里的实义目标，例如 `参加高考`、`下午开会`、`健身`。
+- 已补 App 端兜底匹配：即使 AI 返回 `那个事`，也会结合 `source_text` 清洗噪声词，再匹配现有 active task。
+- 已覆盖真实失败样例：
+  - `参加高考那个事取消了` -> 匹配 `参加高考`。
+  - `下午开会的事情取消了` -> 匹配 `今天下午开会`。
+  - `今天好累，健身不想去了` -> 可匹配 `今天下午去健身`；长期目标冲突分析仍后置。
+- 已验证：移动端确认流测试、移动端全量测试、API prompt/sample 定向测试和 API typecheck 通过。
+- 未完成：完成 / 取消任务的业务状态可见化仍使用当前 MVP 临时策略，后续应引入 `task_status: active / completed / cancelled`，不要长期混用 `record_status`。
+
 ### 4C-U1：取消类表达增强
 
 真实问题：

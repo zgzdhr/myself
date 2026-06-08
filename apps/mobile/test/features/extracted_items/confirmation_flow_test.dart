@@ -724,6 +724,120 @@ void main() {
     expect(existingTask.status, RecordStatus.confirmed.value);
   });
 
+  test(
+    'task update cleans generic suffix and matches concrete source target',
+    () async {
+      await _insertConfirmedTask(
+        database,
+        id: 'task-gaokao',
+        title: '参加高考',
+        dueTime: DateTime.utc(2026, 6, 1, 9),
+      );
+      final taskUpdateController = _buildTaskUpdateController(
+        database,
+        parsedItem: ParsedExtractedItem(
+          localId: 'parsed:0',
+          type: ItemType.taskUpdate,
+          title: '那个事',
+          sourceText: '参加高考那个事取消了',
+          tags: const ['task'],
+          confidence: 0.82,
+          needUserConfirm: true,
+          parsedAt: DateTime.utc(2026, 5, 31),
+          taskUpdateIntent: TaskUpdateIntent(
+            action: TaskUpdateAction.cancel,
+            targetText: '那个事',
+          ),
+        ),
+      );
+
+      final result = await taskUpdateController.submitInput('参加高考那个事取消了');
+      final updateResult = await taskUpdateController.applyTaskUpdate(
+        item: result.items.single,
+      );
+      final cancelledTask = await _getTask(database, 'task-gaokao');
+
+      expect(updateResult.state, TaskUpdateExecutionState.applied);
+      expect(cancelledTask.status, RecordStatus.deleted.value);
+    },
+  );
+
+  test(
+    'task update matches meeting target after 的事情 cancellation noise',
+    () async {
+      await _insertConfirmedTask(
+        database,
+        id: 'task-meeting',
+        title: '今天下午开会',
+        dueTime: DateTime.utc(2026, 5, 31, 14),
+      );
+      final taskUpdateController = _buildTaskUpdateController(
+        database,
+        parsedItem: ParsedExtractedItem(
+          localId: 'parsed:0',
+          type: ItemType.taskUpdate,
+          title: '下午开会',
+          sourceText: '下午开会的事情取消了',
+          tags: const ['task'],
+          confidence: 0.9,
+          needUserConfirm: true,
+          parsedAt: DateTime.utc(2026, 5, 31),
+          taskUpdateIntent: TaskUpdateIntent(
+            action: TaskUpdateAction.cancel,
+            targetText: '下午开会的事情',
+          ),
+        ),
+      );
+
+      final result = await taskUpdateController.submitInput('下午开会的事情取消了');
+      final updateResult = await taskUpdateController.applyTaskUpdate(
+        item: result.items.single,
+      );
+      final cancelledTask = await _getTask(database, 'task-meeting');
+
+      expect(updateResult.state, TaskUpdateExecutionState.applied);
+      expect(cancelledTask.status, RecordStatus.deleted.value);
+    },
+  );
+
+  test(
+    'task update plus energy state can match fitness cancellation target',
+    () async {
+      await _insertConfirmedTask(
+        database,
+        id: 'task-fitness',
+        title: '今天下午去健身',
+        dueTime: DateTime.utc(2026, 5, 31, 14),
+      );
+      final taskUpdateController = _buildTaskUpdateController(
+        database,
+        parsedItem: ParsedExtractedItem(
+          localId: 'parsed:0',
+          type: ItemType.taskUpdate,
+          title: '健身',
+          sourceText: '今天好累，健身不想去了',
+          tags: const ['task'],
+          confidence: 0.78,
+          needUserConfirm: true,
+          parsedAt: DateTime.utc(2026, 5, 31),
+          taskUpdateIntent: TaskUpdateIntent(
+            action: TaskUpdateAction.cancel,
+            targetText: '健身',
+          ),
+        ),
+      );
+
+      final result = await taskUpdateController.submitInput('今天好累，健身不想去了');
+      final updateResult = await taskUpdateController.applyTaskUpdate(
+        item: result.items.single,
+      );
+      final cancelledTask = await _getTask(database, 'task-fitness');
+
+      expect(updateResult.state, TaskUpdateExecutionState.applied);
+      expect(cancelledTask.status, RecordStatus.deleted.value);
+    },
+  );
+
   // ── B5/B6: edit / reject / parser error regression ──
 
   test('edits a matched task title after confirmation', () async {

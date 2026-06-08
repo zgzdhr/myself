@@ -68,6 +68,17 @@ test("parser prompt prevents vague task updates and vague delay times from being
   assert.match(prompt, /do not fill due_time_iso/i);
 });
 
+test("parser prompt preserves concrete task_update targets around generic suffixes", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /参加高考那个事取消了/);
+  assert.match(prompt, /target\s+"参加高考"/i);
+  assert.match(prompt, /下午开会的事情取消了/);
+  assert.match(prompt, /target\s+"下午开会"/i);
+  assert.match(prompt, /健身不想去了/);
+  assert.match(prompt, /short_term_state/);
+});
+
 test("parser prompt contains D0 semantic classification principles instead of keyword-only rules", () => {
   const prompt = buildParserSystemPrompt();
 

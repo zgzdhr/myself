@@ -65,6 +65,17 @@ Rules:
 - For general_answer, set need_user_confirm to false unless the user also states a saveable task, state, event, or profile candidate.
 - For task_update, include update_action and either target_task_title or
   target_text. Use update_action from: complete, cancel, delay, edit.
+- For task_update cancellation, recognize natural Chinese cancellation or
+  resistance phrases such as "取消了", "不用去了", "不去了", "不想去了",
+  "不想做了", "先不做了", "不用开了", "不开了", "改天再说", and "算了".
+- For task_update target extraction, prefer the concrete semantic target from
+  the same sentence. For example, "参加高考那个事取消了" should target
+  "参加高考", and "下午开会的事情取消了" should target "下午开会". Do not use only
+  generic words like "那个事", "这个事", "这件事", or "的事情" when the sentence
+  contains a concrete task target.
+- If the user says "今天好累，健身不想去了", output task_update cancel for
+  "健身" and short_term_state for the current energy state. The app will ask
+  for confirmation before applying the task update.
 - For task_update delay items, include due_time_text and due_time_iso when you
   can infer a concrete target time reliably.
 - For vague references such as "那个事", "这个任务", or "刚才那个", do not invent a target task. Keep the phrase in target_text, lower confidence, and let the app resolve or ask the user to choose.
