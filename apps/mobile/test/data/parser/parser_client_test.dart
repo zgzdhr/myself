@@ -40,16 +40,19 @@ void main() {
       expect(container.read(parserClientProvider), isA<HttpParserClient>());
     });
 
-    test('default parser base uri accepts API_BASE_URL alias for smoke runs', () {
-      expect(
-        defaultParserBaseUri(
-          parserBaseUrl: '',
-          apiBaseUrl: 'http://127.0.0.1:8787',
-          isAndroid: false,
-        ),
-        Uri.parse('http://127.0.0.1:8787'),
-      );
-    });
+    test(
+      'default parser base uri accepts API_BASE_URL alias for smoke runs',
+      () {
+        expect(
+          defaultParserBaseUri(
+            parserBaseUrl: '',
+            apiBaseUrl: 'http://127.0.0.1:8787',
+            isAndroid: false,
+          ),
+          Uri.parse('http://127.0.0.1:8787'),
+        );
+      },
+    );
 
     test(
       'calls the API proxy parse route and maps JSON into ParseResult',
@@ -59,7 +62,7 @@ void main() {
         final client = HttpParserClient(
           baseUri: Uri.parse('http://localhost:8787'),
           timezone: 'Asia/Shanghai',
-          parsedAtProvider: () => DateTime.utc(2026, 5, 31),
+          parsedAtProvider: () => DateTime.utc(2026, 5, 31, 10, 15),
           postJson: (uri, headers, body) async {
             requestedUri = uri;
             requestBody = jsonDecode(body) as Map<String, Object?>;
@@ -88,11 +91,60 @@ void main() {
         final result = await client.parseInput('明天联系王总');
 
         expect(requestedUri, Uri.parse('http://localhost:8787/parse'));
-        expect(requestBody, {'text': '明天联系王总', 'timezone': 'Asia/Shanghai'});
+        expect(requestBody, {
+          'text': '明天联系王总',
+          'timezone': 'Asia/Shanghai',
+          'current_time_iso': '2026-05-31T10:15:00.000Z',
+        });
         expect(result.items.single.type, ItemType.taskCreate);
         expect(result.items.single.localId, 'parsed:0');
       },
     );
+
+    test('includes optional location context only when provided', () async {
+      Map<String, Object?>? requestBody;
+      final client = HttpParserClient(
+        baseUri: Uri.parse('http://localhost:8787'),
+        timezone: 'Asia/Shanghai',
+        parsedAtProvider: () => DateTime.utc(2026, 6, 8, 9),
+        locationContextProvider: () => const ParserLocationContext(
+          label: '上海市徐汇区',
+          latitude: 31.188,
+          longitude: 121.436,
+          accuracyMeters: 50,
+        ),
+        postJson: (uri, headers, body) async {
+          requestBody = jsonDecode(body) as Map<String, Object?>;
+          return ParserHttpResponse(
+            statusCode: 200,
+            body: jsonEncode({
+              'user_reply': '我帮你整理出了一个任务。',
+              'input_summary': '附近买咖啡。',
+              'intent_types': ['task_create'],
+              'items': [
+                {
+                  'type': 'task_create',
+                  'title': '买咖啡',
+                  'source_text': '附近买咖啡',
+                  'tags': ['life'],
+                  'confidence': 0.8,
+                  'need_user_confirm': true,
+                },
+              ],
+            }),
+          );
+        },
+      );
+
+      await client.parseInput('附近买咖啡');
+
+      expect(requestBody?['location_context'], {
+        'label': '上海市徐汇区',
+        'latitude': 31.188,
+        'longitude': 121.436,
+        'accuracy_meters': 50.0,
+      });
+    });
 
     test(
       'returns a user-friendly failure when the network request fails',

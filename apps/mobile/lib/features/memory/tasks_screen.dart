@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
 import 'delete_confirmation.dart';
+import 'task_time_formatter.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({
@@ -76,6 +77,8 @@ class _TasksScreenState extends State<TasksScreen> {
         initialTitle: task.title,
         initialDescription: task.description,
         initialDueTimeText: task.dueTimeText,
+        initialDueTime: task.dueTime,
+        now: widget.nowProvider(),
       ),
     );
 
@@ -86,6 +89,7 @@ class _TasksScreenState extends State<TasksScreen> {
       title: result.title,
       description: result.description,
       dueTimeText: result.dueTimeText,
+      dueTime: result.dueTime,
       updatedAt: widget.nowProvider(),
     );
     _refresh();
@@ -170,27 +174,30 @@ class _TaskCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (task.dueTimeText != null && task.dueTimeText!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    task.dueTimeText!,
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    formatTaskDueText(
+                      dueTime: task.dueTime,
+                      dueTimeText: task.dueTimeText,
+                    ),
                     style: TextStyle(
                       fontSize: 13,
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
             if (sourceText != null && sourceText!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
@@ -261,23 +268,29 @@ class _TaskEditResult {
     required this.title,
     this.description,
     this.dueTimeText,
+    this.dueTime,
   });
 
   final String title;
   final String? description;
   final String? dueTimeText;
+  final DateTime? dueTime;
 }
 
 class _EditTaskDialog extends StatefulWidget {
   const _EditTaskDialog({
     required this.initialTitle,
+    required this.now,
     this.initialDescription,
     this.initialDueTimeText,
+    this.initialDueTime,
   });
 
   final String initialTitle;
+  final DateTime now;
   final String? initialDescription;
   final String? initialDueTimeText;
+  final DateTime? initialDueTime;
 
   @override
   State<_EditTaskDialog> createState() => _EditTaskDialogState();
@@ -286,7 +299,8 @@ class _EditTaskDialog extends StatefulWidget {
 class _EditTaskDialogState extends State<_EditTaskDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descController;
-  late final TextEditingController _dueController;
+  DateTime? _selectedDueTime;
+  String? _dueTimeText;
 
   @override
   void initState() {
@@ -295,17 +309,63 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
     _descController = TextEditingController(
       text: widget.initialDescription ?? '',
     );
-    _dueController = TextEditingController(
-      text: widget.initialDueTimeText ?? '',
-    );
+    _selectedDueTime = widget.initialDueTime;
+    _dueTimeText = widget.initialDueTimeText;
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
-    _dueController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final current = _selectedDueTime ?? widget.now;
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime(current.year, current.month, current.day),
+      firstDate: DateTime(widget.now.year - 1),
+      lastDate: DateTime(widget.now.year + 5),
+    );
+    if (pickedDate == null) return;
+
+    final time = TimeOfDay.fromDateTime(_selectedDueTime ?? widget.now);
+    setState(() {
+      _selectedDueTime = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
+  Future<void> _pickTime() async {
+    final current = _selectedDueTime ?? widget.now;
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(current),
+    );
+    if (pickedTime == null) return;
+
+    setState(() {
+      _selectedDueTime = DateTime(
+        current.year,
+        current.month,
+        current.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
+    });
+  }
+
+  void _clearDueTime() {
+    setState(() {
+      _selectedDueTime = null;
+      _dueTimeText = null;
+    });
   }
 
   @override
@@ -334,12 +394,49 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: _dueController,
-              decoration: const InputDecoration(
-                labelText: '截止时间（如：明天上午）',
-                border: OutlineInputBorder(),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '截止时间',
+                style: Theme.of(context).textTheme.labelLarge,
               ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).dividerColor),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                formatTaskDueText(
+                  dueTime: _selectedDueTime,
+                  dueTimeText: _dueTimeText,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _pickDate,
+                  icon: const Icon(Icons.calendar_today),
+                  label: const Text('选择日期'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _pickTime,
+                  icon: const Icon(Icons.schedule),
+                  label: const Text('选择时间'),
+                ),
+                TextButton.icon(
+                  onPressed: _clearDueTime,
+                  icon: const Icon(Icons.clear),
+                  label: const Text('清除时间'),
+                ),
+              ],
             ),
           ],
         ),
@@ -359,9 +456,8 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
                 description: _descController.text.trim().isEmpty
                     ? null
                     : _descController.text.trim(),
-                dueTimeText: _dueController.text.trim().isEmpty
-                    ? null
-                    : _dueController.text.trim(),
+                dueTimeText: _dueTimeText,
+                dueTime: _selectedDueTime,
               ),
             );
           },

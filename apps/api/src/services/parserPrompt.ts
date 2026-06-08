@@ -31,6 +31,12 @@ Rules:
 - Include source_text for every item by copying the smallest useful phrase from the user input. Do not paraphrase source_text.
 - Preserve vague time text in due_time_text when an exact date/time is uncertain. Do not invent ISO dates.
 - If a time phrase is vague, relative, or underspecified, keep the original phrase in due_time_text and leave due_time_iso out.
+- Resolve relative dates against Current local time from the user prompt. "今天" means the calendar date of Current local time in the given timezone. "明天" means the next local calendar date.
+- For same-day time words such as "今晚", "今晚上", "晚上", "上午", "中午", "下午", and "傍晚", use today's local calendar date unless another explicit date is present.
+- Only fill due_time_iso when the date and time are reliable. For ambiguous phrases such as "明天七点" without morning/evening context, keep due_time_text and leave due_time_iso out.
+- Location context is optional and user-permission based. Use it only to resolve location-relative language such as "附近", "到家后", "在公司", or travel context.
+- If Location context is "not provided", do not guess the user's location.
+- Do not save location context as memory unless the user explicitly states the location in their own input.
 - Do not classify by keywords alone. Classify by how the sentence should be used in the future.
 - A future arrangement, agreed plan, appointment, preparation step, or reminder is task_create when the user needs to participate or act.
 - Social or entertainment arrangements must be task_create when they are future-facing, even if they mention friends, family, games, bars, meals, or other leisure activities. Do not classify a future plan as life_event just because it is social, emotional, or casual.
@@ -91,8 +97,14 @@ Output shape example:
 }
 
 export function buildParserUserPrompt(request: ParseRequest): string {
+  const locationContext = request.location_context
+    ? JSON.stringify(request.location_context)
+    : "not provided";
+
   return `
 Timezone: ${request.timezone}
+Current local time: ${request.current_time_iso}
+Location context: ${locationContext}
 
 User input:
 ${request.text}

@@ -117,6 +117,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('联系王总'), findsOneWidget);
+      expect(find.text('6月1日 10:00｜原文：明天'), findsOneWidget);
       expect(find.textContaining('明天联系王总'), findsOneWidget);
     });
 
@@ -160,6 +161,10 @@ void main() {
       await tester.tap(find.text('编辑'));
       await tester.pumpAndSettle();
 
+      expect(find.text('选择日期'), findsOneWidget);
+      expect(find.text('选择时间'), findsOneWidget);
+      expect(find.text('清除时间'), findsOneWidget);
+
       final titleField = find.byType(TextField).first;
       await tester.enterText(titleField, '联系李总');
       await tester.tap(find.text('保存'));
@@ -167,6 +172,25 @@ void main() {
 
       final task = await database.select(database.tasks).getSingle();
       expect(task.title, '联系李总');
+      expect(task.dueTimeText, '明天');
+      expect(task.dueTime, isNot(isNull));
+    });
+
+    testWidgets('edit task can clear due time', (tester) async {
+      await tester.pumpWidget(
+        _wrap(TasksScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('编辑'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('清除时间'));
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+
+      final task = await database.select(database.tasks).getSingle();
+      expect(task.dueTimeText, isNull);
+      expect(task.dueTime, isNull);
     });
 
     testWidgets('empty state shows no tasks message', (tester) async {
@@ -458,6 +482,8 @@ Future<void> _insertTask(AppDatabase database, {required DateTime now}) {
           sourceRawInputId: 'raw-1',
           sourceExtractedItemId: 'item-1',
           title: '联系王总',
+          dueTimeText: const Value('明天'),
+          dueTime: Value(DateTime(2026, 6, 1, 10)),
           status: RecordStatus.confirmed.value,
           createdAt: now,
           updatedAt: now,

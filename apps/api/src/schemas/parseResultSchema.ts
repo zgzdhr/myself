@@ -9,9 +9,34 @@ export const itemTypes = [
   "profile_candidate",
 ] as const;
 
+const parseContextIsoDateTimeSchema = z.string().refine(
+  (value) => !Number.isNaN(Date.parse(value)),
+  "Expected an ISO-like date time string that JavaScript Date can parse",
+);
+
+export const parseLocationContextSchema = z
+  .object({
+    label: z.string().trim().min(1).optional(),
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
+    accuracy_meters: z.number().positive().optional(),
+  })
+  .strict()
+  .refine(
+    (location) =>
+      location.label != null ||
+      (location.latitude != null && location.longitude != null),
+    {
+      message:
+        "location_context must include label or both latitude and longitude",
+    },
+  );
+
 export const parseRequestSchema = z.object({
   text: z.string().trim().min(1).max(2000),
   timezone: z.string().trim().min(1),
+  current_time_iso: parseContextIsoDateTimeSchema,
+  location_context: parseLocationContextSchema.optional(),
 });
 
 export const parseResultItemSchema = z

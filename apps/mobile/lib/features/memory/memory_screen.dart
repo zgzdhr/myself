@@ -6,6 +6,7 @@ import 'life_events_screen.dart';
 import 'privacy_screen.dart';
 import 'profile_items_screen.dart';
 import 'short_term_states_screen.dart';
+import 'task_time_formatter.dart';
 import 'tasks_screen.dart';
 
 class MemoryScreen extends StatefulWidget {
@@ -38,8 +39,9 @@ class _MemoryScreenState extends State<MemoryScreen> {
     final states = await db.getActiveShortTermStates(now: now);
     final events = await db.getActiveLifeEvents();
     final profiles = await db.getActiveProfileItems();
-    final pendingTaskCount =
-        await db.countPendingExtractedItemsByType(ItemType.taskCreate.apiValue);
+    final pendingTaskCount = await db.countPendingExtractedItemsByType(
+      ItemType.taskCreate.apiValue,
+    );
     final pendingProfileCount = await db.countPendingExtractedItemsByType(
       ItemType.profileCandidate.apiValue,
     );
@@ -49,10 +51,18 @@ class _MemoryScreenState extends State<MemoryScreen> {
       shortTermStates: states,
       lifeEvents: events,
       profileItems: profiles,
-      taskUpdatedAt: tasks.isNotEmpty ? _latest(tasks.map((t) => t.updatedAt)) : null,
-      stateUpdatedAt: states.isNotEmpty ? _latest(states.map((s) => s.updatedAt)) : null,
-      eventUpdatedAt: events.isNotEmpty ? _latest(events.map((e) => e.updatedAt)) : null,
-      profileUpdatedAt: profiles.isNotEmpty ? _latest(profiles.map((p) => p.updatedAt)) : null,
+      taskUpdatedAt: tasks.isNotEmpty
+          ? _latest(tasks.map((t) => t.updatedAt))
+          : null,
+      stateUpdatedAt: states.isNotEmpty
+          ? _latest(states.map((s) => s.updatedAt))
+          : null,
+      eventUpdatedAt: events.isNotEmpty
+          ? _latest(events.map((e) => e.updatedAt))
+          : null,
+      profileUpdatedAt: profiles.isNotEmpty
+          ? _latest(profiles.map((p) => p.updatedAt))
+          : null,
       pendingTaskCount: pendingTaskCount,
       pendingProfileCount: pendingProfileCount,
     );
@@ -110,9 +120,12 @@ class _MemoryScreenState extends State<MemoryScreen> {
                     ListTile(
                       dense: true,
                       title: Text(task.title),
-                      subtitle: task.dueTimeText != null
-                          ? Text(task.dueTimeText!)
-                          : null,
+                      subtitle: Text(
+                        formatTaskDueText(
+                          dueTime: task.dueTime,
+                          dueTimeText: task.dueTimeText,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -174,9 +187,9 @@ class _MemoryScreenState extends State<MemoryScreen> {
   }
 
   void _navigate(Widget screen) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (context) => screen),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (context) => screen));
     _refresh();
   }
 
@@ -257,9 +270,7 @@ class _Section extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -326,10 +337,7 @@ class _Section extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '最近更新：${_formatDate(updatedAt!)}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF8A8278),
-                ),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF8A8278)),
               ),
             ],
             const SizedBox(height: 8),

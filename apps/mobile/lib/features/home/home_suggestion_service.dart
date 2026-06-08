@@ -1,5 +1,6 @@
 import '../../data/local_db/app_database.dart';
 import '../context/context_builder.dart';
+import '../memory/task_time_formatter.dart';
 
 class HomeSuggestion {
   const HomeSuggestion({required this.text, required this.reason});
@@ -12,12 +13,14 @@ class HomeSuggestionContext {
   const HomeSuggestionContext({
     required this.now,
     required this.tasks,
+    this.todayTasks = const [],
     required this.shortTermStates,
     required this.profileItems,
   });
 
   final DateTime now;
   final List<HomeTask> tasks;
+  final List<HomeTask> todayTasks;
   final List<HomeShortTermState> shortTermStates;
   final List<HomeProfileItem> profileItems;
 }
@@ -27,13 +30,19 @@ class HomeTask {
     required this.id,
     required this.title,
     required this.priority,
+    this.dueTimeText,
     this.dueTime,
   });
 
   final String id;
   final String title;
   final String priority;
+  final String? dueTimeText;
   final DateTime? dueTime;
+
+  String get displayText {
+    return '$title｜${formatTaskDueText(dueTime: dueTime, dueTimeText: dueTimeText)}';
+  }
 }
 
 class HomeShortTermState {
@@ -77,6 +86,17 @@ class HomeSuggestionService {
             id: task.id,
             title: task.title,
             priority: task.priority,
+            dueTimeText: task.dueTimeText,
+            dueTime: task.dueTime,
+          ),
+      ],
+      todayTasks: [
+        for (final task in package.todayTasks)
+          HomeTask(
+            id: task.id,
+            title: task.title,
+            priority: task.priority,
+            dueTimeText: task.dueTimeText,
             dueTime: task.dueTime,
           ),
       ],

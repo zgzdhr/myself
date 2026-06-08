@@ -154,6 +154,62 @@ void main() {
     },
   );
 
+  test('infers same-day implicit time words for task auto-save', () async {
+    final eveningController = _buildTaskCreateController(
+      database,
+      rawInputId: 'raw-evening',
+      title: '和同学吃烤鱼',
+      sourceText: '今晚上要和同学吃烤鱼',
+      now: DateTime.utc(2026, 5, 31, 10),
+    );
+
+    await eveningController.submitInput('今晚上要和同学吃烤鱼');
+
+    final task = await database.select(database.tasks).getSingle();
+    expect(task.title, '和同学吃烤鱼');
+    expect(task.dueTimeText, '今晚');
+    expect(task.dueTime!.year, 2026);
+    expect(task.dueTime!.month, 5);
+    expect(task.dueTime!.day, 31);
+    expect(task.dueTime!.hour, 19);
+  });
+
+  test('does not convert explicit future date time words to today', () async {
+    final fridayController = _buildTaskCreateController(
+      database,
+      rawInputId: 'raw-friday',
+      title: '和同学吃烤鱼',
+      sourceText: '周五下午和同学吃烤鱼',
+      now: DateTime.utc(2026, 5, 31, 10),
+    );
+
+    await fridayController.submitInput('周五下午和同学吃烤鱼');
+
+    final tasks = await database.getActiveTasks();
+    final item = await _getExtractedItem(database, 'raw-friday:0');
+    expect(tasks, isEmpty);
+    expect(item.status, RecordStatus.pending.value);
+  });
+
+  test('keeps tomorrow evening out of same-day inference', () async {
+    final tomorrowEveningController = _buildTaskCreateController(
+      database,
+      rawInputId: 'raw-tomorrow-evening',
+      title: '和同学吃烤鱼',
+      sourceText: '明天晚上和同学吃烤鱼',
+      now: DateTime.utc(2026, 5, 31, 10),
+    );
+
+    await tomorrowEveningController.submitInput('明天晚上和同学吃烤鱼');
+
+    final task = await database.select(database.tasks).getSingle();
+    expect(task.dueTimeText, '明天晚上');
+    expect(task.dueTime!.year, 2026);
+    expect(task.dueTime!.month, 6);
+    expect(task.dueTime!.day, 1);
+    expect(task.dueTime!.hour, 19);
+  });
+
   test(
     'profile candidate only becomes profile item after confirmation',
     () async {
@@ -633,71 +689,77 @@ void main() {
     expect(updatedTask.status, RecordStatus.confirmed.value);
   });
 
-  test('rejecting a task_update item leaves the target task unchanged', () async {
-    await _insertConfirmedTask(
-      database,
-      id: 'task-reject-target',
-      title: '准备周报',
-      dueTime: DateTime.utc(2026, 5, 31, 9),
-    );
-    final taskUpdateController = _buildTaskUpdateController(
-      database,
-      parsedItem: ParsedExtractedItem(
-        localId: 'parsed:0',
-        type: ItemType.taskUpdate,
+  test(
+    'rejecting a task_update item leaves the target task unchanged',
+    () async {
+      await _insertConfirmedTask(
+        database,
+        id: 'task-reject-target',
         title: '准备周报',
-        sourceText: '准备周报不用做了',
-        tags: const ['task'],
-        confidence: 0.9,
-        needUserConfirm: true,
-        parsedAt: DateTime.utc(2026, 5, 31),
-        taskUpdateIntent: TaskUpdateIntent(
-          action: TaskUpdateAction.cancel,
-          targetTaskTitle: '准备周报',
-          targetText: '准备周报',
+        dueTime: DateTime.utc(2026, 5, 31, 9),
+      );
+      final taskUpdateController = _buildTaskUpdateController(
+        database,
+        parsedItem: ParsedExtractedItem(
+          localId: 'parsed:0',
+          type: ItemType.taskUpdate,
+          title: '准备周报',
+          sourceText: '准备周报不用做了',
+          tags: const ['task'],
+          confidence: 0.9,
+          needUserConfirm: true,
+          parsedAt: DateTime.utc(2026, 5, 31),
+          taskUpdateIntent: TaskUpdateIntent(
+            action: TaskUpdateAction.cancel,
+            targetTaskTitle: '准备周报',
+            targetText: '准备周报',
+          ),
         ),
-      ),
-    );
+      );
 
-    final result = await taskUpdateController.submitInput('准备周报不用做了');
-    await taskUpdateController.rejectExtractedItem(
-      extractedItemId: result.items.single.localId,
-    );
-    final untouchedTask = await _getTask(database, 'task-reject-target');
-    final rejectedItem = await _getExtractedItem(
-      database,
-      result.items.single.localId,
-    );
+      final result = await taskUpdateController.submitInput('准备周报不用做了');
+      await taskUpdateController.rejectExtractedItem(
+        extractedItemId: result.items.single.localId,
+      );
+      final untouchedTask = await _getTask(database, 'task-reject-target');
+      final rejectedItem = await _getExtractedItem(
+        database,
+        result.items.single.localId,
+      );
 
-    expect(untouchedTask.title, '准备周报');
-    expect(untouchedTask.status, RecordStatus.confirmed.value);
-    expect(rejectedItem.status, RecordStatus.rejected.value);
-  });
+      expect(untouchedTask.title, '准备周报');
+      expect(untouchedTask.status, RecordStatus.confirmed.value);
+      expect(rejectedItem.status, RecordStatus.rejected.value);
+    },
+  );
 
-  test('task_update submit failure does not modify any existing task', () async {
-    await _insertConfirmedTask(
-      database,
-      id: 'task-error-target',
-      title: '整理资料',
-      dueTime: DateTime.utc(2026, 5, 31, 9),
-    );
-    final errorController = ExtractedItemsController(
-      database: database,
-      parserClient: _ErrorParserClient(),
-      rawInputIdFactory: () => 'raw-error',
-      parseResultIdFactory: () => 'parse-error',
-      officialRecordIdFactory: () => 'official-error',
-      nowProvider: () => DateTime.utc(2026, 5, 31),
-    );
+  test(
+    'task_update submit failure does not modify any existing task',
+    () async {
+      await _insertConfirmedTask(
+        database,
+        id: 'task-error-target',
+        title: '整理资料',
+        dueTime: DateTime.utc(2026, 5, 31, 9),
+      );
+      final errorController = ExtractedItemsController(
+        database: database,
+        parserClient: _ErrorParserClient(),
+        rawInputIdFactory: () => 'raw-error',
+        parseResultIdFactory: () => 'parse-error',
+        officialRecordIdFactory: () => 'official-error',
+        nowProvider: () => DateTime.utc(2026, 5, 31),
+      );
 
-    await expectLater(
-      errorController.submitInput('更新任务'),
-      throwsA(isA<ParserFailure>()),
-    );
-    final untouchedTask = await _getTask(database, 'task-error-target');
-    expect(untouchedTask.title, '整理资料');
-    expect(untouchedTask.status, RecordStatus.confirmed.value);
-  });
+      await expectLater(
+        errorController.submitInput('更新任务'),
+        throwsA(isA<ParserFailure>()),
+      );
+      final untouchedTask = await _getTask(database, 'task-error-target');
+      expect(untouchedTask.title, '整理资料');
+      expect(untouchedTask.status, RecordStatus.confirmed.value);
+    },
+  );
 
   test('cancel action marks task as deleted per MVP status strategy', () async {
     // B1 documented: complete → archived, cancel → deleted.
@@ -886,6 +948,41 @@ ExtractedItemsController _buildPendingTaskController(db.AppDatabase database) {
     parseResultIdFactory: () => 'parse-2',
     officialRecordIdFactory: () => 'official-pending-task',
     nowProvider: () => DateTime.utc(2026, 5, 31),
+  );
+}
+
+ExtractedItemsController _buildTaskCreateController(
+  db.AppDatabase database, {
+  required String rawInputId,
+  required String title,
+  required String sourceText,
+  required DateTime now,
+}) {
+  return ExtractedItemsController(
+    database: database,
+    parserClient: _StaticParserClient(
+      ParseResult(
+        userReply: '我先整理成一条任务。',
+        inputSummary: sourceText,
+        intentTypes: const [ItemType.taskCreate],
+        items: [
+          ParsedExtractedItem(
+            localId: 'parsed:0',
+            type: ItemType.taskCreate,
+            title: title,
+            sourceText: sourceText,
+            tags: const ['任务'],
+            confidence: 0.92,
+            needUserConfirm: true,
+            parsedAt: now,
+          ),
+        ],
+      ),
+    ),
+    rawInputIdFactory: () => rawInputId,
+    parseResultIdFactory: () => 'parse-$rawInputId',
+    officialRecordIdFactory: () => 'official-$rawInputId',
+    nowProvider: () => now,
   );
 }
 

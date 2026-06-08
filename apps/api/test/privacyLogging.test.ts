@@ -55,6 +55,7 @@ test("logs parser errors with request id and error type but without raw user tex
     body: JSON.stringify({
       text: sensitiveText,
       timezone: "Asia/Shanghai",
+      current_time_iso: "2026-06-08T17:15:00.000+08:00",
     }),
   });
 

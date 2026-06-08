@@ -1005,34 +1005,106 @@ class ExtractedItemsController {
     required String text,
     required DateTime now,
   }) {
+    DateTime atHour(int dayOffset, int hour) {
+      return DateTime(now.year, now.month, now.day + dayOffset, hour);
+    }
+
     if (text.contains('明天上午')) {
-      return (
-        dueTimeText: '明天上午',
-        dueTime: DateTime(now.year, now.month, now.day + 1, 9),
-      );
+      return (dueTimeText: '明天上午', dueTime: atHour(1, 9));
     }
 
     if (text.contains('明天下午')) {
+      return (dueTimeText: '明天下午', dueTime: atHour(1, 14));
+    }
+
+    if (text.contains('明天晚上') || text.contains('明晚') || text.contains('明天傍晚')) {
       return (
-        dueTimeText: '明天下午',
-        dueTime: DateTime(now.year, now.month, now.day + 1, 14),
+        dueTimeText: text.contains('明天傍晚') ? '明天傍晚' : '明天晚上',
+        dueTime: atHour(1, 19),
       );
     }
 
     if (text.contains('明天')) {
+      return (dueTimeText: '明天', dueTime: atHour(1, 9));
+    }
+
+    if (_hasExplicitDateOutsideTodayOrTomorrow(text)) {
+      return (dueTimeText: _firstRecognizedTimeText(text), dueTime: null);
+    }
+
+    if (text.contains('今天上午') || text.contains('上午')) {
       return (
-        dueTimeText: '明天',
-        dueTime: DateTime(now.year, now.month, now.day + 1, 9),
+        dueTimeText: text.contains('今天上午') ? '今天上午' : '上午',
+        dueTime: atHour(0, 9),
+      );
+    }
+
+    if (text.contains('今天中午') || text.contains('中午')) {
+      return (
+        dueTimeText: text.contains('今天中午') ? '今天中午' : '中午',
+        dueTime: atHour(0, 12),
+      );
+    }
+
+    if (text.contains('今天下午') || text.contains('今下午') || text.contains('下午')) {
+      return (
+        dueTimeText: text.contains('今天下午') || text.contains('今下午')
+            ? '今天下午'
+            : '下午',
+        dueTime: atHour(0, 14),
+      );
+    }
+
+    if (text.contains('今天晚上') ||
+        text.contains('今晚上') ||
+        text.contains('今晚') ||
+        text.contains('晚上') ||
+        text.contains('傍晚')) {
+      return (
+        dueTimeText:
+            text.contains('今天晚上') || text.contains('今晚上') || text.contains('今晚')
+            ? '今晚'
+            : text.contains('傍晚')
+            ? '傍晚'
+            : '晚上',
+        dueTime: atHour(0, 19),
       );
     }
 
     if (text.contains('今天')) {
-      return (
-        dueTimeText: '今天',
-        dueTime: DateTime(now.year, now.month, now.day, now.hour),
-      );
+      return (dueTimeText: '今天', dueTime: atHour(0, now.hour));
     }
 
     return (dueTimeText: null, dueTime: null);
+  }
+
+  bool _hasExplicitDateOutsideTodayOrTomorrow(String text) {
+    return RegExp(r'(周|星期|礼拜)[一二三四五六日天]').hasMatch(text) ||
+        RegExp(r'\d{1,2}[月/-]\d{1,2}[日号]?').hasMatch(text) ||
+        RegExp(r'(后天|大后天|下周|下星期|下礼拜)').hasMatch(text);
+  }
+
+  String? _firstRecognizedTimeText(String text) {
+    const timeTexts = [
+      '上午',
+      '中午',
+      '下午',
+      '傍晚',
+      '晚上',
+      '今晚',
+      '今晚上',
+      '今天上午',
+      '今天中午',
+      '今天下午',
+      '今天晚上',
+      '明天上午',
+      '明天下午',
+      '明天晚上',
+      '明天傍晚',
+    ];
+    for (final timeText in timeTexts) {
+      if (text.contains(timeText)) return timeText;
+    }
+    return null;
   }
 }

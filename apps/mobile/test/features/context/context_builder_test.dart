@@ -59,6 +59,82 @@ void main() {
     expect(package.excludedReasonCounts['deleted'], greaterThanOrEqualTo(1));
   });
 
+  test('splits overdue, today, upcoming, and unscheduled tasks', () async {
+    await _insertTask(
+      database,
+      id: 'task-overdue',
+      title: '补交客户资料',
+      status: RecordStatus.confirmed,
+      dueTime: now.subtract(const Duration(hours: 1)),
+    );
+    await _insertTask(
+      database,
+      id: 'task-today',
+      title: '今天联系王总',
+      status: RecordStatus.confirmed,
+      dueTime: now.add(const Duration(hours: 1)),
+    );
+    await _insertTask(
+      database,
+      id: 'task-tomorrow',
+      title: '明天开会',
+      status: RecordStatus.confirmed,
+      dueTime: now.add(const Duration(days: 1)),
+    );
+    await _insertTask(
+      database,
+      id: 'task-unscheduled',
+      title: '回头整理资料',
+      status: RecordStatus.confirmed,
+      dueTime: null,
+    );
+    await _insertTask(
+      database,
+      id: 'task-too-far',
+      title: '八天后做的事',
+      status: RecordStatus.confirmed,
+      dueTime: now.add(const Duration(days: 8)),
+    );
+
+    final package = await builder.buildCurrentSuggestion(
+      database: database,
+      now: now,
+    );
+
+    expect(package.overdueTasks.map((task) => task.title), ['补交客户资料']);
+    expect(package.todayTasks.map((task) => task.title), ['今天联系王总']);
+    expect(package.nextSevenDaysTasks.map((task) => task.title), ['明天开会']);
+    expect(package.unscheduledTasks.map((task) => task.title), ['回头整理资料']);
+    expect(
+      package.suggestionTasks.map((task) => task.title),
+      isNot(contains('八天后做的事')),
+    );
+  });
+
+  test('debug date controls which tasks count as today', () async {
+    final tomorrow = now.add(const Duration(days: 1));
+    await _insertTask(
+      database,
+      id: 'task-tomorrow',
+      title: '明天开会',
+      status: RecordStatus.confirmed,
+      dueTime: DateTime.utc(tomorrow.year, tomorrow.month, tomorrow.day, 11),
+    );
+
+    final todayPackage = await builder.buildCurrentSuggestion(
+      database: database,
+      now: now,
+    );
+    final tomorrowPackage = await builder.buildCurrentSuggestion(
+      database: database,
+      now: tomorrow,
+    );
+
+    expect(todayPackage.todayTasks, isEmpty);
+    expect(todayPackage.nextSevenDaysTasks.map((task) => task.title), ['明天开会']);
+    expect(tomorrowPackage.todayTasks.map((task) => task.title), ['明天开会']);
+  });
+
   test('excludes expired short-term states from current suggestions', () async {
     await _insertState(
       database,

@@ -7,11 +7,19 @@ import {
 } from "../src/services/deepseekParser.js";
 import { parseRequestSchema } from "../src/schemas/parseResultSchema.js";
 
+const currentTimeIso = "2026-06-08T17:15:00.000+08:00";
+const parseRequest = {
+  text: "明天联系王总",
+  timezone: "Asia/Shanghai",
+  current_time_iso: currentTimeIso,
+};
+
 test("rejects input longer than 2000 characters", () => {
   const longText = "测试".repeat(1001); // 2002 chars
   const result = parseRequestSchema.safeParse({
     text: longText,
     timezone: "Asia/Shanghai",
+    current_time_iso: currentTimeIso,
   });
   assert.equal(result.success, false);
   if (!result.success) {
@@ -27,6 +35,7 @@ test("accepts input at exactly 2000 characters", () => {
   const result = parseRequestSchema.safeParse({
     text,
     timezone: "Asia/Shanghai",
+    current_time_iso: currentTimeIso,
   });
   assert.equal(result.success, true);
 });
@@ -69,7 +78,7 @@ test("returns a clear error when the DeepSeek API key is missing", async () => {
   const parser = createDeepSeekParser({ apiKey: "" });
 
   await assert.rejects(
-    () => parser({ text: "明天联系王总", timezone: "Asia/Shanghai" }),
+    () => parser(parseRequest),
     (error) => {
       assert.equal(error instanceof ParserServiceError, true);
       assert.equal((error as ParserServiceError).code, "missing_api_key");
@@ -82,7 +91,7 @@ test("treats the example placeholder DeepSeek API key as missing", async () => {
   const parser = createDeepSeekParser({ apiKey: "replace_with_your_key" });
 
   await assert.rejects(
-    () => parser({ text: "明天联系王总", timezone: "Asia/Shanghai" }),
+    () => parser(parseRequest),
     (error) => {
       assert.equal(error instanceof ParserServiceError, true);
       assert.equal((error as ParserServiceError).code, "missing_api_key");
@@ -105,10 +114,7 @@ test("retries once when DeepSeek returns invalid JSON, then validates the result
   };
   const parser = createDeepSeekParser({ apiKey: "test-key", fetchFn });
 
-  const result = await parser({
-    text: "明天联系王总",
-    timezone: "Asia/Shanghai",
-  });
+  const result = await parser(parseRequest);
 
   assert.equal(calls.length, 2);
   assert.equal(result.items[0]?.type, "task_create");
@@ -117,6 +123,7 @@ test("retries once when DeepSeek returns invalid JSON, then validates the result
   assert.equal(firstBody.response_format.type, "json_object");
   assert.equal(firstBody.messages[1].role, "user");
   assert.match(firstBody.messages[1].content, /Asia\/Shanghai/);
+  assert.match(firstBody.messages[1].content, /2026-06-08T17:15:00\.000\+08:00/);
   assert.equal(
     (calls[0]?.headers as Record<string, string>).Authorization,
     "Bearer test-key",
@@ -142,7 +149,7 @@ test("throws a timeout-specific error when DeepSeek does not respond within the 
   const start = Date.now();
   await assert.rejects(
     () =>
-      parser({ text: "明天联系王总", timezone: "Asia/Shanghai" }),
+      parser(parseRequest),
     (error) => {
       assert.equal(error instanceof ParserServiceError, true);
       assert.equal(
@@ -174,7 +181,7 @@ test("throws a structured parse error after two invalid schema responses", async
   const parser = createDeepSeekParser({ apiKey: "test-key", fetchFn });
 
   await assert.rejects(
-    () => parser({ text: "明天联系王总", timezone: "Asia/Shanghai" }),
+    () => parser(parseRequest),
     (error) => {
       assert.equal(error instanceof ParserServiceError, true);
       assert.equal((error as ParserServiceError).code, "invalid_parse_result");

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildParserSystemPrompt } from "../src/services/parserPrompt.js";
+import {
+  buildParserSystemPrompt,
+  buildParserUserPrompt,
+} from "../src/services/parserPrompt.js";
 
 test("parser prompt contains the required MVP parsing rules", () => {
   const prompt = buildParserSystemPrompt();
@@ -94,4 +97,33 @@ test("parser prompt documents D0 short-term state subtypes as tags or semantic h
   assert.match(prompt, /physical_state/);
   assert.match(prompt, /availability_state/);
   assert.match(prompt, /cognitive_state/);
+});
+
+test("parser prompt defines current time and optional location context rules", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /Current local time/i);
+  assert.match(prompt, /今天/);
+  assert.match(prompt, /明天/);
+  assert.match(prompt, /Location context/i);
+  assert.match(prompt, /do not guess the user's location/i);
+});
+
+test("parser user prompt includes current time and location context", () => {
+  const prompt = buildParserUserPrompt({
+    text: "附近买咖啡",
+    timezone: "Asia/Shanghai",
+    current_time_iso: "2026-06-08T17:15:00.000+08:00",
+    location_context: {
+      label: "上海市徐汇区",
+      latitude: 31.188,
+      longitude: 121.436,
+      accuracy_meters: 50,
+    },
+  });
+
+  assert.match(prompt, /Asia\/Shanghai/);
+  assert.match(prompt, /2026-06-08T17:15:00\.000\+08:00/);
+  assert.match(prompt, /上海市徐汇区/);
+  assert.match(prompt, /31\.188/);
 });

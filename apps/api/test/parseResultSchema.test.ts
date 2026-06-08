@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseResultSchema } from "../src/schemas/parseResultSchema.js";
+import {
+  parseRequestSchema,
+  parseResultSchema,
+} from "../src/schemas/parseResultSchema.js";
 
 const validParseResult = {
   user_reply: "我帮你整理出了 1 个任务、1 条短期状态和 1 条长期画像候选。",
@@ -37,6 +40,35 @@ const validParseResult = {
 };
 
 const taskItem = validParseResult.items[0] as Record<string, unknown>;
+
+test("accepts parse request context with current time and optional location", () => {
+  const result = parseRequestSchema.safeParse({
+    text: "附近买咖啡",
+    timezone: "Asia/Shanghai",
+    current_time_iso: "2026-06-08T17:15:00.000+08:00",
+    location_context: {
+      label: "上海市徐汇区",
+      latitude: 31.188,
+      longitude: 121.436,
+      accuracy_meters: 50,
+    },
+  });
+
+  assert.equal(result.success, true);
+});
+
+test("rejects incomplete coordinate-only location context", () => {
+  const result = parseRequestSchema.safeParse({
+    text: "附近买咖啡",
+    timezone: "Asia/Shanghai",
+    current_time_iso: "2026-06-08T17:15:00.000+08:00",
+    location_context: {
+      latitude: 31.188,
+    },
+  });
+
+  assert.equal(result.success, false);
+});
 
 test("accepts a valid task, state, and profile parse result", () => {
   const result = parseResultSchema.safeParse(validParseResult);

@@ -48,6 +48,7 @@ class ContextBuilder {
           id: task.id,
           title: task.title,
           priority: task.priority,
+          dueTimeText: task.dueTimeText,
           dueTime: task.dueTime,
         ),
     ];
@@ -62,14 +63,22 @@ class ContextBuilder {
       ],
       todayTasks: [
         for (final task in contextTasks)
-          if (task.dueTime == null || _isSameDay(task.dueTime!, now)) task,
+          if (task.dueTime != null &&
+              !task.dueTime!.isBefore(now) &&
+              _isSameDay(task.dueTime!, now))
+            task,
       ],
       nextSevenDaysTasks: [
         for (final task in contextTasks)
           if (task.dueTime != null &&
               task.dueTime!.isAfter(now) &&
-              !_isSameDay(task.dueTime!, now))
+              !_isSameDay(task.dueTime!, now) &&
+              !task.dueTime!.isAfter(now.add(const Duration(days: 7))))
             task,
+      ],
+      unscheduledTasks: [
+        for (final task in contextTasks)
+          if (task.dueTime == null) task,
       ],
       activeShortTermStates: [
         for (final state in states)
@@ -279,6 +288,7 @@ class ContextPackage {
     required this.overdueTasks,
     required this.todayTasks,
     required this.nextSevenDaysTasks,
+    required this.unscheduledTasks,
     required this.activeShortTermStates,
     required this.confirmedProfileItems,
     required this.memoryExplanations,
@@ -291,6 +301,7 @@ class ContextPackage {
   final List<ContextTask> overdueTasks;
   final List<ContextTask> todayTasks;
   final List<ContextTask> nextSevenDaysTasks;
+  final List<ContextTask> unscheduledTasks;
   final List<ContextShortTermState> activeShortTermStates;
   final List<ContextProfileItem> confirmedProfileItems;
   final List<ContextMemoryExplanation> memoryExplanations;
@@ -304,6 +315,7 @@ class ContextPackage {
         'overdue_tasks': overdueTasks.length,
         'today_tasks': todayTasks.length,
         'next_7_days_tasks': nextSevenDaysTasks.length,
+        'unscheduled_tasks': unscheduledTasks.length,
         'active_short_term_states': activeShortTermStates.length,
         'confirmed_profile_items': confirmedProfileItems.length,
       },
@@ -321,12 +333,14 @@ class ContextTask {
     required this.id,
     required this.title,
     required this.priority,
+    this.dueTimeText,
     this.dueTime,
   });
 
   final String id;
   final String title;
   final String priority;
+  final String? dueTimeText;
   final DateTime? dueTime;
 }
 

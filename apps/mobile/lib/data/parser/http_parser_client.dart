@@ -13,13 +13,33 @@ typedef ParserHttpPost =
     );
 
 class ParserHttpResponse {
-  const ParserHttpResponse({
-    required this.statusCode,
-    required this.body,
-  });
+  const ParserHttpResponse({required this.statusCode, required this.body});
 
   final int statusCode;
   final String body;
+}
+
+class ParserLocationContext {
+  const ParserLocationContext({
+    this.label,
+    this.latitude,
+    this.longitude,
+    this.accuracyMeters,
+  });
+
+  final String? label;
+  final double? latitude;
+  final double? longitude;
+  final double? accuracyMeters;
+
+  Map<String, Object?> toJson() {
+    return {
+      if (label != null && label!.trim().isNotEmpty) 'label': label!.trim(),
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (accuracyMeters != null) 'accuracy_meters': accuracyMeters,
+    };
+  }
 }
 
 class HttpParserClient implements ParserClient {
@@ -27,14 +47,17 @@ class HttpParserClient implements ParserClient {
     required this.baseUri,
     this.timezone = 'Asia/Shanghai',
     DateTime Function()? parsedAtProvider,
+    ParserLocationContext? Function()? locationContextProvider,
     ParserHttpPost? postJson,
     this.timeout = const Duration(seconds: 12),
-  })  : parsedAtProvider = parsedAtProvider ?? DateTime.now,
-        postJson = postJson ?? _defaultPostJson;
+  }) : parsedAtProvider = parsedAtProvider ?? DateTime.now,
+       locationContextProvider = locationContextProvider ?? (() => null),
+       postJson = postJson ?? _defaultPostJson;
 
   final Uri baseUri;
   final String timezone;
   final DateTime Function() parsedAtProvider;
+  final ParserLocationContext? Function() locationContextProvider;
   final ParserHttpPost postJson;
   final Duration timeout;
 
@@ -51,10 +74,7 @@ class HttpParserClient implements ParserClient {
 
     try {
       final json = jsonDecode(response.body) as Map<String, Object?>;
-      return ParseResult.fromAiJson(
-        json: json,
-        parsedAt: parsedAtProvider(),
-      );
+      return ParseResult.fromAiJson(json: json, parsedAt: parsedAtProvider());
     } on FormatException {
       throw const ParserFailure(
         code: 'invalid_response',
@@ -69,6 +89,7 @@ class HttpParserClient implements ParserClient {
   }
 
   Future<ParserHttpResponse> _sendParseRequest(String text) async {
+    final locationContext = locationContextProvider()?.toJson();
     try {
       return await postJson(
         baseUri.resolve('/parse'),
@@ -76,6 +97,9 @@ class HttpParserClient implements ParserClient {
         jsonEncode({
           'text': text,
           'timezone': timezone,
+          'current_time_iso': parsedAtProvider().toIso8601String(),
+          if (locationContext != null && locationContext.isNotEmpty)
+            'location_context': locationContext,
         }),
       ).timeout(timeout);
     } on ParserFailure {
