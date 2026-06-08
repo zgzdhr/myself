@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-项目已经进入 MVP 骨架稳定阶段，核心链路和基础结构已经落地，不再是正式开发前的纯规划状态。
+项目已经从 MVP 骨架稳定阶段进入真实手机试用后的可用性修正阶段。核心链路已经能在 Android 真机上通过本地 API proxy 调用 DeepSeek 并写入本地 SQLite。Phase 4A 已完成待确认批次保留、删除二次确认和 Debug 日期切换；Phase 4B 已完成时间上下文、可选地点上下文合同、时间语义、今日行动过滤、时间展示和日期时间编辑器。当前下一步是 Phase 4C，重点增强 `task_update` 取消 / 完成 / 延期表达和目标任务匹配。
 
 当前已经落地：
 
@@ -18,7 +18,10 @@
 - TypeScript API proxy，包含 `/parse` route、Zod schema 校验、DeepSeek parser service、prompt、sample set 和隐私日志测试。
 - Phase 2 DeepSeek smoke workflow，用于验证真实模型能返回符合 schema 的结构化 JSON。
 - Task 10/11 架构设计文档，覆盖小总结机制和受控 Context Builder。
-- 第一版最小 ContextBuilder，当前只支持 `current_suggestion`，并被首页建议复用。
+- ContextBuilder 已支持 `current_suggestion` 和 `task_update_resolution`，并被首页建议和任务更新匹配复用。
+- Phase 3 真实试用文档，记录三星 Android 真机 APK、API proxy、DeepSeek 解析链路和 Phase 4 问题来源。
+- Phase 4A 信任底线修复：最近 3 批 pending 待确认内容保留、记忆删除二次确认、Debug 日期切换。
+- Phase 4B 时间语义与今日行动修复：当前时间传给 DeepSeek、可选地点上下文合同、同日隐含时间、今天 / 明天 / 未来 / 未安排任务分组、任务时间展示、日期时间编辑器。
 - 基础测试覆盖，包括 Flutter analyze/test 目标、API typecheck/test 目标，以及 parser、数据库、确认流、记忆管理和隐私失败处理测试。
 
 优先阅读：
@@ -29,8 +32,11 @@
 - `docs/architecture/phase-2-ai-parse-smoke.md`：真实 DeepSeek 解析 smoke 流程说明。
 - `docs/architecture/mobile-smoke-test.md`：移动端 smoke 验证记录。
 - `docs/architecture/current-verification.md`：当前自动化验证结果。
+- `docs/architecture/phase-3-verification.md`：Phase 3 验收和真实试用结论。
+- `docs/architecture/phase-3-real-trial-feedback.md`：三星 Android 真机真实试用反馈。
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
+- `2026-06-05-mvp-next-task-map.md`：当前 Phase 4 任务地图。
 
 ## Apps
 
@@ -63,7 +69,7 @@
 → 生成 extracted items
 → 用户确认 / 修改 / 拒绝
 → 写入本地数据库
-→ ContextBuilder 选择 current_suggestion 所需上下文
+→ ContextBuilder 选择 current_suggestion / task_update_resolution 所需上下文
 → 首页基于今日任务、短期状态、已确认长期画像给简单建议
 ```
 
@@ -85,17 +91,60 @@
 ## 当前 ContextBuilder 边界
 
 - 已实现：`apps/mobile/lib/features/context/context_builder.dart`
-- 当前只支持：`current_suggestion`
-- 复用位置：`apps/mobile/lib/features/home/home_suggestion_service.dart`
+- 当前支持：`current_suggestion`、`task_update_resolution`
+- 复用位置：`apps/mobile/lib/features/home/home_suggestion_service.dart`、任务更新匹配流程
 - 测试位置：`apps/mobile/test/features/context/context_builder_test.dart`
 - 排除日志：只记录原因数量，不记录 raw input 或敏感正文。
 - 后置能力：复盘、复杂个人问答、记忆编辑、summary 注入、向量检索、LLM rerank。
 
-## 下一阶段
+## 真实试用发现的主要问题
 
-下一阶段先做稳定化，不扩大成完整 AI Agent：
+Phase 3 三星 Android 真机试用说明：App 已经可以真实运行和调用 DeepSeek，但还不够可信、不够顺手。下一阶段重点不是继续扩“智能”，而是先修信任底线。
 
-- 基于当前 `current_suggestion` ContextBuilder 做小步扩展。
-- 优先补解释性 UI 或 `task_update` 上下文匹配。
-- `daily_review`、`weekly_review`、复杂个人问答和记忆编辑后置。
-- 不做完整 Agent，不做向量检索，不做行为模式推断。
+当前最重要的问题：
+
+- 待确认内容不能丢：连续点击“整理”后，上一批未确认内容不能从页面消失。
+- 时间语义要更符合中文日常表达：`晚上` / `今晚` / `下午` 默认通常应理解为今天对应时间段。（Phase 4B 已完成第一版）
+- 今日行动不能混入明天任务；无明确日期的任务应单独处理，而不是默认都算今天。（Phase 4B 已完成第一版）
+- `task_update` 取消表达还太脆，例如“下午开会的事情取消了”和“健身不想去了”需要更稳的匹配和确认。
+- 任务截止时间需要日期/时间选择器，未来提醒需要具体日期和时间。（Phase 4B 已完成编辑入口，完整提醒仍后置）
+- 记忆删除需要二次确认，后续再做批量删除。
+- 首页建议和今日行动需要更清晰的分组、展开和多建议展示。
+
+## 当前阶段
+
+当前阶段是 **Phase 4：真实试用信任修复阶段**。
+
+目标：
+
+```text
+不丢内容
+不乱显示今天/明天
+能更稳地理解任务取消/延期
+允许用户安全删除
+让首页解释更清楚
+```
+
+阶段进度：
+
+1. Phase 4A：信任底座修复，已完成。
+   - 保留 pending 确认批次。
+   - 删除操作确认弹窗。
+   - Debug 日期切换能力。
+2. Phase 4B：时间语义与今日行动修复，已完成。
+   - 当前时间上下文传给 DeepSeek。
+   - 可选地点上下文合同，默认不上传地点。
+   - 同日隐含时间语义：晚上 / 今晚 / 下午。
+   - 今天 / 明天 / 未来 / 未安排任务过滤修复。
+   - due time 展示规则和日期时间编辑器。
+   - 提交：`f62bba1 feat: complete phase 4B time fixes`。
+3. Phase 4C：`task_update` 取消表达和目标匹配增强，当前下一步。
+4. Phase 4D：首页建议解释分组、今日行动展开、多建议展示。
+
+仍然不做：
+
+- 完整 AI Agent。
+- 向量检索。
+- 自动长期画像进化。
+- 云同步。
+- 复杂日 / 周 / 月复盘。

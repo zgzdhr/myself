@@ -69,7 +69,7 @@ Accepted as next-phase backlog, not fixed in this verification document:
 
 ## Verification Status
 
-Automated verification last fully passed in Phase 3 E2:
+Automated verification last fully passed for the full project in Phase 3 E2:
 
 ```bash
 ./scripts/check-all.sh
@@ -82,20 +82,39 @@ Recorded result:
 - `npm run typecheck`: pass.
 - `npm test`: pass, 53 tests.
 
-This document records manual real-device feedback and does not introduce code
-changes that require rerunning automated tests.
+After this Phase 3 verification, Phase 4A mobile trust fixes were implemented
+and verified separately:
+
+- Commit: `c389778 feat: complete phase 4A trust fixes`.
+- `flutter analyze`: pass.
+- `flutter test`: pass, 108 tests.
+
+Phase 4B time and today-action fixes were also implemented and verified after
+Phase 4A:
+
+- Commit: `f62bba1 feat: complete phase 4B time fixes`.
+- `flutter analyze`: pass.
+- `flutter test`: pass, 118 tests.
+- `npm run typecheck`: pass.
+- API parser/schema/prompt targeted tests: pass, 28 tests.
+- Known gap: `apps/api/test/privacyLogging.test.ts` currently hangs when run
+  individually and should be repaired separately.
+
+This document records manual real-device feedback and the Phase 3 exit
+decision. Current verification details should be checked in
+`docs/architecture/current-verification.md`.
 
 ## Phase 3 Exit Decision
 
 Phase 3 can close as a real-trial stabilization phase if the project accepts
 that the issues above become next-phase priorities.
 
-Recommended next phase order:
+Recommended next phase order, updated after Phase 4B:
 
-1. Preserve pending confirmation batches.
-2. Fix today/tomorrow and same-day time semantics.
-3. Tighten task update matching for cancel / do not want to do / not going.
-4. Add debug date switching for real trial builds.
-5. Improve task deadline editing with date/time picker.
+1. Preserve pending confirmation batches. Done in Phase 4A.
+2. Add delete confirmation and debug date switching. Done in Phase 4A.
+3. Fix today/tomorrow and same-day time semantics. Done in Phase 4B.
+4. Improve task deadline editing with date/time picker. Done in Phase 4B.
+5. Tighten task update matching for cancel / do not want to do / not going.
 6. Redesign home suggestion and today action cards after data behavior is
    stable.

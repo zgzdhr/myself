@@ -14,9 +14,9 @@
 
 ## 当前规划状态
 
-截至 2026-06-07，项目已经完成 Phase 3 D0 阶段。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、Task 10/11 设计文档、`current_suggestion` ContextBuilder、`task_update_resolution` ContextBuilder、解释性 UI、用户控制感增强、中文语义边界校准文档、D0 parser prompt/sample/smoke 增强已经存在，不再是空项目或纯规划阶段。
+截至 2026-06-08，项目已经从早期 0-6 阶段的 MVP 建设路线，切换到 **Phase 4：真实试用信任修复阶段**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理都已经完成。
 
-当前下一步是 Phase 3 D1：`current_suggestion` 排序和解释优化。D2 也相对独立，可以在 D1 后交给另一个 Agent 继续执行；不要回头重复做 D0。
+Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。当前下一步是 **Phase 4C：task_update 真实语义增强**，重点处理“取消了 / 不用了 / 不去了 / 不想去了 / 先不做了”等表达、任务匹配噪声词、可能与长期目标冲突的取消意图，以及完成 / 取消任务的可见化。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“Phase 4 首页建议 / Phase 5 记忆管理 / Phase 6 双端验证”路线理解当前项目。
 
 已确认的核心链路：
 
@@ -49,8 +49,11 @@
 - `apps/api/src/services/deepseekParser.ts`：DeepSeek 调用与解析服务。
 - `apps/api/src/services/parserPrompt.ts`：结构化解析 prompt。
 - `apps/api/scripts/smokeParseSamples.ts`：真实解析 smoke 脚本。
-- `2026-06-07-phase3_d0_guide.md`：Phase 3 D0 中文语义边界校准指导文件。
+- `2026-06-07-phase3_d0.md`：Phase 3 D0 中文语义边界校准指导文件。
 - `docs/architecture/chinese-semantic-classification-rules.md`：D0 中文语义分类规则文档。
+- `apps/mobile/lib/features/memory/delete_confirmation.dart`：Phase 4A 删除确认弹窗复用入口。
+- `apps/mobile/lib/features/home/home_screen.dart`：首页、Debug 日期切换、当前时间 provider 入口。
+- `apps/mobile/lib/features/memory/task_time_formatter.dart`：Phase 4B 任务时间展示规则。
 
 当前已经落地的验证资产：
 
@@ -62,6 +65,9 @@
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
 - `docs/architecture/current-verification.md`：当前自动化验证结果。
+- `docs/architecture/phase-3-verification.md`：Phase 3 验收和真实试用结论。
+- `docs/architecture/phase-3-real-trial-feedback.md`：三星 Android 真机真实试用反馈。
+- `2026-06-05-mvp-next-task-map.md`：当前 Phase 4 任务地图。
 
 重要源文档：
 
@@ -78,13 +84,15 @@
 3. `docs/architecture/current-verification.md`：确认最近一次自动化验证状态。
 4. `docs/architecture/mobile-smoke-test.md`：确认 Android / iOS smoke 状态。
 5. `docs/architecture/phase-2-ai-parse-smoke.md`：确认真实 DeepSeek parse smoke 流程。
-6. `2026-06-07-phase3_d0_guide.md`：了解 D0 已完成的中文语义边界校准。
-7. `docs/architecture/chinese-semantic-classification-rules.md`：查看 D0 正式语义规则。
-8. `docs/architecture/summary-system-design.md`：理解 Task 10 小总结机制。
-9. `docs/architecture/context-builder-design.md`：理解 Task 11 Context Builder 总设计。
-10. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
-11. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
-12. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
+6. `docs/architecture/phase-3-verification.md`：确认 Phase 3 已收尾到真实试用，并了解哪些问题进入 Phase 4。
+7. `docs/architecture/phase-3-real-trial-feedback.md`：查看三星 Android 真机反馈原始整理。
+8. `2026-06-05-mvp-next-task-map.md`：确认当前 Phase 4A/4B/4C/4D/4E 任务地图。
+9. `docs/architecture/chinese-semantic-classification-rules.md`：查看 D0 正式语义规则。
+10. `docs/architecture/task-update-resolution.md`：理解 `task_update` 匹配和后续增强边界。
+11. `docs/architecture/context-builder-design.md`：理解 Context Builder 总设计。
+12. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
+13. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
+14. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
 
 ## 目标平台与技术方向
 
@@ -429,89 +437,79 @@ myself/
     api/        # 最小 DeepSeek API proxy
 ```
 
-## 开发阶段路线图
+## 当前阶段路线图
 
-### Phase 0：项目地基
+旧的 Phase 0-6 路线已经完成其主要作用：项目不再是“从零搭建 MVP”，而是已经进入真实手机试用后的修复阶段。后续按 Phase 4 子阶段推进。
 
-目标：建立 Flutter + API proxy + 文档结构。
+### Phase 4：真实试用信任修复阶段
 
-交付：
+目标：
 
-- `apps/mobile` Flutter 项目。
-- `apps/api` TypeScript API proxy。
-- `.env.example`。
-- 基础 README。
+```text
+不丢内容
+不乱显示今天/明天
+更稳地理解任务取消/延期
+删除和编辑让用户放心
+首页解释更清楚
+```
 
-### Phase 1：本地数据层
-
-目标：先让 App 能保存、读取、删除结构化数据。
-
-交付：
-
-- Drift / SQLite schema。
-- 7 张 MVP 表。
-- 数据状态流转。
-- 本地测试。
-
-### Phase 2：AI 解析闭环
-
-目标：用户输入一句话，DeepSeek 返回结构化 JSON，App 生成待确认卡片。
+### Phase 4A：信任底座修复，已完成
 
 交付：
 
-- 后端 `/parse` 接口。
-- JSON Schema / Zod 校验。
-- 移动端 parser client。
-- 解析失败兜底。
+- 保留最近 3 批 pending 待确认内容，连续整理不会让上一批待确认从页面消失。
+- 任务、短期状态、生活事件、长期画像删除前增加二次确认。
+- Debug 构建增加测试日期切换，便于验证今日任务和短期状态过期逻辑。
+- 对应测试已补充，`flutter analyze` 和 `flutter test` 已通过。
+- 提交：`c389778 feat: complete phase 4A trust fixes`。
 
-### Phase 3：确认与写入
-
-目标：用户能确认、修改、拒绝 AI 解析结果。
-
-交付：
-
-- extracted item 卡片。
-- 确认后写入正式表。
-- 拒绝后不生效。
-- 修改后记录 edited 状态。
-
-### Phase 4：首页建议
-
-目标：首页能根据任务、短期状态、已确认画像给简单建议。
+### Phase 4B：时间语义与今日行动修复，已完成
 
 交付：
 
-- 今日任务列表。
-- 近期状态展示。
-- 当前建议卡片。
-- 简单建议规则。
+- 增加 Time Reference Contract：移动端解析请求向 API / DeepSeek 传 `current_time_iso`，让“今天 / 明天 / 今晚”等相对时间以用户当时本地时间为基准。
+- 预留可选 `location_context` 合同，默认不上传地点；未来只有用户授权定位后才作为解析上下文使用，且 prompt 明确没有地点时不得猜测位置。
+- `晚上` / `今晚` / `今晚上` / `下午` / `上午` / `中午` / `傍晚` 等无其他日期修饰时，优先理解为今天对应时间段。
+- 修复明天任务进入今日行动的问题，未安排任务不再默认算今日任务。
+- 区分 `todayTasks`、`overdueTasks`、`upcomingTasks`、`unscheduledTasks`。
+- 任务展示中明确具体日期和原始时间文本，为后续提醒能力打基础。
+- 任务编辑入口从手填截止日期升级为日期 / 时间选择器，并支持清除时间。
+- 对应验证已通过：`flutter analyze`、`flutter test`（118 tests）、`npm run typecheck`、API parser / schema / prompt 相关 Node 测试。
+- 提交：`f62bba1 feat: complete phase 4B time fixes`。
 
-### Phase 5：记忆管理
+已知缺口：
 
-目标：用户能看到 AI 记住了什么，并能删除。
+- `apps/api/test/privacyLogging.test.ts` 单独运行会挂住。该测试负责验证 API 错误日志不泄露用户原文，后续需要单独排查 server / fetch 生命周期。
 
-交付：
+### Phase 4C：task_update 真实语义增强，当前下一步
 
-- 任务页。
-- 短期状态页。
-- 生活事件页。
-- 长期画像页。
-- 删除 / 归档能力。
+目标：
 
-### Phase 6：Android / iOS 验证
+- 增强“取消了 / 不用了 / 不去了 / 不想去了 / 先不做了”等真实中文表达识别。
+- 改进目标任务匹配，去掉“的事情 / 这个事 / 那个事”等噪声词。
+- 对“健身不想去了”这类可能与长期目标冲突的表达，先进入确认或建议流程，不静默覆盖用户选择。
+- 完成 / 取消任务未来要有业务状态展示、划线、可撤销入口，避免从用户视野里突然消失。
 
-目标：确认同一套 Flutter 代码能在 Android 与 iOS 上运行。
+### Phase 4D：首页与行动区体验
 
-交付：
+目标：
 
-- Android 模拟器可运行。
-- iOS 模拟器可运行。
-- 本地数据库在两端可用。
-- 基础输入与确认流程可用。
+- 首页建议按任务依据、当前状态、长期偏好分组展示。
+- 今日行动区域支持展开，能看到当天任务安排。
+- AI 建议区域支持展开，展示 1-3 条建议及依据。
+- 状态、画像、长期偏好之间使用更清晰的分隔和排版。
+
+### Phase 4E：试用版可验证性和 APK 链路
+
+目标：
+
+- 继续保持 Android 真机 APK + 本地 API proxy + DeepSeek 真实链路可跑。
+- 明确 Debug / Release 网络配置差异。
+- 后续如需给用户安装测试 APK，应单独记录构建命令、API 地址、设备网络前提和安全注意事项。
 
 ## 长期后续任务与产品记忆
 
-以下内容来自 D0 讨论、Claude memory 和 Phase 3 C 阶段后的真实试用反馈。它们不是当前 D0 必须实现的任务，但要保存在项目记忆里，避免后续忘掉。
+以下内容来自 D0 讨论、Claude memory、Phase 3 真实试用反馈和 Phase 4A/4B 修复。它们不是 Phase 4C 必须一次做完的任务，但要保存在项目记忆里，避免后续忘掉。
 
 ### 1. prompt-accuracy：中文语义边界要继续校准
 
@@ -521,11 +519,16 @@ myself/
 - parser prompt 和 sample set 需要覆盖社交约定、娱乐安排、客户拜访、生活预约、模糊时间、普通问答和长期画像边界。
 - 分类不能只看关键词。“记得提醒我”可能是任务，但“我记得我读过这本书”不是任务。
 
+当前状态：
+
+- `docs/architecture/chinese-semantic-classification-rules.md` 已写入。
+- `apps/api/src/services/parserPrompt.ts`、`parserSampleSet.ts` 和 smoke 检查已完成 D0 增强。
+- 后续继续围绕真实失败样例补充规则和测试，不再把 D0 当作未完成阶段。
+
 后续方向：
 
-- D0 先写 `docs/architecture/chinese-semantic-classification-rules.md`。
-- 再更新 `apps/api/src/services/parserPrompt.ts` 和 `apps/api/src/services/parserSampleSet.ts`。
-- smoke 检查要支持 `expectedTypes`、`forbiddenTypes`、`need_user_confirm`、`source_text`、模糊时间不乱造 `due_time_iso`。
+- Phase 4B 已补“晚上/今晚/下午”等同日隐含时间语义和当前时间上下文合同。
+- 后续继续让 smoke 检查覆盖 `expectedTypes`、`forbiddenTypes`、`need_user_confirm`、`source_text`、模糊时间不乱造 `due_time_iso`。
 
 ### 2. task-time：时间粒度和提醒系统后置
 
@@ -537,7 +540,8 @@ myself/
 
 当前边界：
 
-- D0 只定义语义，不实现完整提醒系统。
+- Phase 4B 已修同日隐含时间、今日/未来任务过滤、时间展示和任务日期时间编辑入口。
+- 完整提醒系统仍后置。
 - 模糊时间优先保留 `due_time_text`，不乱填 `due_time_iso`。
 
 后续方向：
@@ -575,7 +579,7 @@ myself/
 
 当前边界：
 
-- D0 不改数据库和任务 UI。
+- Phase 4C 可以先增强取消/完成匹配和确认流程。
 - 中期建议引入 `task_status: active / completed / cancelled`，不要长期混用 `record_status` 表达任务业务状态。
 
 ### 5. 模糊延期和双提醒
@@ -588,7 +592,8 @@ myself/
 
 当前边界：
 
-- D0 只记录规则，不实现提醒系统。
+- Phase 4B 已改善任务时间展示和编辑入口。
+- Phase 4C 可以继续改善延期识别和更新确认，但不实现完整提醒系统。
 
 ### 6. short_term_state 子类型与覆盖策略
 
@@ -604,7 +609,7 @@ myself/
 
 当前边界：
 
-- D0 只定义语义和后续策略，不新增 item type。
+- 当前只定义语义和后续策略，不新增 item type。
 
 ### 7. life_event 是未来自进化的重要证据
 
@@ -628,7 +633,7 @@ myself/
 
 当前边界：
 
-- D0 不做深度建议页。
+- Phase 4 不做深度建议页。
 - 不做复杂个人问答、向量检索或完整 Agent。
 
 ### 9. 当前任务与长期画像 / 长期目标的冲突分析
@@ -679,9 +684,12 @@ myself/
 
 ## 当前下一步
 
-当前下一步是执行 Phase 3 D1：`current_suggestion` 排序和解释优化。
+当前下一步是执行 **Phase 4C：task_update 真实语义增强**。
 
-1. 先读 `2026-06-05-phase3_副本.md` 中 D1。
-2. 再看 `apps/mobile/lib/features/context/context_builder.dart` 和 `apps/mobile/lib/features/home/home_suggestion_service.dart`。
-3. D1 完成后继续 D2：`memory_explanation` 设计，先规则解释，不接 LLM。
-4. 更复杂的提醒系统、自动画像进化、深度建议、个人问答、summary 注入、向量检索、LLM rerank 都后置。
+1. 先读 `2026-06-05-mvp-next-task-map.md` 中 Phase 4C。
+2. 再看 `docs/architecture/phase-3-real-trial-feedback.md`，确认真实失败样例。
+3. 再看 `docs/architecture/chinese-semantic-classification-rules.md`，确认中文任务更新和语义边界。
+4. 再看 `apps/mobile/lib/features/context/context_builder.dart`、`apps/mobile/lib/features/home/home_suggestion_service.dart`、`apps/mobile/lib/features/extracted_items/extracted_items_controller.dart`。
+5. Phase 4C 优先修：取消类表达、目标任务匹配、模糊引用处理、可能与长期目标冲突的“不想去了”确认流程。
+6. 完成 / 取消任务的业务状态可见化是 4C 的重要产品边界，避免任务从用户视野里突然消失。
+7. 更复杂的提醒系统、自动画像进化、深度建议、个人问答、summary 注入、向量检索、LLM rerank 都后置。

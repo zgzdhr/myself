@@ -1,5 +1,104 @@
 # Current Verification
 
+## Latest Verification: Phase 4B Time Semantics and Today Actions
+
+Date: 2026-06-08
+Scope: Time reference contract, optional location context contract, same-day
+implicit time semantics, today/future task filtering, task time display, and
+task date/time editing
+
+### Summary
+
+- Result: Pass with one known API privacy test gap.
+- Phase 4B fixes were implemented, committed, and pushed in
+  `f62bba1 feat: complete phase 4B time fixes`.
+- Mobile parser requests now include `current_time_iso`, so API / DeepSeek can
+  resolve "今天", "明天", and "今晚" against the user's current local time.
+- API schema and prompt now support optional `location_context`; the mobile app
+  does not upload location by default, and the prompt says not to guess location
+  when it is not provided.
+- ContextBuilder now separates overdue, today, next-seven-days, and unscheduled
+  tasks, so tomorrow and unscheduled tasks do not appear in today's actions.
+- Task due-time display now shows concrete date/time plus original time text
+  when available, "时间待明确" for vague original time, and "未设时间" when no
+  time exists.
+- Task editing now supports date picker, time picker, and clearing due time.
+
+### Commands Run
+
+```bash
+cd apps/mobile
+flutter analyze
+flutter test
+
+cd apps/api
+npm run typecheck
+node --test --import tsx test/deepseekParser.test.ts test/parseResultSchema.test.ts test/parserPrompt.test.ts
+```
+
+### Results
+
+- `flutter analyze`: Pass, no issues found.
+- `flutter test`: Pass, 118 tests passed.
+- `npm run typecheck`: Pass.
+- API parser/schema/prompt tests: Pass, 28 tests passed.
+
+### Known Gap
+
+- `node --test --import tsx test/privacyLogging.test.ts` hangs when run
+  individually in the current environment. That test is responsible for
+  checking API error logs include request metadata but not raw user text. It
+  should be repaired separately by investigating the test HTTP server / fetch
+  lifecycle.
+- The Phase 4B commit only updated this test's request payload with
+  `current_time_iso`; it was not counted as a passing verification target.
+
+### Notes
+
+- Existing unrelated documentation, Android manifest, and phase planning draft
+  changes were not part of the Phase 4B code commit.
+- Next active work is Phase 4C: real Chinese `task_update` semantics and target
+  matching.
+
+## Previous Verification: Phase 4A Trust Fixes
+
+Date: 2026-06-08
+Scope: Pending confirmation persistence, delete confirmation dialogs, and debug date switcher
+
+### Summary
+
+- Result: Pass.
+- Phase 4A trust fixes were implemented and committed in
+  `c389778 feat: complete phase 4A trust fixes`.
+- Input screen now preserves recent pending extracted-item batches instead of
+  letting earlier unconfirmed content disappear after a new parse request.
+- Memory delete actions now ask for confirmation before deleting tasks,
+  short-term states, life events, and profile items.
+- Debug builds now include a date switcher so date-based home suggestion and
+  short-term-state expiration behavior can be tested without waiting for the
+  real next day.
+
+### Commands Run
+
+```bash
+cd apps/mobile
+flutter analyze
+flutter test
+```
+
+### Results
+
+- `flutter analyze`: Pass, no issues found.
+- `flutter test`: Pass, 108 tests passed.
+
+### Notes
+
+- This verification focused on mobile because Phase 4A changed Flutter UI,
+  controller, and widget tests only.
+- Existing unrelated README, Android manifest, and phase planning draft changes
+  were not part of the Phase 4A commit.
+- Superseded by Phase 4B verification above.
+
 ## Latest Verification: Phase 3 Real Trial Feedback
 
 Date: 2026-06-08
@@ -152,7 +251,8 @@ npm test
 
 - `flutter analyze`, `flutter test`, and the API localhost privacy test required permission mode because the sandbox blocks Flutter SDK cache writes and local server/fetch behavior.
 - Earlier sandboxed API test attempts were cancelled after hanging on `test/privacyLogging.test.ts`; the same full API suite passed in permission mode.
-- D2 is complete. The next project step can be D3/E work depending on the active phase plan.
+- Historical note: D2 is complete. This old next-step note has been superseded
+  by Phase 4 planning; current active work is Phase 4C.
 
 ## Latest Verification: Phase 3 D0
 
@@ -197,7 +297,8 @@ API_BASE_URL=http://127.0.0.1:8791 npm run smoke:parse
 ### Notes
 
 - Real smoke used a freshly started API proxy on `API_PORT=8791` to avoid reading an older long-running dev process.
-- D0 is now complete. The next project step is D1: `current_suggestion` ranking and explanation optimization.
+- Historical note: D0 is complete. The old D1 next-step note has been
+  superseded by Phase 4 planning; current active work is Phase 4C.
 
 ## Previous Verification: Task 10/11 ContextBuilder
 
