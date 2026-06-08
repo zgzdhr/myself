@@ -1,5 +1,44 @@
 # Current Verification
 
+## Latest Verification: Phase 3 E2
+
+Date: 2026-06-08
+Scope: `sqlite3_flutter_libs` dependency risk review and cleanup
+
+### Summary
+
+- Result: Pass.
+- `flutter pub outdated` showed direct dependencies are up-to-date.
+- `sqlite3_flutter_libs 0.6.0+eol` was removed from direct mobile dependencies.
+- `sqlite3` remains resolved at `3.3.2`, which provides the current Flutter native bundling path used by Drift.
+- No business behavior changed.
+
+### Commands Run
+
+```bash
+cd apps/mobile
+flutter pub outdated
+flutter pub get
+
+cd ../..
+./scripts/check-all.sh
+```
+
+### Results
+
+- `flutter pub outdated`: Pass. Direct dependencies all up-to-date.
+- `flutter pub get`: Pass. Removed `sqlite3_flutter_libs 0.6.0+eol`; changed 1 dependency.
+- `./scripts/check-all.sh`: Pass.
+- `flutter analyze`: Pass, no issues found.
+- `flutter test`: Pass, 105 tests passed.
+- `npm run typecheck`: Pass.
+- `npm test`: Pass, 53 tests passed.
+
+### Notes
+
+- Commands that invoke Flutter or local API tests required permission mode because the sandbox blocks Flutter SDK cache writes and local server/fetch behavior.
+- Flutter tests still emit the existing Drift multiple-database debug warning in one test path; tests pass and this was not introduced by E2.
+
 ## Latest Verification: Phase 3 E1
 
 Date: 2026-06-08

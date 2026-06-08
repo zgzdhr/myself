@@ -90,7 +90,7 @@ The following manual flow was verified via widget tests:
 - The mock parser mode does not require the API server to be running. It returns hardcoded data directly in the Dart client.
 - Full end-to-end testing with real AI parsing requires the API server (`cd apps/api && npm run dev`) and an actual DeepSeek API key.
 - Android emulator uses API 36 (Android 16 "Baklava") with Google APIs arm64-v8a — no compatibility issues observed.
-- `sqlite3_flutter_libs: ^0.6.0+eol` is a deprecated package but works fine on API 36 with 4KB page size. An upgrade to `sqlite3: ^3.x` is recommended before targeting 16KB page size devices.
+- Phase 3 E2 removed the obsolete `sqlite3_flutter_libs: ^0.6.0+eol` direct dependency. The project now relies on `sqlite3` 3.x through Drift for Flutter native bundling.
 
 ## Phase 3 A5 Real API Debug Note
 
