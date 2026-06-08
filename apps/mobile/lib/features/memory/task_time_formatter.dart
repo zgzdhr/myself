@@ -1,4 +1,8 @@
-String formatTaskDueText({DateTime? dueTime, String? dueTimeText}) {
+String formatTaskDueText({
+  DateTime? dueTime,
+  String? dueTimeText,
+  DateTime? now,
+}) {
   final originalText = dueTimeText?.trim();
   final hasOriginalText = originalText != null && originalText.isNotEmpty;
 
@@ -12,7 +16,11 @@ String formatTaskDueText({DateTime? dueTime, String? dueTimeText}) {
       '${_twoDigits(localDueTime.hour)}:${_twoDigits(localDueTime.minute)}';
   final concreteText = '$dateText $timeText';
 
-  return hasOriginalText ? '$concreteText｜原文：$originalText' : concreteText;
+  final overduePrefix = now != null && dueTime.isBefore(now) ? '已逾期｜' : '';
+  final displayText = hasOriginalText
+      ? '$concreteText｜原文：$originalText'
+      : concreteText;
+  return '$overduePrefix$displayText';
 }
 
 String _twoDigits(int value) => value.toString().padLeft(2, '0');

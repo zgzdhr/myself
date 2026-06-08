@@ -263,7 +263,10 @@ class _InputScreenState extends State<InputScreen> {
     final editedItem = await showModalBottomSheet<EditedExtractedItem>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => EditExtractedItemSheet(item: item),
+      builder: (context) => EditExtractedItemSheet(
+        item: item,
+        now: widget.controller.nowProvider(),
+      ),
     );
 
     if (editedItem == null) {
@@ -275,12 +278,18 @@ class _InputScreenState extends State<InputScreen> {
         extractedItemId: item.localId,
         editedTitle: editedItem.title,
         editedContent: editedItem.content,
+        hasEditedDueTime: editedItem.hasDueTimeEdit,
+        editedDueTimeText: editedItem.dueTimeText,
+        editedDueTime: editedItem.dueTime,
       );
     } else {
       await widget.controller.confirmExtractedItem(
         extractedItemId: item.localId,
         editedTitle: editedItem.title,
         editedContent: editedItem.content,
+        hasEditedDueTime: editedItem.hasDueTimeEdit,
+        editedDueTimeText: editedItem.dueTimeText,
+        editedDueTime: editedItem.dueTime,
       );
     }
     await _refreshPendingBatches();

@@ -84,6 +84,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
           }
 
           final data = snapshot.data!;
+          final now = widget.nowProvider();
 
           return ListView(
             padding: const EdgeInsets.all(20),
@@ -124,6 +125,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
                         formatTaskDueText(
                           dueTime: task.dueTime,
                           dueTimeText: task.dueTimeText,
+                          now: now,
                         ),
                       ),
                     ),

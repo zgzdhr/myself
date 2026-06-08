@@ -60,6 +60,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 _TaskCard(
                   task: task,
                   sourceText: data.sourceTexts[task.sourceExtractedItemId],
+                  now: widget.nowProvider(),
                   onEdit: () => _edit(task),
                   onDelete: () => _delete(task),
                 ),
@@ -130,12 +131,14 @@ class _TaskCard extends StatelessWidget {
   const _TaskCard({
     required this.task,
     required this.sourceText,
+    required this.now,
     required this.onEdit,
     required this.onDelete,
   });
 
   final Task task;
   final String? sourceText;
+  final DateTime now;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -188,6 +191,7 @@ class _TaskCard extends StatelessWidget {
                     formatTaskDueText(
                       dueTime: task.dueTime,
                       dueTimeText: task.dueTimeText,
+                      now: now,
                     ),
                     style: TextStyle(
                       fontSize: 13,

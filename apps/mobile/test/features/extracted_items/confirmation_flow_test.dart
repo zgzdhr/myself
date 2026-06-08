@@ -171,7 +171,64 @@ void main() {
     expect(task.dueTime!.year, 2026);
     expect(task.dueTime!.month, 5);
     expect(task.dueTime!.day, 31);
-    expect(task.dueTime!.hour, 19);
+    expect(task.dueTime!.hour, 18);
+  });
+
+  test(
+    'explicit clock time overrides same-day time segment defaults',
+    () async {
+      final eveningController = _buildTaskCreateController(
+        database,
+        rawInputId: 'raw-evening-clock',
+        title: '出去玩',
+        sourceText: '今晚上9点我要出去玩',
+        now: DateTime.utc(2026, 5, 31, 10),
+      );
+
+      await eveningController.submitInput('今晚上9点我要出去玩');
+
+      var task = await database.select(database.tasks).getSingle();
+      expect(task.dueTimeText, '9点');
+      expect(task.dueTime!.day, 31);
+      expect(task.dueTime!.hour, 21);
+      expect(task.dueTime!.minute, 0);
+
+      await database.delete(database.tasks).go();
+      await database.delete(database.extractedItems).go();
+      await database.delete(database.aiParseResults).go();
+      await database.delete(database.rawInputs).go();
+
+      final afternoonController = _buildTaskCreateController(
+        database,
+        rawInputId: 'raw-afternoon-clock',
+        title: '出去',
+        sourceText: '下午1:20我要出去',
+        now: DateTime.utc(2026, 5, 31, 10),
+      );
+
+      await afternoonController.submitInput('下午1:20我要出去');
+
+      task = await database.select(database.tasks).getSingle();
+      expect(task.dueTimeText, '1:20');
+      expect(task.dueTime!.hour, 13);
+      expect(task.dueTime!.minute, 20);
+    },
+  );
+
+  test('uses reminder-friendly defaults for vague time segments', () async {
+    final noonController = _buildTaskCreateController(
+      database,
+      rawInputId: 'raw-noon',
+      title: '吃饭',
+      sourceText: '中午吃饭',
+      now: DateTime.utc(2026, 5, 31, 10),
+    );
+
+    await noonController.submitInput('中午吃饭');
+
+    final task = await database.select(database.tasks).getSingle();
+    expect(task.dueTimeText, '中午');
+    expect(task.dueTime!.hour, 11);
   });
 
   test('does not convert explicit future date time words to today', () async {
@@ -207,7 +264,7 @@ void main() {
     expect(task.dueTime!.year, 2026);
     expect(task.dueTime!.month, 6);
     expect(task.dueTime!.day, 1);
-    expect(task.dueTime!.hour, 19);
+    expect(task.dueTime!.hour, 18);
   });
 
   test(
@@ -247,6 +304,24 @@ void main() {
       expect(extractedItem.status, RecordStatus.edited.value);
     },
   );
+
+  test('edit before confirming can set task due time manually', () async {
+    final pendingTaskController = _buildPendingTaskController(database);
+    await pendingTaskController.submitInput('回头整理资料');
+
+    await pendingTaskController.confirmExtractedItem(
+      extractedItemId: 'raw-2:0',
+      editedTitle: '整理资料',
+      hasEditedDueTime: true,
+      editedDueTimeText: '手动选择',
+      editedDueTime: DateTime(2026, 6, 8, 16, 30),
+    );
+
+    final task = await database.select(database.tasks).getSingle();
+    expect(task.title, '整理资料');
+    expect(task.dueTimeText, '手动选择');
+    expect(task.dueTime, DateTime(2026, 6, 8, 16, 30));
+  });
 
   test('rejects item without creating an official record', () async {
     await controller.submitInput('明天上午联系王总，我今天很累，我不喜欢太频繁的提醒。');

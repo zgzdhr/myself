@@ -16,4 +16,15 @@ void main() {
   test('shows unscheduled when no time information exists', () {
     expect(formatTaskDueText(), '未设时间');
   });
+
+  test('marks concrete due time as overdue when it is before now', () {
+    expect(
+      formatTaskDueText(
+        dueTime: DateTime(2026, 6, 8, 14),
+        dueTimeText: '下午',
+        now: DateTime(2026, 6, 8, 15),
+      ),
+      '已逾期｜6月8日 14:00｜原文：下午',
+    );
+  });
 }

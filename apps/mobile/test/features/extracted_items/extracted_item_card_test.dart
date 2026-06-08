@@ -9,6 +9,7 @@ import 'package:mobile/domain/extracted_item.dart';
 import 'package:mobile/domain/item_type.dart';
 import 'package:mobile/domain/parse_result.dart';
 import 'package:mobile/domain/record_status.dart';
+import 'package:mobile/features/extracted_items/edit_extracted_item_sheet.dart';
 import 'package:mobile/features/extracted_items/extracted_item_card.dart';
 import 'package:mobile/features/extracted_items/extracted_items_controller.dart';
 import 'package:mobile/features/input/input_screen.dart';
@@ -32,6 +33,50 @@ void main() {
     expect(find.text('长期画像候选'), findsOneWidget);
     expect(find.text('确认后才会成为长期记忆'), findsOneWidget);
     expect(find.text('拒绝'), findsOneWidget);
+  });
+
+  testWidgets('task edit sheet exposes optional date and time controls', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        EditExtractedItemSheet(
+          item: _item(
+            type: ItemType.taskCreate,
+            title: '回头整理资料',
+            sourceText: '回头整理资料',
+          ),
+          now: DateTime(2026, 6, 8, 10),
+        ),
+      ),
+    );
+
+    expect(find.text('任务时间'), findsOneWidget);
+    expect(find.text('选择日期'), findsOneWidget);
+    expect(find.text('选择时间'), findsOneWidget);
+    expect(find.text('清除时间'), findsOneWidget);
+    expect(find.text('未设时间'), findsOneWidget);
+  });
+
+  testWidgets('profile edit sheet does not expose task time controls', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        EditExtractedItemSheet(
+          item: _item(
+            type: ItemType.profileCandidate,
+            content: '用户不喜欢频繁提醒',
+            sourceText: '我不喜欢频繁提醒',
+          ),
+          now: DateTime(2026, 6, 8, 10),
+        ),
+      ),
+    );
+
+    expect(find.text('任务时间'), findsNothing);
+    expect(find.text('选择日期'), findsNothing);
+    expect(find.text('选择时间'), findsNothing);
   });
 
   // ── C1: save target display ──
