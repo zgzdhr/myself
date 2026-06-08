@@ -1,5 +1,47 @@
 # Current Verification
 
+## Latest Verification: Phase 3 Real Trial Feedback
+
+Date: 2026-06-08
+Scope: Samsung Android real API debug APK trial and Phase 3 feedback capture
+
+### Summary
+
+- Result: Trial complete with known issues.
+- Android debug APK was built for real API testing against the local API proxy.
+- API proxy health check passed on both localhost and LAN address.
+- Real DeepSeek parse request returned valid `task_create` plus
+  `short_term_state` for a Chinese sample.
+- Detailed feedback is recorded in
+  `docs/architecture/phase-3-real-trial-feedback.md`.
+- Phase 3 verification summary is recorded in
+  `docs/architecture/phase-3-verification.md`.
+
+### Manual Checks
+
+```bash
+curl http://127.0.0.1:8787/health
+curl http://192.168.0.103:8787/health
+curl -X POST http://127.0.0.1:8787/parse \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"明天上午联系王总，我今天有点累。","timezone":"Asia/Shanghai"}'
+```
+
+### Results
+
+- `/health`: Pass, returned `{"ok":true}`.
+- `/parse`: Pass, returned `task_create` and `short_term_state`.
+- Real-trial feedback found next-phase issues in time semantics, task update
+  matching, today filtering, pending confirmation persistence, date testing,
+  home suggestion layout, and memory deletion safety.
+
+### Notes
+
+- The Android network manifest change used for local real-device testing is a
+  debug/trial concern and should be handled separately from documentation-only
+  verification commits.
+- Latest full automated verification remains Phase 3 E2 below.
+
 ## Latest Verification: Phase 3 E2
 
 Date: 2026-06-08

@@ -124,6 +124,17 @@ Main rule:
 
 Current action suggestions should be based primarily on current tasks and current state. Summaries can support the reply later, but they should not override tasks or active states.
 
+Real-trial UI direction:
+
+- Suggestion explanations should keep tasks, short-term states, and confirmed
+  profile items visually separated instead of joining them into one dense
+  sentence.
+- The home suggestion area can later become expandable and show up to three
+  suggestions with source grouping.
+- Suggestions may include relevant non-today tasks or habits when they are
+  actionable now, but today/tomorrow filtering must be correct before expanding
+  this behavior.
+
 ### `daily_review`
 
 Example:

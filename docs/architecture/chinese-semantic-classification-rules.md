@@ -31,6 +31,7 @@ Examples:
 |---|---|---|
 | 晚上同学约我去网吧，我同意了 | `task_create` | Future social arrangement, not `life_event`. |
 | 晚上和妹妹去酒吧 | `task_create` | Future entertainment plan. |
+| 今晚上要和同学吃烤鱼 | `task_create` | Same-day evening arrangement. |
 | 过会儿提醒我给客户发消息 | `task_create` | Vague near-term reminder. |
 | 回头把会议纪要发给团队 | `task_create` | Clear action, vague time. |
 | 等我到酒店后给王总回电话 | `task_create` | Conditional future task. |
@@ -39,6 +40,9 @@ Current D0 behavior:
 
 - Preserve vague time in `due_time_text`.
 - Do not invent `due_time_iso` for vague or conditional time.
+- When the user says "今晚", "晚上", "下午", or similar same-day time words
+  without another date, prefer today's local calendar date unless surrounding
+  context clearly points elsewhere.
 - Recurring expressions such as "每天" and "偶尔" may become task candidates,
   but D0 does not implement a full recurrence/reminder system.
 
@@ -53,6 +57,8 @@ Examples:
 |---|---|---|
 | 王总那个事做完了 | `task_update` | Complete action, target may need resolution. |
 | 明天会议取消 | `task_update` | Cancel action. |
+| 下午开会的事情取消了 | `task_update` | Cancel existing afternoon meeting. |
+| 今天好累，健身不想去了 | `task_update` + `short_term_state` | Possible cancellation plus energy state. |
 | 客户沟通推到后天 | `task_update` | Delay action with new time text. |
 | 那个事终于搞定了 | `task_update` | Vague target; app must resolve or ask. |
 

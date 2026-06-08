@@ -149,6 +149,17 @@ MVP rule:
   concrete part. For example, `那个客户资料不用做了` can target `客户资料` if the
   parser extracts `客户资料` as `targetText`.
 
+Real-trial note:
+
+- `下午开会的事情取消了` should be treated as a concrete target if there is an
+  active task such as `今天下午开会`.
+- `今天好累，健身不想去了` should extract both an `energy_state` and a possible
+  cancel/update target such as `健身` when an active fitness task exists.
+- Phrases such as `不想去了`, `不去了`, `不用去了`, and `不想做了` should not
+  silently delete a task. They should resolve to a confirmation flow when a safe
+  target exists, because the user may be expressing temporary resistance rather
+  than a final cancellation.
+
 ## Similar Titles
 
 When multiple task titles are similar, the system must prefer user control over
