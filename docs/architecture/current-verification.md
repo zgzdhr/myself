@@ -1,5 +1,37 @@
 # Current Verification
 
+## Latest Verification: Phase 3 E1
+
+Date: 2026-06-08
+Scope: Unified project check script for mobile and API verification
+
+### Summary
+
+- Result: Pass.
+- New script: `scripts/check-all.sh`.
+- README now documents the one-command verification entry point.
+- The script runs mobile static checks, mobile tests, API typecheck, and API tests.
+- No business behavior changed.
+
+### Command Run
+
+```bash
+./scripts/check-all.sh
+```
+
+### Results
+
+- `flutter analyze`: Pass, no issues found.
+- `flutter test`: Pass, 105 tests passed.
+- `npm run typecheck`: Pass.
+- `npm test`: Pass, 53 tests passed.
+
+### Notes
+
+- The first sandboxed run stopped at Flutter SDK cache writes.
+- The official E1 verification used permission mode because the script needs Flutter SDK cache writes and the API localhost privacy test starts a local server.
+- Flutter tests still emit the existing Drift multiple-database debug warning in one test path; tests pass and this was not introduced by E1.
+
 ## Latest Verification: Phase 3 D2
 
 Date: 2026-06-08

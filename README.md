@@ -37,6 +37,23 @@
 - `apps/mobile`: Flutter Android/iOS app.
 - `apps/api`: Minimal TypeScript DeepSeek API proxy.
 
+## 验证
+
+根目录提供统一检查脚本，用于一次跑完移动端和 API 的基础验证：
+
+```bash
+./scripts/check-all.sh
+```
+
+脚本会依次执行：
+
+- `cd apps/mobile && flutter analyze`
+- `cd apps/mobile && flutter test`
+- `cd apps/api && npm run typecheck`
+- `cd apps/api && npm test`
+
+在受限沙箱环境里，Flutter SDK cache 写入和 API localhost 隐私测试可能需要权限模式；本机正常开发环境可直接运行。
+
 ## MVP 闭环
 
 ```text
