@@ -315,41 +315,12 @@ class _HomeFollowUp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primarySuggestion = suggestions.first;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SurfacePanel(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _SectionEyebrow(
-                icon: Icons.auto_awesome_rounded,
-                label: 'AI 建议',
-              ),
-              const SizedBox(height: 12),
-              Text(
-                primarySuggestion.text,
-                style: const TextStyle(
-                  color: Color(0xFF1D1D1F),
-                  fontSize: 18,
-                  height: 1.35,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                primarySuggestion.reason,
-                style: const TextStyle(
-                  color: Color(0xFF746E66),
-                  fontSize: 15,
-                  height: 1.4,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        _HomeSuggestionPanel(
+          suggestions: suggestions,
+          contextData: contextData,
         ),
         const SizedBox(height: 18),
         _HomeListSection(
@@ -369,6 +340,184 @@ class _HomeFollowUp extends StatelessWidget {
   }
 }
 
+class _HomeSuggestionPanel extends StatelessWidget {
+  const _HomeSuggestionPanel({
+    required this.suggestions,
+    required this.contextData,
+  });
+
+  final List<HomeSuggestion> suggestions;
+  final HomeSuggestionContext contextData;
+
+  @override
+  Widget build(BuildContext context) {
+    final primarySuggestion = suggestions.first;
+
+    return _SurfacePanel(
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: true,
+            tilePadding: const EdgeInsets.fromLTRB(16, 14, 10, 8),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            leading: const Icon(
+              Icons.auto_awesome_rounded,
+              size: 19,
+              color: Color(0xFF53736A),
+            ),
+            title: const Text(
+              'AI 建议',
+              style: TextStyle(
+                color: Color(0xFF53736A),
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                primarySuggestion.text,
+                style: const TextStyle(
+                  color: Color(0xFF1D1D1F),
+                  fontSize: 18,
+                  height: 1.35,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            children: [
+              if (suggestions.length > 1) ...[
+                const SizedBox(height: 4),
+                for (final suggestion in suggestions.skip(1))
+                  _SuggestionTextRow(text: suggestion.text),
+                const SizedBox(height: 8),
+              ],
+              _EvidenceGroup(
+                title: '任务依据',
+                emptyText: '暂无可用于建议的任务',
+                items: [
+                  for (final task in contextData.tasks.take(3))
+                    task.displayText,
+                ],
+              ),
+              const SizedBox(height: 12),
+              _EvidenceGroup(
+                title: '当前状态',
+                emptyText: '暂无未过期状态',
+                items: [
+                  for (final state in contextData.shortTermStates.take(3))
+                    state.content,
+                ],
+              ),
+              const SizedBox(height: 12),
+              _EvidenceGroup(
+                title: '长期偏好',
+                emptyText: '暂无已确认长期画像',
+                items: [
+                  for (final profile in contextData.profileItems.take(2))
+                    profile.content,
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestionTextRow extends StatelessWidget {
+  const _SuggestionTextRow({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: Icon(
+              Icons.arrow_right_rounded,
+              size: 18,
+              color: Color(0xFF53736A),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Color(0xFF3A3835),
+                fontSize: 15,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EvidenceGroup extends StatelessWidget {
+  const _EvidenceGroup({
+    required this.title,
+    required this.emptyText,
+    required this.items,
+  });
+
+  final String title;
+  final String emptyText;
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F5EF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE9E1D6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF1D1D1F),
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (items.isEmpty)
+            Text(
+              emptyText,
+              style: const TextStyle(
+                color: Color(0xFF8A8278),
+                fontSize: 14,
+                height: 1.35,
+              ),
+            )
+          else
+            for (final item in items)
+              _CompactBullet(text: item, color: const Color(0xFF53736A)),
+        ],
+      ),
+    );
+  }
+}
+
 class _HomeListSection extends StatelessWidget {
   const _HomeListSection({
     required this.title,
@@ -383,58 +532,76 @@ class _HomeListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SurfacePanel(
-      padding: const EdgeInsets.all(14),
-      child: Column(
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: true,
+            tilePadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+            childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            title: Text(
+              items.isEmpty ? title : '$title · ${items.length}',
+              style: const TextStyle(
+                color: Color(0xFF1D1D1F),
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            children: [
+              if (items.isEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    emptyText,
+                    style: const TextStyle(
+                      color: Color(0xFF8A8278),
+                      fontSize: 14,
+                      height: 1.35,
+                    ),
+                  ),
+                )
+              else
+                for (final item in items)
+                  _CompactBullet(text: item, color: const Color(0xFF53736A)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactBullet extends StatelessWidget {
+  const _CompactBullet({required this.text, required this.color});
+
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFF1D1D1F),
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
+          Padding(
+            padding: const EdgeInsets.only(top: 7),
+            child: Icon(Icons.circle, size: 5, color: color),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Color(0xFF3A3835),
+                fontSize: 15,
+                height: 1.3,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          const SizedBox(height: 10),
-          if (items.isEmpty)
-            Text(
-              emptyText,
-              style: const TextStyle(
-                color: Color(0xFF8A8278),
-                fontSize: 14,
-                height: 1.35,
-              ),
-            )
-          else
-            for (final item in items.take(3))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 7),
-                      child: Icon(
-                        Icons.circle,
-                        size: 5,
-                        color: Color(0xFF53736A),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item,
-                        style: const TextStyle(
-                          color: Color(0xFF3A3835),
-                          fontSize: 15,
-                          height: 1.3,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
         ],
       ),
     );
@@ -549,31 +716,6 @@ class _SurfacePanel extends StatelessWidget {
         ],
       ),
       child: child,
-    );
-  }
-}
-
-class _SectionEyebrow extends StatelessWidget {
-  const _SectionEyebrow({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: const Color(0xFF53736A)),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF53736A),
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
     );
   }
 }
