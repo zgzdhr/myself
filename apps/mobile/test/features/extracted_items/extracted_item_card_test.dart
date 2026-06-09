@@ -650,6 +650,60 @@ void main() {
     expect(find.text('HOME_CONTEXT_AFTER_INPUT'), findsNothing);
   });
 
+  testWidgets('auto-saved input notifies home records changed', (tester) async {
+    final database = db.AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+
+    var recordsChangedCount = 0;
+    final controller = ExtractedItemsController(
+      database: database,
+      parserClient: _StaticParserClient(
+        ParseResult(
+          userReply: '我帮你整理出了一个任务。',
+          inputSummary: '用户提到明天联系王总。',
+          intentTypes: const [ItemType.taskCreate],
+          items: [
+            ParsedExtractedItem(
+              localId: 'parsed:0',
+              type: ItemType.taskCreate,
+              title: '联系王总',
+              sourceText: '明天联系王总',
+              tags: const ['work'],
+              confidence: 0.91,
+              needUserConfirm: true,
+              parsedAt: DateTime.utc(2026, 5, 31),
+            ),
+          ],
+        ),
+      ),
+      rawInputIdFactory: () => 'raw-auto-refresh',
+      parseResultIdFactory: () => 'parse-auto-refresh',
+      nowProvider: () => DateTime.utc(2026, 5, 31),
+    );
+
+    await tester.pumpWidget(
+      _wrap(
+        InputScreen(
+          controller: controller,
+          onRecordsChanged: () {
+            recordsChangedCount++;
+          },
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField), '明天联系王总');
+    await tester.tap(find.text('整理'));
+    await tester.pumpAndSettle();
+
+    expect(recordsChangedCount, 1);
+    expect(await database.getActiveTasks(), hasLength(1));
+  });
+
   testWidgets('ambiguous task update lets user select which task to update', (
     tester,
   ) async {
