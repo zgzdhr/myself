@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-项目已经从 MVP 骨架稳定阶段进入真实手机试用后的可用性修正阶段。核心链路已经能在 Android 真机上通过本地 API proxy 调用 DeepSeek 并写入本地 SQLite。Phase 4A 已完成待确认批次保留、删除二次确认和 Debug 日期切换；Phase 4B 已完成时间上下文、可选地点上下文合同、时间语义、今日行动过滤、时间展示和日期时间编辑器。当前下一步是 Phase 4C，重点增强 `task_update` 取消 / 完成 / 延期表达和目标任务匹配。
+项目已经从 MVP 骨架稳定阶段进入真实手机试用后的可用性修正阶段。核心链路已经能在 Android 真机上通过本地 API proxy 调用 DeepSeek 并写入本地 SQLite。Phase 4A-4E 已完成：待确认批次保留、删除二次确认、Debug 日期切换、时间语义修复、`task_update` 取消/匹配增强、首页建议分组展开、任务业务状态可见化，以及真实 APK + 本地 API proxy 试用链路文档。
 
 当前已经落地：
 
@@ -22,6 +22,10 @@
 - Phase 3 真实试用文档，记录三星 Android 真机 APK、API proxy、DeepSeek 解析链路和 Phase 4 问题来源。
 - Phase 4A 信任底线修复：最近 3 批 pending 待确认内容保留、记忆删除二次确认、Debug 日期切换。
 - Phase 4B 时间语义与今日行动修复：当前时间传给 DeepSeek、可选地点上下文合同、同日隐含时间、今天 / 明天 / 未来 / 未安排任务分组、任务时间展示、日期时间编辑器。
+- Phase 4C task_update 真实语义增强：取消类表达、噪声词清洗、目标任务匹配和真实失败样例覆盖。
+- Phase 4D 首页与行动区体验：AI 建议和今日行动可展开，建议依据按任务、状态、长期偏好分组展示。
+- Phase 4D.5 任务业务状态：`task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。
+- Phase 4E 真机试用链路：Android debug APK、本地 API proxy、DeepSeek Key 服务端保护、LAN 调试和排查 checklist。
 - 基础测试覆盖，包括 Flutter analyze/test 目标、API typecheck/test 目标，以及 parser、数据库、确认流、记忆管理和隐私失败处理测试。
 
 优先阅读：
@@ -34,6 +38,7 @@
 - `docs/architecture/current-verification.md`：当前自动化验证结果。
 - `docs/architecture/phase-3-verification.md`：Phase 3 验收和真实试用结论。
 - `docs/architecture/phase-3-real-trial-feedback.md`：三星 Android 真机真实试用反馈。
+- `docs/architecture/phase-4e-real-apk-trial.md`：Phase 4E 真实 APK + 本地 API proxy 试用链路。
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
 - `2026-06-05-mvp-next-task-map.md`：当前 Phase 4 任务地图。

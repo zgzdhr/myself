@@ -273,7 +273,7 @@ f62bba1 feat: complete phase 4B time fixes
 - 已完成日期选择、时间选择和清除时间入口。
 - 完整提醒、重复提醒、提前提醒仍后置。
 
-## 3. Phase 4C：task_update 真实语义增强，当前下一步
+## 3. Phase 4C：task_update 真实语义增强，已完成
 
 执行状态（2026-06-08）：
 
@@ -358,6 +358,14 @@ f62bba1 feat: complete phase 4B time fixes
 
 ## 4. Phase 4D：首页与行动区体验
 
+执行状态（2026-06-09）：
+
+- 已完成首页体验第一步：AI 建议区域可展开，展开后按任务依据、当前状态、长期偏好分组展示。
+- 已完成今日行动区域可展开，并显示当天任务数量。
+- 已完成 Phase 4D.5：任务记录生命周期和任务业务状态拆分，新增 `task_status: active / completed / cancelled`。
+- 完成 / 取消任务后，任务记录保持可见，不再混用 `deleted` / `archived` 表示业务状态。
+- 首页建议和 `task_update` 匹配只使用 `active` 任务。
+
 目标：
 
 - AI 建议区域可展开。
@@ -379,6 +387,12 @@ f62bba1 feat: complete phase 4B time fixes
 - 不做完整 Agent。
 
 ## 5. Phase 4E：试用版和 APK 链路
+
+执行状态（2026-06-09）：
+
+- 已完成 Android debug 真实试用链路文档：`docs/architecture/phase-4e-real-apk-trial.md`。
+- 已确认 Android manifest 支持本地 HTTP API proxy 调试所需的 `INTERNET` 权限和 cleartext trial 配置。
+- 已明确 Debug APK 构建命令、`PARSER_BASE_URL` / Mac LAN IP 规则、API proxy health check、DeepSeek Key 不进移动端的边界。
 
 目标：
 

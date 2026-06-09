@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../data/local_db/app_database.dart';
 import '../../domain/item_type.dart';
 import '../../domain/record_status.dart';
+import '../../domain/task_status.dart';
 
 enum ContextIntent {
   currentSuggestion,
@@ -111,9 +112,11 @@ class ContextBuilder {
     final candidates = <ContextTaskCandidate>[];
     var deletedCount = 0;
     var archivedCount = 0;
+    var inactiveTaskCount = 0;
 
     for (final task in allTasks) {
-      if (task.status == RecordStatus.confirmed.value) {
+      if (task.status == RecordStatus.confirmed.value &&
+          task.taskStatus == TaskStatus.active.value) {
         candidates.add(
           ContextTaskCandidate(
             id: task.id,
@@ -123,6 +126,8 @@ class ContextBuilder {
             dueTime: task.dueTime,
           ),
         );
+      } else if (task.status == RecordStatus.confirmed.value) {
+        inactiveTaskCount++;
       } else if (task.status == RecordStatus.deleted.value) {
         deletedCount++;
       } else if (task.status == RecordStatus.archived.value) {
@@ -133,6 +138,9 @@ class ContextBuilder {
     final excludedReasonCounts = <String, int>{};
     if (deletedCount > 0) excludedReasonCounts['deleted'] = deletedCount;
     if (archivedCount > 0) excludedReasonCounts['archived'] = archivedCount;
+    if (inactiveTaskCount > 0) {
+      excludedReasonCounts['inactive_tasks'] = inactiveTaskCount;
+    }
 
     return ContextTaskUpdatePackage(
       candidates: candidates,
@@ -155,6 +163,7 @@ class ContextBuilder {
       'rejected': 0,
       'pending': 0,
       'expired': 0,
+      'inactive_tasks': 0,
       'unconfirmed_profile_candidate': 0,
       'raw_inputs_default_excluded': rawInputs.length,
     };
@@ -162,6 +171,9 @@ class ContextBuilder {
     for (final task in tasks) {
       if (task.status == RecordStatus.deleted.value) {
         counts['deleted'] = counts['deleted']! + 1;
+      } else if (task.status == RecordStatus.confirmed.value &&
+          task.taskStatus != TaskStatus.active.value) {
+        counts['inactive_tasks'] = counts['inactive_tasks']! + 1;
       }
     }
 

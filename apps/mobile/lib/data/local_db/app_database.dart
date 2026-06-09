@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../../domain/record_status.dart';
+import '../../domain/task_status.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -25,7 +26,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onUpgrade: (m, from, to) async {
+        if (from < 2) {
+          await m.addColumn(tasks, tasks.taskStatus);
+          await customStatement(
+            "UPDATE tasks SET task_status = '${TaskStatus.completed.value}', "
+            "status = '${RecordStatus.confirmed.value}' "
+            "WHERE status = '${RecordStatus.archived.value}'",
+          );
+        }
+      },
+    );
+  }
 
   static QueryExecutor _openConnection() {
     return LazyDatabase(() async {
@@ -66,6 +83,7 @@ class AppDatabase extends _$AppDatabase {
           title: item.title ?? item.content ?? item.sourceText,
           description: Value(item.content),
           status: RecordStatus.confirmed.value,
+          taskStatus: Value(TaskStatus.active.value),
           createdAt: now,
           updatedAt: now,
         ),
@@ -147,13 +165,27 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Future<void> markTaskArchived({
+  Future<void> markTaskCompleted({
     required String id,
     required DateTime updatedAt,
   }) {
     return (update(tasks)..where((task) => task.id.equals(id))).write(
       TasksCompanion(
-        status: Value(RecordStatus.archived.value),
+        status: Value(RecordStatus.confirmed.value),
+        taskStatus: Value(TaskStatus.completed.value),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
+  Future<void> markTaskCancelled({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(tasks)..where((task) => task.id.equals(id))).write(
+      TasksCompanion(
+        status: Value(RecordStatus.confirmed.value),
+        taskStatus: Value(TaskStatus.cancelled.value),
         updatedAt: Value(updatedAt),
       ),
     );
@@ -312,6 +344,15 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<List<Task>> getActiveTasks() {
+    return (select(tasks)..where(
+          (task) =>
+              task.status.equals(RecordStatus.confirmed.value) &
+              task.taskStatus.equals(TaskStatus.active.value),
+        ))
+        .get();
+  }
+
+  Future<List<Task>> getVisibleTasks() {
     return (select(
       tasks,
     )..where((task) => task.status.equals(RecordStatus.confirmed.value))).get();
@@ -324,6 +365,7 @@ class AppDatabase extends _$AppDatabase {
           ..where(
             (task) =>
                 task.status.equals(RecordStatus.confirmed.value) &
+                task.taskStatus.equals(TaskStatus.active.value) &
                 (task.dueTime.isNull() |
                     task.dueTime.isSmallerOrEqualValue(nextSevenDaysEnd)),
           )
@@ -365,11 +407,11 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<int> countPendingExtractedItemsByType(String type) async {
-    final rows = await (select(extractedItems)
-          ..where(
-            (item) => item.type.equals(type) & item.status.equals('pending'),
-          ))
-        .get();
+    final rows =
+        await (select(extractedItems)..where(
+              (item) => item.type.equals(type) & item.status.equals('pending'),
+            ))
+            .get();
     return rows.length;
   }
 }

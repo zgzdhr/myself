@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/local_db/app_database.dart';
 import 'package:mobile/domain/item_type.dart';
 import 'package:mobile/domain/record_status.dart';
+import 'package:mobile/domain/task_status.dart';
 import 'package:mobile/features/context/context_builder.dart';
 import 'package:mobile/features/home/home_suggestion_service.dart';
 
@@ -407,6 +408,46 @@ void main() {
     expect(package.excludedReasonCounts['archived'], greaterThanOrEqualTo(1));
   });
 
+  test(
+    'task update resolution excludes completed and cancelled tasks',
+    () async {
+      await _insertTask(
+        database,
+        id: 'task-completed-1',
+        title: '已完成任务',
+        status: RecordStatus.confirmed,
+        taskStatus: TaskStatus.completed,
+        dueTime: now,
+      );
+      await _insertTask(
+        database,
+        id: 'task-cancelled-1',
+        title: '已取消任务',
+        status: RecordStatus.confirmed,
+        taskStatus: TaskStatus.cancelled,
+        dueTime: now,
+      );
+      await _insertTask(
+        database,
+        id: 'task-active-1',
+        title: '联系王总',
+        status: RecordStatus.confirmed,
+        dueTime: now,
+      );
+
+      final package = await builder.buildTaskUpdateResolution(
+        database: database,
+        now: now,
+      );
+
+      expect(package.candidates.map((c) => c.title), ['联系王总']);
+      expect(
+        package.excludedReasonCounts['inactive_tasks'],
+        greaterThanOrEqualTo(2),
+      );
+    },
+  );
+
   test('task update resolution candidate has only minimal fields', () async {
     await _insertTask(
       database,
@@ -574,6 +615,7 @@ Future<void> _insertTask(
   required String id,
   required String title,
   required RecordStatus status,
+  TaskStatus taskStatus = TaskStatus.active,
   required DateTime? dueTime,
 }) {
   return database
@@ -587,6 +629,7 @@ Future<void> _insertTask(
           dueTime: Value(dueTime),
           priority: const Value('medium'),
           status: status.value,
+          taskStatus: Value(taskStatus.value),
           createdAt: nowForTests(dueTime),
           updatedAt: nowForTests(dueTime),
         ),

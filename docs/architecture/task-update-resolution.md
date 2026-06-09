@@ -179,32 +179,35 @@ Rules:
 
 ### `complete`
 
-Current MVP behavior:
+Current Phase 4D.5 behavior:
 
-- `complete` calls `markTaskArchived`.
-- The task record `status` becomes `archived`.
+- `complete` calls `markTaskCompleted`.
+- The task record `status` stays `confirmed`.
+- The task business state `task_status` becomes `completed`.
 - The extracted `task_update` item becomes `confirmed` after the update is
   applied.
 
-MVP boundary:
+Visibility rule:
 
-- `archived` currently means "completed task" for task updates.
-- This is a temporary schema shortcut.
+- Completed tasks stay visible in task memory pages.
+- Completed tasks do not participate in homepage suggestions or future
+  `task_update` matching.
 
 ### `cancel`
 
-Current MVP behavior:
+Current Phase 4D.5 behavior:
 
-- `cancel` calls `markTaskDeleted`.
-- The task record `status` becomes `deleted`.
+- `cancel` calls `markTaskCancelled`.
+- The task record `status` stays `confirmed`.
+- The task business state `task_status` becomes `cancelled`.
 - The extracted `task_update` item becomes `confirmed` after the update is
   applied.
 
-MVP boundary:
+Visibility rule:
 
-- `deleted` currently means "cancelled task" for task updates.
-- This overlaps with real deletion and undo behavior, so it should not be
-  treated as the final model.
+- Cancelled tasks stay visible in task memory pages.
+- Cancelled tasks do not participate in homepage suggestions or future
+  `task_update` matching.
 
 ### `delay`
 
@@ -249,44 +252,43 @@ Product meaning:
 - `cancel`: the user says the task no longer needs to be done.
 - `delete`: the user removes a record from memory or undoes an auto-saved item.
 
-Current schema limitation:
+Current Phase 4D.5 model:
 
-- Both cancellation and deletion currently use record `status = deleted` in
-  the `tasks` table.
-
-Risk:
-
-- The app cannot later distinguish "I cancelled this task" from "I deleted this
+- Cancellation uses `task_status = cancelled` and keeps `status = confirmed`.
+- Deletion uses `status = deleted` and removes the record from normal memory
+  and suggestion queries.
+- The app can now distinguish "I cancelled this task" from "I deleted this
   record and do not want it used".
 
-MVP decision:
+Migration note:
 
-- Keep the current schema for B1.
-- Document the risk clearly.
-- Avoid building analytics, review, or memory behavior that depends on knowing
-  whether a deleted task was cancelled or removed.
+- Older `archived` task rows are migrated to `status = confirmed` and
+  `task_status = completed`.
+- Older `deleted` rows are not resurrected because they may represent real user
+  deletions; from Phase 4D.5 onward, new cancellations use
+  `task_status = cancelled`.
 
-## Recommended Future Schema Direction
+## Task Status Schema
 
-The current `status` field is doing two jobs:
+Before Phase 4D.5, the `status` field was doing two jobs:
 
 - Record lifecycle: `confirmed`, `deleted`, `archived`, etc.
 - Task business state: active, completed, cancelled.
 
-Future schema should split these concerns:
+Phase 4D.5 splits these concerns:
 
 ```text
 tasks.status       -> record lifecycle, for visibility and deletion
 tasks.task_status  -> task business state
 ```
 
-Recommended `task_status` values:
+`task_status` values:
 
 - `active`
 - `completed`
 - `cancelled`
 
-Future mapping:
+Current mapping:
 
 - New task -> `status = confirmed`, `task_status = active`
 - Complete -> `status = confirmed`, `task_status = completed`

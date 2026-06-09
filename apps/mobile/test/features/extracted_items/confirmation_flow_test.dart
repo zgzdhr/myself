@@ -8,6 +8,7 @@ import 'package:mobile/domain/extracted_item.dart';
 import 'package:mobile/domain/item_type.dart';
 import 'package:mobile/domain/parse_result.dart';
 import 'package:mobile/domain/record_status.dart';
+import 'package:mobile/domain/task_status.dart';
 import 'package:mobile/features/extracted_items/extracted_items_controller.dart';
 
 void main() {
@@ -367,7 +368,8 @@ void main() {
     final extractedItem = await _getExtractedItem(database, 'raw-3:0');
 
     expect(updateResult.state, TaskUpdateExecutionState.applied);
-    expect(updatedTask.status, RecordStatus.archived.value);
+    expect(updatedTask.status, RecordStatus.confirmed.value);
+    expect(updatedTask.taskStatus, TaskStatus.completed.value);
     expect(extractedItem.status, RecordStatus.confirmed.value);
   });
 
@@ -444,7 +446,8 @@ void main() {
     final updatedTask = await _getTask(database, 'task-existing-3');
 
     expect(updateResult.state, TaskUpdateExecutionState.applied);
-    expect(updatedTask.status, RecordStatus.deleted.value);
+    expect(updatedTask.status, RecordStatus.confirmed.value);
+    expect(updatedTask.taskStatus, TaskStatus.cancelled.value);
   });
 
   test('ambiguous task update requires selection before applying', () async {
@@ -758,7 +761,8 @@ void main() {
       final cancelledTask = await _getTask(database, 'task-gaokao');
 
       expect(updateResult.state, TaskUpdateExecutionState.applied);
-      expect(cancelledTask.status, RecordStatus.deleted.value);
+      expect(cancelledTask.status, RecordStatus.confirmed.value);
+      expect(cancelledTask.taskStatus, TaskStatus.cancelled.value);
     },
   );
 
@@ -796,7 +800,8 @@ void main() {
       final cancelledTask = await _getTask(database, 'task-meeting');
 
       expect(updateResult.state, TaskUpdateExecutionState.applied);
-      expect(cancelledTask.status, RecordStatus.deleted.value);
+      expect(cancelledTask.status, RecordStatus.confirmed.value);
+      expect(cancelledTask.taskStatus, TaskStatus.cancelled.value);
     },
   );
 
@@ -834,7 +839,8 @@ void main() {
       final cancelledTask = await _getTask(database, 'task-fitness');
 
       expect(updateResult.state, TaskUpdateExecutionState.applied);
-      expect(cancelledTask.status, RecordStatus.deleted.value);
+      expect(cancelledTask.status, RecordStatus.confirmed.value);
+      expect(cancelledTask.taskStatus, TaskStatus.cancelled.value);
     },
   );
 
@@ -950,44 +956,43 @@ void main() {
     },
   );
 
-  test('cancel action marks task as deleted per MVP status strategy', () async {
-    // B1 documented: complete → archived, cancel → deleted.
-    // This is a temporary schema shortcut tracked in
-    // docs/architecture/task-update-resolution.md.
-    await _insertConfirmedTask(
-      database,
-      id: 'task-cancel-strategy',
-      title: '不做了的任务',
-      dueTime: DateTime.utc(2026, 5, 31, 9),
-    );
-    final taskUpdateController = _buildTaskUpdateController(
-      database,
-      parsedItem: ParsedExtractedItem(
-        localId: 'parsed:0',
-        type: ItemType.taskUpdate,
+  test(
+    'cancel action keeps record visible with cancelled task status',
+    () async {
+      await _insertConfirmedTask(
+        database,
+        id: 'task-cancel-strategy',
         title: '不做了的任务',
-        sourceText: '不做了的任务取消',
-        tags: const ['task'],
-        confidence: 0.93,
-        needUserConfirm: true,
-        parsedAt: DateTime.utc(2026, 5, 31),
-        taskUpdateIntent: TaskUpdateIntent(
-          action: TaskUpdateAction.cancel,
-          targetTaskTitle: '不做了的任务',
-          targetText: '不做了的任务',
+        dueTime: DateTime.utc(2026, 5, 31, 9),
+      );
+      final taskUpdateController = _buildTaskUpdateController(
+        database,
+        parsedItem: ParsedExtractedItem(
+          localId: 'parsed:0',
+          type: ItemType.taskUpdate,
+          title: '不做了的任务',
+          sourceText: '不做了的任务取消',
+          tags: const ['task'],
+          confidence: 0.93,
+          needUserConfirm: true,
+          parsedAt: DateTime.utc(2026, 5, 31),
+          taskUpdateIntent: TaskUpdateIntent(
+            action: TaskUpdateAction.cancel,
+            targetTaskTitle: '不做了的任务',
+            targetText: '不做了的任务',
+          ),
         ),
-      ),
-    );
+      );
 
-    final result = await taskUpdateController.submitInput('不做了的任务取消');
-    await taskUpdateController.applyTaskUpdate(item: result.items.single);
-    final cancelledTask = await _getTask(database, 'task-cancel-strategy');
+      final result = await taskUpdateController.submitInput('不做了的任务取消');
+      await taskUpdateController.applyTaskUpdate(item: result.items.single);
+      final cancelledTask = await _getTask(database, 'task-cancel-strategy');
 
-    // MVP: cancel → deleted (temporary, will be task_status: cancelled later)
-    expect(cancelledTask.status, RecordStatus.deleted.value);
-    // Task data is preserved (title still readable) — not truly deleted
-    expect(cancelledTask.title, '不做了的任务');
-  });
+      expect(cancelledTask.status, RecordStatus.confirmed.value);
+      expect(cancelledTask.taskStatus, TaskStatus.cancelled.value);
+      expect(cancelledTask.title, '不做了的任务');
+    },
+  );
 
   // ── C3: auto-save boundary regression ──
 

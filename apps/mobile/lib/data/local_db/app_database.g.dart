@@ -1720,6 +1720,18 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _taskStatusMeta = const VerificationMeta(
+    'taskStatus',
+  );
+  @override
+  late final GeneratedColumn<String> taskStatus = GeneratedColumn<String>(
+    'task_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('active'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1753,6 +1765,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     dueTime,
     priority,
     status,
+    taskStatus,
     createdAt,
     updatedAt,
   ];
@@ -1841,6 +1854,12 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     } else if (isInserting) {
       context.missing(_statusMeta);
     }
+    if (data.containsKey('task_status')) {
+      context.handle(
+        _taskStatusMeta,
+        taskStatus.isAcceptableOrUnknown(data['task_status']!, _taskStatusMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1902,6 +1921,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         DriftSqlType.string,
         data['${effectivePrefix}status'],
       )!,
+      taskStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1929,6 +1952,7 @@ class Task extends DataClass implements Insertable<Task> {
   final DateTime? dueTime;
   final String priority;
   final String status;
+  final String taskStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Task({
@@ -1941,6 +1965,7 @@ class Task extends DataClass implements Insertable<Task> {
     this.dueTime,
     required this.priority,
     required this.status,
+    required this.taskStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1962,6 +1987,7 @@ class Task extends DataClass implements Insertable<Task> {
     }
     map['priority'] = Variable<String>(priority);
     map['status'] = Variable<String>(status);
+    map['task_status'] = Variable<String>(taskStatus);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1984,6 +2010,7 @@ class Task extends DataClass implements Insertable<Task> {
           : Value(dueTime),
       priority: Value(priority),
       status: Value(status),
+      taskStatus: Value(taskStatus),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2006,6 +2033,7 @@ class Task extends DataClass implements Insertable<Task> {
       dueTime: serializer.fromJson<DateTime?>(json['dueTime']),
       priority: serializer.fromJson<String>(json['priority']),
       status: serializer.fromJson<String>(json['status']),
+      taskStatus: serializer.fromJson<String>(json['taskStatus']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2023,6 +2051,7 @@ class Task extends DataClass implements Insertable<Task> {
       'dueTime': serializer.toJson<DateTime?>(dueTime),
       'priority': serializer.toJson<String>(priority),
       'status': serializer.toJson<String>(status),
+      'taskStatus': serializer.toJson<String>(taskStatus),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2038,6 +2067,7 @@ class Task extends DataClass implements Insertable<Task> {
     Value<DateTime?> dueTime = const Value.absent(),
     String? priority,
     String? status,
+    String? taskStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Task(
@@ -2050,6 +2080,7 @@ class Task extends DataClass implements Insertable<Task> {
     dueTime: dueTime.present ? dueTime.value : this.dueTime,
     priority: priority ?? this.priority,
     status: status ?? this.status,
+    taskStatus: taskStatus ?? this.taskStatus,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -2072,6 +2103,9 @@ class Task extends DataClass implements Insertable<Task> {
       dueTime: data.dueTime.present ? data.dueTime.value : this.dueTime,
       priority: data.priority.present ? data.priority.value : this.priority,
       status: data.status.present ? data.status.value : this.status,
+      taskStatus: data.taskStatus.present
+          ? data.taskStatus.value
+          : this.taskStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2089,6 +2123,7 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('dueTime: $dueTime, ')
           ..write('priority: $priority, ')
           ..write('status: $status, ')
+          ..write('taskStatus: $taskStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2106,6 +2141,7 @@ class Task extends DataClass implements Insertable<Task> {
     dueTime,
     priority,
     status,
+    taskStatus,
     createdAt,
     updatedAt,
   );
@@ -2122,6 +2158,7 @@ class Task extends DataClass implements Insertable<Task> {
           other.dueTime == this.dueTime &&
           other.priority == this.priority &&
           other.status == this.status &&
+          other.taskStatus == this.taskStatus &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -2136,6 +2173,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<DateTime?> dueTime;
   final Value<String> priority;
   final Value<String> status;
+  final Value<String> taskStatus;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -2149,6 +2187,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.dueTime = const Value.absent(),
     this.priority = const Value.absent(),
     this.status = const Value.absent(),
+    this.taskStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2163,6 +2202,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.dueTime = const Value.absent(),
     this.priority = const Value.absent(),
     required String status,
+    this.taskStatus = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -2183,6 +2223,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<DateTime>? dueTime,
     Expression<String>? priority,
     Expression<String>? status,
+    Expression<String>? taskStatus,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -2198,6 +2239,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       if (dueTime != null) 'due_time': dueTime,
       if (priority != null) 'priority': priority,
       if (status != null) 'status': status,
+      if (taskStatus != null) 'task_status': taskStatus,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2214,6 +2256,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Value<DateTime?>? dueTime,
     Value<String>? priority,
     Value<String>? status,
+    Value<String>? taskStatus,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -2229,6 +2272,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       dueTime: dueTime ?? this.dueTime,
       priority: priority ?? this.priority,
       status: status ?? this.status,
+      taskStatus: taskStatus ?? this.taskStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -2267,6 +2311,9 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
+    if (taskStatus.present) {
+      map['task_status'] = Variable<String>(taskStatus.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2291,6 +2338,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('dueTime: $dueTime, ')
           ..write('priority: $priority, ')
           ..write('status: $status, ')
+          ..write('taskStatus: $taskStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -6313,6 +6361,7 @@ typedef $$TasksTableCreateCompanionBuilder =
       Value<DateTime?> dueTime,
       Value<String> priority,
       required String status,
+      Value<String> taskStatus,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -6328,6 +6377,7 @@ typedef $$TasksTableUpdateCompanionBuilder =
       Value<DateTime?> dueTime,
       Value<String> priority,
       Value<String> status,
+      Value<String> taskStatus,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -6421,6 +6471,11 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskStatus => $composableBuilder(
+    column: $table.taskStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6525,6 +6580,11 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get taskStatus => $composableBuilder(
+    column: $table.taskStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6615,6 +6675,11 @@ class $$TasksTableAnnotationComposer
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get taskStatus => $composableBuilder(
+    column: $table.taskStatus,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6709,6 +6774,7 @@ class $$TasksTableTableManager
                 Value<DateTime?> dueTime = const Value.absent(),
                 Value<String> priority = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<String> taskStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -6722,6 +6788,7 @@ class $$TasksTableTableManager
                 dueTime: dueTime,
                 priority: priority,
                 status: status,
+                taskStatus: taskStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -6737,6 +6804,7 @@ class $$TasksTableTableManager
                 Value<DateTime?> dueTime = const Value.absent(),
                 Value<String> priority = const Value.absent(),
                 required String status,
+                Value<String> taskStatus = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -6750,6 +6818,7 @@ class $$TasksTableTableManager
                 dueTime: dueTime,
                 priority: priority,
                 status: status,
+                taskStatus: taskStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

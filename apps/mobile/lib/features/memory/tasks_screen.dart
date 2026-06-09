@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
+import '../../domain/task_status.dart';
 import 'delete_confirmation.dart';
 import 'task_time_formatter.dart';
 
@@ -28,7 +29,7 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Future<_TaskViewData> _load() async {
-    final tasks = await widget.database.getActiveTasks();
+    final tasks = await widget.database.getVisibleTasks();
     final ids = tasks.map((t) => t.sourceExtractedItemId).toList();
     final sourceTexts = await widget.database.getSourceTextsByExtractedItemIds(
       ids,
@@ -144,6 +145,9 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final taskStatus = TaskStatus.fromValue(task.taskStatus);
+    final isDone = taskStatus != TaskStatus.active;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -156,12 +160,23 @@ class _TaskCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     task.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
+                      color: isDone
+                          ? Theme.of(context).textTheme.bodyLarge?.color
+                                ?.withValues(alpha: 0.55)
+                          : null,
+                      decoration: taskStatus == TaskStatus.completed
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
                 ),
+                if (taskStatus != TaskStatus.active) ...[
+                  _TaskStatusBadge(status: taskStatus),
+                  const SizedBox(width: 8),
+                ],
                 _PriorityBadge(priority: task.priority),
               ],
             ),
@@ -224,6 +239,43 @@ class _TaskCard extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskStatusBadge extends StatelessWidget {
+  const _TaskStatusBadge({required this.status});
+
+  final TaskStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (status) {
+      TaskStatus.active => '待处理',
+      TaskStatus.completed => '已完成',
+      TaskStatus.cancelled => '已取消',
+    };
+    final color = switch (status) {
+      TaskStatus.active => Theme.of(context).colorScheme.primary,
+      TaskStatus.completed => Colors.green,
+      TaskStatus.cancelled => Colors.grey,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: color,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

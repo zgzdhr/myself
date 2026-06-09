@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/local_db/app_database.dart';
 import 'package:mobile/domain/item_type.dart';
 import 'package:mobile/domain/record_status.dart';
+import 'package:mobile/domain/task_status.dart';
 
 void main() {
   late AppDatabase database;
@@ -66,6 +67,7 @@ void main() {
     final extractedItems = await database.select(database.extractedItems).get();
 
     expect(tasks.single.title, '联系王总');
+    expect(tasks.single.taskStatus, TaskStatus.active.value);
     expect(profiles.single.content, '用户不喜欢太频繁的提醒');
     expect(extractedItems.map((item) => item.status).toSet(), {
       RecordStatus.confirmed.value,
@@ -118,6 +120,42 @@ void main() {
 
     expect(await database.getActiveProfileItems(), isEmpty);
   });
+
+  test(
+    'completed and cancelled tasks stay visible but leave active queries',
+    () async {
+      final now = DateTime.utc(2026, 5, 31, 12);
+
+      await _insertRawInput(database, now: now);
+      await _insertParseResult(database, now: now);
+      await _insertExtractedTask(database, now: now);
+      await database.confirmExtractedItemAsTask(
+        taskId: 'task-1',
+        extractedItemId: 'item-task',
+        now: now,
+      );
+
+      await database.markTaskCompleted(
+        id: 'task-1',
+        updatedAt: now.add(const Duration(minutes: 1)),
+      );
+
+      expect(await database.getActiveTasks(), isEmpty);
+      var visibleTasks = await database.getVisibleTasks();
+      expect(visibleTasks.single.status, RecordStatus.confirmed.value);
+      expect(visibleTasks.single.taskStatus, TaskStatus.completed.value);
+
+      await database.markTaskCancelled(
+        id: 'task-1',
+        updatedAt: now.add(const Duration(minutes: 2)),
+      );
+
+      expect(await database.getActiveTasks(), isEmpty);
+      visibleTasks = await database.getVisibleTasks();
+      expect(visibleTasks.single.status, RecordStatus.confirmed.value);
+      expect(visibleTasks.single.taskStatus, TaskStatus.cancelled.value);
+    },
+  );
 }
 
 Future<void> _insertRawInput(AppDatabase database, {required DateTime now}) {

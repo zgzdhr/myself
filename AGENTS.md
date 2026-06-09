@@ -14,9 +14,9 @@
 
 ## 当前规划状态
 
-截至 2026-06-08，项目已经从早期 0-6 阶段的 MVP 建设路线，切换到 **Phase 4：真实试用信任修复阶段**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理都已经完成。
+截至 2026-06-09，项目已经从早期 0-6 阶段的 MVP 建设路线，切换到 **Phase 4：真实试用信任修复阶段**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理都已经完成。
 
-Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。当前下一步是 **Phase 4C：task_update 真实语义增强**，重点处理“取消了 / 不用了 / 不去了 / 不想去了 / 先不做了”等表达、任务匹配噪声词、可能与长期目标冲突的取消意图，以及完成 / 取消任务的可见化。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“Phase 4 首页建议 / Phase 5 记忆管理 / Phase 6 双端验证”路线理解当前项目。
+Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。Phase 4C 已完成：取消类表达、任务匹配噪声清洗和真实失败样例覆盖。Phase 4D 已完成：首页 AI 建议和今日行动可展开，建议依据按任务、当前状态、长期偏好分组展示。Phase 4D.5 已完成：新增 `task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。Phase 4E 已完成：Android debug APK + 本地 API proxy + DeepSeek 真实试用链路文档和构建验证。当前下一步是 **真实试用回收 / Phase 5 记忆管理与可控性增强规划**。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“Phase 4 首页建议 / Phase 5 记忆管理 / Phase 6 双端验证”路线理解当前项目。
 
 已确认的核心链路：
 
@@ -481,18 +481,18 @@ myself/
 
 - `apps/api/test/privacyLogging.test.ts` 单独运行会挂住。该测试负责验证 API 错误日志不泄露用户原文，后续需要单独排查 server / fetch 生命周期。
 
-### Phase 4C：task_update 真实语义增强，当前下一步
+### Phase 4C：task_update 真实语义增强，已完成
 
 目标：
 
 - 增强“取消了 / 不用了 / 不去了 / 不想去了 / 先不做了”等真实中文表达识别。
 - 改进目标任务匹配，去掉“的事情 / 这个事 / 那个事”等噪声词。
 - 对“健身不想去了”这类可能与长期目标冲突的表达，先进入确认或建议流程，不静默覆盖用户选择。
-- 完成 / 取消任务未来要有业务状态展示、划线、可撤销入口，避免从用户视野里突然消失。
+- 完成 / 取消任务已有业务状态展示：任务记录生命周期和任务业务状态已拆分为 `status` 与 `task_status`。
 
 ### Phase 4D：首页与行动区体验
 
-目标：
+已完成：
 
 - 首页建议按任务依据、当前状态、长期偏好分组展示。
 - 今日行动区域支持展开，能看到当天任务安排。
@@ -501,11 +501,12 @@ myself/
 
 ### Phase 4E：试用版可验证性和 APK 链路
 
-目标：
+已完成：
 
 - 继续保持 Android 真机 APK + 本地 API proxy + DeepSeek 真实链路可跑。
 - 明确 Debug / Release 网络配置差异。
 - 后续如需给用户安装测试 APK，应单独记录构建命令、API 地址、设备网络前提和安全注意事项。
+- 4E 文档：`docs/architecture/phase-4e-real-apk-trial.md`。
 
 ## 长期后续任务与产品记忆
 
@@ -684,12 +685,10 @@ myself/
 
 ## 当前下一步
 
-当前下一步是执行 **Phase 4C：task_update 真实语义增强**。
+当前下一步是 **真实试用回收 / Phase 5 记忆管理与可控性增强规划**。
 
-1. 先读 `2026-06-05-mvp-next-task-map.md` 中 Phase 4C。
-2. 再看 `docs/architecture/phase-3-real-trial-feedback.md`，确认真实失败样例。
-3. 再看 `docs/architecture/chinese-semantic-classification-rules.md`，确认中文任务更新和语义边界。
-4. 再看 `apps/mobile/lib/features/context/context_builder.dart`、`apps/mobile/lib/features/home/home_suggestion_service.dart`、`apps/mobile/lib/features/extracted_items/extracted_items_controller.dart`。
-5. Phase 4C 优先修：取消类表达、目标任务匹配、模糊引用处理、可能与长期目标冲突的“不想去了”确认流程。
-6. 完成 / 取消任务的业务状态可见化是 4C 的重要产品边界，避免任务从用户视野里突然消失。
-7. 更复杂的提醒系统、自动画像进化、深度建议、个人问答、summary 注入、向量检索、LLM rerank 都后置。
+1. 先读 `2026-06-05-mvp-next-task-map.md`，确认 Phase 4A-4E 已完成。
+2. 再看 `docs/architecture/phase-4e-real-apk-trial.md`，按文档复现 Android debug APK + 本地 API proxy + DeepSeek 链路。
+3. 连续做一次真实手机试用，记录新的失败样例、误保存、误匹配、展示不清楚和信任问题。
+4. 根据真实试用结果决定 Phase 5 优先级，默认方向是记忆管理、任务状态可控性、删除/撤销/恢复和试用反馈闭环。
+5. 更复杂的提醒系统、自动画像进化、深度建议、个人问答、summary 注入、向量检索、LLM rerank 都后置。

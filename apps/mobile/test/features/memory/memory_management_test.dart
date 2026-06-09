@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/local_db/app_database.dart';
 import 'package:mobile/domain/item_type.dart';
 import 'package:mobile/domain/record_status.dart';
+import 'package:mobile/domain/task_status.dart';
 import 'package:mobile/features/home/home_suggestion_service.dart';
 import 'package:mobile/features/memory/life_events_screen.dart';
 import 'package:mobile/features/memory/memory_screen.dart';
@@ -119,6 +120,32 @@ void main() {
       expect(find.text('联系王总'), findsOneWidget);
       expect(find.text('6月1日 10:00｜原文：明天'), findsOneWidget);
       expect(find.textContaining('明天联系王总'), findsOneWidget);
+    });
+
+    testWidgets('shows completed and cancelled task status labels', (
+      tester,
+    ) async {
+      await database.markTaskCompleted(id: 'task-1', updatedAt: now);
+      await _insertTask(
+        database,
+        now: now,
+        id: 'task-cancelled',
+        title: '取消的任务',
+        sourceExtractedItemId: 'item-cancelled',
+        dueTimeText: '今天',
+        dueTime: now,
+        taskStatus: TaskStatus.cancelled,
+      );
+
+      await tester.pumpWidget(
+        _wrap(TasksScreen(database: database, nowProvider: () => now)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('联系王总'), findsOneWidget);
+      expect(find.text('已完成'), findsOneWidget);
+      expect(find.text('取消的任务'), findsOneWidget);
+      expect(find.text('已取消'), findsOneWidget);
     });
 
     testWidgets('delete task requires confirmation before marking deleted', (
@@ -473,18 +500,48 @@ Future<void> _insertSourceRows(
       );
 }
 
-Future<void> _insertTask(AppDatabase database, {required DateTime now}) {
-  return database
+Future<void> _insertTask(
+  AppDatabase database, {
+  required DateTime now,
+  String id = 'task-1',
+  String title = '联系王总',
+  String sourceExtractedItemId = 'item-1',
+  String dueTimeText = '明天',
+  DateTime? dueTime,
+  TaskStatus taskStatus = TaskStatus.active,
+}) async {
+  if (sourceExtractedItemId != 'item-1') {
+    await database
+        .into(database.extractedItems)
+        .insert(
+          ExtractedItemsCompanion.insert(
+            id: sourceExtractedItemId,
+            rawInputId: 'raw-1',
+            aiParseResultId: 'parse-1',
+            type: ItemType.taskCreate.apiValue,
+            title: Value(title),
+            sourceText: title,
+            confidence: 0.9,
+            needUserConfirm: true,
+            status: RecordStatus.confirmed.value,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+  }
+
+  await database
       .into(database.tasks)
       .insert(
         TasksCompanion.insert(
-          id: 'task-1',
+          id: id,
           sourceRawInputId: 'raw-1',
-          sourceExtractedItemId: 'item-1',
-          title: '联系王总',
-          dueTimeText: const Value('明天'),
-          dueTime: Value(DateTime(2026, 6, 1, 10)),
+          sourceExtractedItemId: sourceExtractedItemId,
+          title: title,
+          dueTimeText: Value(dueTimeText),
+          dueTime: Value(dueTime ?? DateTime(2026, 6, 1, 10)),
           status: RecordStatus.confirmed.value,
+          taskStatus: Value(taskStatus.value),
           createdAt: now,
           updatedAt: now,
         ),

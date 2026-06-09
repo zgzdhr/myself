@@ -54,6 +54,8 @@ class Tasks extends Table {
   DateTimeColumn get dueTime => dateTime().nullable()();
   TextColumn get priority => text().withDefault(const Constant('medium'))();
   TextColumn get status => text()();
+  TextColumn get taskStatus =>
+      text().named('task_status').withDefault(const Constant('active'))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 

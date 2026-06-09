@@ -9,6 +9,7 @@ import '../../domain/extracted_item.dart';
 import '../../domain/item_type.dart';
 import '../../domain/parse_result.dart';
 import '../../domain/record_status.dart';
+import '../../domain/task_status.dart';
 import '../context/context_builder.dart';
 
 class SubmitInputResult {
@@ -398,9 +399,9 @@ class ExtractedItemsController {
     await database.transaction(() async {
       switch (intent.action) {
         case TaskUpdateAction.complete:
-          await database.markTaskArchived(id: resolvedTask.id, updatedAt: now);
+          await database.markTaskCompleted(id: resolvedTask.id, updatedAt: now);
         case TaskUpdateAction.cancel:
-          await database.markTaskDeleted(id: resolvedTask.id, updatedAt: now);
+          await database.markTaskCancelled(id: resolvedTask.id, updatedAt: now);
         case TaskUpdateAction.delay:
           await database.updateTaskById(
             id: resolvedTask.id,
@@ -1171,6 +1172,7 @@ class ExtractedItemsController {
                 dueTimeText: Value(taskDue.dueTimeText),
                 dueTime: Value(taskDue.dueTime),
                 status: RecordStatus.confirmed.value,
+                taskStatus: Value(TaskStatus.active.value),
                 createdAt: now,
                 updatedAt: now,
               ),
