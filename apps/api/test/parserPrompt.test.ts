@@ -120,11 +120,44 @@ test("parser prompt defines current time and optional location context rules", (
   assert.match(prompt, /do not guess the user's location/i);
 });
 
+test("parser prompt handles Phase 5 speech-like input and mixed intents", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /speech-like/i);
+  assert.match(prompt, /filler words/i);
+  assert.match(prompt, /raw natural-language user speech or text/i);
+  assert.match(prompt, /First infer the user's intended meaning/i);
+  assert.match(prompt, /multiple useful intents/i);
+  assert.match(prompt, /split it into multiple items/i);
+});
+
+test("parser prompt distinguishes reliable and ambiguous clock times", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /明天七点/);
+  assert.match(prompt, /leave due_time_iso out/i);
+  assert.match(prompt, /下午三点/);
+  assert.match(prompt, /晚上八点/);
+  assert.match(prompt, /15:30/);
+});
+
+test("parser prompt covers Phase 5 natural cancel and delay wording", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /先算了/);
+  assert.match(prompt, /撤了/);
+  assert.match(prompt, /别去了/);
+  assert.match(prompt, /改到/);
+  assert.match(prompt, /挪到/);
+  assert.match(prompt, /推到/);
+});
+
 test("parser user prompt includes current time and location context", () => {
   const prompt = buildParserUserPrompt({
     text: "附近买咖啡",
     timezone: "Asia/Shanghai",
     current_time_iso: "2026-06-08T17:15:00.000+08:00",
+    input_style: "natural_language",
     location_context: {
       label: "上海市徐汇区",
       latitude: 31.188,
@@ -135,6 +168,7 @@ test("parser user prompt includes current time and location context", () => {
 
   assert.match(prompt, /Asia\/Shanghai/);
   assert.match(prompt, /2026-06-08T17:15:00\.000\+08:00/);
+  assert.match(prompt, /Input style: natural_language/);
   assert.match(prompt, /上海市徐汇区/);
   assert.match(prompt, /31\.188/);
 });

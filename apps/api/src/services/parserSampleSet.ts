@@ -70,6 +70,27 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     expectedTypes: ["task_create"],
     forbiddenTypes: ["life_event", "profile_candidate"],
   },
+  {
+    id: "phase5_voice_like_noisy_task",
+    label: "Phase 5：语音化噪声中的明确任务",
+    text: "嗯那个你帮我记一下吧就是下午三点要给张总打个电话然后确认合同的事。",
+    expectedTypes: ["task_create"],
+    forbiddenTypes: ["life_event", "profile_candidate"],
+  },
+  {
+    id: "phase5_question_with_embedded_task",
+    label: "Phase 5：问题里夹带任务",
+    text: "我应该怎么准备明天的客户拜访？对了，今晚八点提醒我把资料打印出来。",
+    expectedTypes: ["general_answer", "task_create"],
+    forbiddenTypes: ["profile_candidate"],
+  },
+  {
+    id: "phase5_bare_clock_ambiguous_task",
+    label: "Phase 5：裸七点时间不应乱造早晚",
+    text: "明天七点联系王总。",
+    expectedTypes: ["task_create"],
+    forbiddenTypes: ["life_event", "profile_candidate"],
+  },
 
   // ── task_update ──
   {
@@ -120,6 +141,27 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     text: "那个事终于搞定了。",
     expectedTypes: ["task_update"],
   },
+  {
+    id: "phase5_voice_like_cancel_with_noise",
+    label: "Phase 5：口语化取消任务",
+    text: "呃下午开会那个事先算了吧，今天不开了。",
+    expectedTypes: ["task_update"],
+    forbiddenTypes: ["profile_candidate"],
+  },
+  {
+    id: "phase5_delay_with_clear_new_time",
+    label: "Phase 5：明确延期到新时间",
+    text: "把客户资料整理这件事挪到下周一下午三点。",
+    expectedTypes: ["task_update"],
+    forbiddenTypes: ["profile_candidate"],
+  },
+  {
+    id: "phase5_vague_delay_missing_new_time",
+    label: "Phase 5：模糊延期不乱造新时间",
+    text: "准备方案那个任务先往后放一放。",
+    expectedTypes: ["task_update"],
+    forbiddenTypes: ["profile_candidate"],
+  },
 
   // ── short_term_state ──
   {
@@ -145,6 +187,13 @@ export const parserSmokeSamples: ParserSmokeSample[] = [
     label: "短期出行状态",
     text: "我现在在路上，不方便接电话，大概一个小时后到公司。",
     expectedTypes: ["short_term_state"],
+  },
+  {
+    id: "phase5_voice_like_state_and_event",
+    label: "Phase 5：口语化状态和事件",
+    text: "反正今天跟客户聊得挺累的，然后刚才方案也被打回来了，先记录一下。",
+    expectedTypes: ["short_term_state", "life_event"],
+    forbiddenTypes: ["profile_candidate"],
   },
   {
     id: "d0_social_bar_plan_with_mood",

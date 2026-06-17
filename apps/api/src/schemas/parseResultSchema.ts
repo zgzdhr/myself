@@ -36,6 +36,9 @@ export const parseRequestSchema = z.object({
   text: z.string().trim().min(1).max(2000),
   timezone: z.string().trim().min(1),
   current_time_iso: parseContextIsoDateTimeSchema,
+  input_style: z
+    .enum(["natural_language", "speech_like", "typed"])
+    .default("natural_language"),
   location_context: parseLocationContextSchema.optional(),
 });
 

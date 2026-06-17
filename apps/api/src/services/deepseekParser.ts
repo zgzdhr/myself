@@ -14,6 +14,7 @@ type DeepSeekParserConfig = {
   apiKey?: string;
   baseUrl?: string;
   model?: string;
+  temperature?: number;
   fetchFn?: FetchLike;
   timeoutMs?: number;
 };
@@ -80,6 +81,8 @@ export function createDeepSeekParser(config: DeepSeekParserConfig = {}) {
     );
     const model =
       config.model ?? process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash";
+    const temperature =
+      config.temperature ?? readParserTemperatureFromEnv() ?? 0.25;
     const timeoutMs = config.timeoutMs ?? 20_000;
 
     let lastError: unknown;
@@ -95,6 +98,7 @@ export function createDeepSeekParser(config: DeepSeekParserConfig = {}) {
           baseUrl,
           fetchFn,
           model,
+          temperature,
           request,
           signal: controller.signal,
         });
@@ -155,6 +159,7 @@ async function callDeepSeek({
   baseUrl,
   fetchFn,
   model,
+  temperature,
   request,
   signal,
 }: {
@@ -162,6 +167,7 @@ async function callDeepSeek({
   baseUrl: string;
   fetchFn: FetchLike;
   model: string;
+  temperature: number;
   request: ParseRequest;
   signal?: AbortSignal;
 }): Promise<string> {
@@ -184,7 +190,7 @@ async function callDeepSeek({
         response_format: { type: "json_object" },
         thinking: { type: "disabled" },
         stream: false,
-        temperature: 0.1,
+        temperature,
         max_tokens: 1800,
       }),
     });
@@ -217,6 +223,20 @@ async function callDeepSeek({
   }
 
   return content;
+}
+
+function readParserTemperatureFromEnv(): number | undefined {
+  const rawValue = process.env.DEEPSEEK_PARSER_TEMPERATURE?.trim();
+  if (!rawValue) {
+    return undefined;
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) {
+    return undefined;
+  }
+
+  return Math.min(Math.max(parsed, 0), 1);
 }
 
 function tryParseJson(

@@ -97,6 +97,15 @@ export function evaluateSampleResult(
         `vague time fabricated due_time_iso="${item.due_time_iso}" for text="${item.due_time_text}"`,
       );
     }
+
+    if (
+      sample.id.includes("bare_clock_ambiguous") &&
+      item.due_time_iso
+    ) {
+      ruleFailures.push(
+        `ambiguous bare clock fabricated due_time_iso="${item.due_time_iso}"`,
+      );
+    }
   }
 
   if (

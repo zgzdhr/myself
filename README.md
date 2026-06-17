@@ -43,6 +43,7 @@
 - `docs/architecture/phase-4e-real-apk-trial.md`：Phase 4E 真实 APK + 本地 API proxy 试用链路。
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
+- `docs/architecture/phase-5-task-map.md`：Phase 5 中文任务地图，记录当前建议执行顺序。
 - `docs/architecture/phase-5-reflection-goals-evolution.md`：Phase 5 复盘、学习目标、电脑端和自进化长期路线。
 - `2026-06-05-mvp-next-task-map.md`：当前 Phase 4 任务地图。
 

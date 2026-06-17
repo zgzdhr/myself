@@ -46,6 +46,7 @@ test("accepts parse request context with current time and optional location", ()
     text: "附近买咖啡",
     timezone: "Asia/Shanghai",
     current_time_iso: "2026-06-08T17:15:00.000+08:00",
+    input_style: "speech_like",
     location_context: {
       label: "上海市徐汇区",
       latitude: 31.188,
@@ -55,6 +56,19 @@ test("accepts parse request context with current time and optional location", ()
   });
 
   assert.equal(result.success, true);
+});
+
+test("defaults parse request input style to natural language", () => {
+  const result = parseRequestSchema.safeParse({
+    text: "明天联系王总",
+    timezone: "Asia/Shanghai",
+    current_time_iso: "2026-06-08T17:15:00.000+08:00",
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.input_style, "natural_language");
+  }
 });
 
 test("rejects incomplete coordinate-only location context", () => {

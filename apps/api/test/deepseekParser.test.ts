@@ -12,6 +12,7 @@ const parseRequest = {
   text: "明天联系王总",
   timezone: "Asia/Shanghai",
   current_time_iso: currentTimeIso,
+  input_style: "natural_language" as const,
 };
 
 test("rejects input longer than 2000 characters", () => {
@@ -121,13 +122,35 @@ test("retries once when DeepSeek returns invalid JSON, then validates the result
 
   const firstBody = JSON.parse(String(calls[0]?.body));
   assert.equal(firstBody.response_format.type, "json_object");
+  assert.equal(firstBody.temperature, 0.25);
   assert.equal(firstBody.messages[1].role, "user");
   assert.match(firstBody.messages[1].content, /Asia\/Shanghai/);
   assert.match(firstBody.messages[1].content, /2026-06-08T17:15:00\.000\+08:00/);
+  assert.match(firstBody.messages[1].content, /Input style: natural_language/);
   assert.equal(
     (calls[0]?.headers as Record<string, string>).Authorization,
     "Bearer test-key",
   );
+});
+
+test("allows parser temperature to be configured for real-input trials", async () => {
+  const calls: RequestInit[] = [];
+  const fetchFn = async (_url: string | URL | Request, init?: RequestInit) => {
+    if (init) {
+      calls.push(init);
+    }
+    return jsonCompletion(JSON.stringify(validParseResult));
+  };
+  const parser = createDeepSeekParser({
+    apiKey: "test-key",
+    fetchFn,
+    temperature: 0.35,
+  });
+
+  await parser(parseRequest);
+
+  const body = JSON.parse(String(calls[0]?.body));
+  assert.equal(body.temperature, 0.35);
 });
 
 test("throws a timeout-specific error when DeepSeek does not respond within the timeout window", async () => {

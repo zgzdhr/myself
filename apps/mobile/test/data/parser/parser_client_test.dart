@@ -95,6 +95,7 @@ void main() {
           'text': '明天联系王总',
           'timezone': 'Asia/Shanghai',
           'current_time_iso': '2026-05-31T10:15:00.000Z',
+          'input_style': 'natural_language',
         });
         expect(result.items.single.type, ItemType.taskCreate);
         expect(result.items.single.localId, 'parsed:0');

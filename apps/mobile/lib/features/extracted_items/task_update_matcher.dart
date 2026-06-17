@@ -130,8 +130,18 @@ class TaskUpdateMatcher {
       '取消掉',
       '取消了',
       '取消',
+      '先算了',
+      '撤了',
+      '别去了',
       '改天再说',
       '算了',
+      '往后放一放',
+      '放一放',
+      '往后挪',
+      '往后推',
+      '挪到',
+      '推到',
+      '延到',
     ];
     for (final phrase in actionNoise) {
       normalized = normalized.replaceAll(phrase, '');

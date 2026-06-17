@@ -209,3 +209,71 @@ test("D0 recurring goals remain task/profile candidates without pretending recur
     );
   }
 });
+
+test("Phase 5 parser prelude samples cover voice-like and mixed Chinese input", () => {
+  const requiredSampleIds = [
+    "phase5_voice_like_noisy_task",
+    "phase5_question_with_embedded_task",
+    "phase5_bare_clock_ambiguous_task",
+    "phase5_voice_like_cancel_with_noise",
+    "phase5_delay_with_clear_new_time",
+    "phase5_vague_delay_missing_new_time",
+    "phase5_voice_like_state_and_event",
+  ];
+
+  for (const id of requiredSampleIds) {
+    assert.ok(
+      parserSmokeSamples.some((sample) => sample.id === id),
+      `${id} sample missing`,
+    );
+  }
+});
+
+test("Phase 5 voice-like samples do not become profile candidates", () => {
+  const voiceLikeSamples = parserSmokeSamples.filter((sample) =>
+    sample.id.startsWith("phase5_voice_like_"),
+  );
+
+  assert.ok(voiceLikeSamples.length >= 2);
+  for (const sample of voiceLikeSamples) {
+    assert.equal(
+      sample.forbiddenTypes?.includes("profile_candidate"),
+      true,
+      `${sample.id} must forbid profile_candidate`,
+    );
+  }
+});
+
+test("Phase 5 mixed question sample preserves both answer and embedded task", () => {
+  const sample = parserSmokeSamples.find(
+    (s) => s.id === "phase5_question_with_embedded_task",
+  );
+  assert.ok(sample);
+  assert.ok(sample.expectedTypes.includes("general_answer"));
+  assert.ok(sample.expectedTypes.includes("task_create"));
+  assert.equal(sample.forbiddenTypes?.includes("profile_candidate"), true);
+});
+
+test("Phase 5 task update samples cover noisy cancel and delay boundaries", () => {
+  const cancelSample = parserSmokeSamples.find(
+    (s) => s.id === "phase5_voice_like_cancel_with_noise",
+  );
+  const clearDelaySample = parserSmokeSamples.find(
+    (s) => s.id === "phase5_delay_with_clear_new_time",
+  );
+  const vagueDelaySample = parserSmokeSamples.find(
+    (s) => s.id === "phase5_vague_delay_missing_new_time",
+  );
+
+  assert.ok(cancelSample);
+  assert.match(cancelSample.text, /先算了|不开了/);
+  assert.ok(cancelSample.expectedTypes.includes("task_update"));
+
+  assert.ok(clearDelaySample);
+  assert.match(clearDelaySample.text, /挪到下周一下午三点/);
+  assert.ok(clearDelaySample.expectedTypes.includes("task_update"));
+
+  assert.ok(vagueDelaySample);
+  assert.match(vagueDelaySample.text, /往后放一放/);
+  assert.ok(vagueDelaySample.expectedTypes.includes("task_update"));
+});

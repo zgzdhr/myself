@@ -75,6 +75,7 @@ Phase 5 的长期方向包括：每日复盘总结、学习目标、学习进展
 - `docs/architecture/mobile-smoke-test.md`：移动端 smoke 验证记录。
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
+- `docs/architecture/phase-5-task-map.md`：Phase 5 中文任务地图，记录当前建议执行顺序。
 - `docs/architecture/phase-5-reflection-goals-evolution.md`：Phase 5 复盘、目标对齐、电脑端和自进化长期路线。
 - `docs/architecture/current-verification.md`：当前自动化验证结果。
 - `docs/architecture/phase-3-verification.md`：Phase 3 验收和真实试用结论。
@@ -101,11 +102,12 @@ Phase 5 的长期方向包括：每日复盘总结、学习目标、学习进展
 8. `2026-06-05-mvp-next-task-map.md`：确认当前 Phase 4A/4B/4C/4D/4E 任务地图。
 9. `docs/architecture/chinese-semantic-classification-rules.md`：查看 D0 正式语义规则。
 10. `docs/architecture/task-update-resolution.md`：理解 `task_update` 匹配和后续增强边界。
-11. `docs/architecture/phase-5-reflection-goals-evolution.md`：理解 Phase 5 复盘、学习目标、电脑端和自进化边界。
-12. `docs/architecture/context-builder-design.md`：理解 Context Builder 总设计。
-13. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
-14. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
-15. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
+11. `docs/architecture/phase-5-task-map.md`：先看 Phase 5 当前中文任务地图和执行顺序。
+12. `docs/architecture/phase-5-reflection-goals-evolution.md`：理解 Phase 5 复盘、学习目标、电脑端和自进化边界。
+13. `docs/architecture/context-builder-design.md`：理解 Context Builder 总设计。
+14. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
+15. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
+16. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
 
 ## 目标平台与技术方向
 

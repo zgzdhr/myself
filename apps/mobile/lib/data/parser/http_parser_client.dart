@@ -98,6 +98,7 @@ class HttpParserClient implements ParserClient {
           'text': text,
           'timezone': timezone,
           'current_time_iso': parsedAtProvider().toIso8601String(),
+          'input_style': 'natural_language',
           if (locationContext != null && locationContext.isNotEmpty)
             'location_context': locationContext,
         }),

@@ -11,9 +11,12 @@ InferredTaskDue inferTaskDue({required String text, required DateTime now}) {
   }
 
   final explicitClockTime = _firstExplicitClockTime(text);
-  DateTime dueTimeFor(int dayOffset, int defaultHour) {
+  DateTime? dueTimeFor(int dayOffset, int defaultHour) {
     if (explicitClockTime == null) {
       return atTime(dayOffset, defaultHour);
+    }
+    if (!_isReliableClockTime(explicitClockTime)) {
+      return null;
     }
     return atTime(
       dayOffset,
@@ -24,6 +27,28 @@ InferredTaskDue inferTaskDue({required String text, required DateTime now}) {
 
   String timeTextFor(String fallbackText) {
     return explicitClockTime?.text ?? fallbackText;
+  }
+
+  if (text.contains('大后天')) {
+    return InferredTaskDue(
+      dueTimeText: timeTextFor('大后天'),
+      dueTime: dueTimeFor(3, 9),
+    );
+  }
+
+  if (text.contains('后天')) {
+    return InferredTaskDue(
+      dueTimeText: timeTextFor('后天'),
+      dueTime: dueTimeFor(2, 9),
+    );
+  }
+
+  final nextWeekdayOffset = _nextWeekdayOffset(text, now);
+  if (nextWeekdayOffset != null) {
+    return InferredTaskDue(
+      dueTimeText: timeTextFor(_firstNextWeekdayText(text) ?? '下周'),
+      dueTime: dueTimeFor(nextWeekdayOffset, 9),
+    );
   }
 
   if (text.contains('明天上午')) {
@@ -105,7 +130,7 @@ InferredTaskDue inferTaskDue({required String text, required DateTime now}) {
     );
   }
 
-  if (explicitClockTime != null) {
+  if (explicitClockTime != null && _isReliableClockTime(explicitClockTime)) {
     return InferredTaskDue(
       dueTimeText: explicitClockTime.text,
       dueTime: dueTimeFor(0, now.hour),
@@ -118,7 +143,7 @@ InferredTaskDue inferTaskDue({required String text, required DateTime now}) {
 bool _hasExplicitDateOutsideTodayOrTomorrow(String text) {
   return RegExp(r'(周|星期|礼拜)[一二三四五六日天]').hasMatch(text) ||
       RegExp(r'\d{1,2}[月/-]\d{1,2}[日号]?').hasMatch(text) ||
-      RegExp(r'(后天|大后天|下周|下星期|下礼拜)').hasMatch(text);
+      RegExp(r'(下周|下星期|下礼拜)').hasMatch(text);
 }
 
 String? _firstRecognizedTimeText(String text) {
@@ -145,13 +170,16 @@ String? _firstRecognizedTimeText(String text) {
   return null;
 }
 
-({String text, int hour, int minute})? _firstExplicitClockTime(String text) {
+({String text, int hour, int minute, bool hasDayPeriodContext})?
+_firstExplicitClockTime(String text) {
   final numericColonMatch = RegExp(r'(\d{1,2})[:：](\d{1,2})').firstMatch(text);
   if (numericColonMatch != null) {
+    final hour = int.parse(numericColonMatch.group(1)!);
     return (
       text: numericColonMatch.group(0)!,
-      hour: int.parse(numericColonMatch.group(1)!),
+      hour: hour,
       minute: int.parse(numericColonMatch.group(2)!),
+      hasDayPeriodContext: _hasDayPeriodContext(text) || hour > 12,
     );
   }
 
@@ -161,10 +189,12 @@ String? _firstRecognizedTimeText(String text) {
   if (numericPointMatch != null) {
     final halfText = numericPointMatch.group(2);
     final minuteText = numericPointMatch.group(3);
+    final hour = int.parse(numericPointMatch.group(1)!);
     return (
       text: numericPointMatch.group(0)!,
-      hour: int.parse(numericPointMatch.group(1)!),
+      hour: hour,
       minute: halfText == '半' ? 30 : int.tryParse(minuteText ?? '') ?? 0,
+      hasDayPeriodContext: _hasDayPeriodContext(text) || hour > 12,
     );
   }
 
@@ -178,11 +208,30 @@ String? _firstRecognizedTimeText(String text) {
         text: chinesePointMatch.group(0)!,
         hour: hour,
         minute: chinesePointMatch.group(2) == '半' ? 30 : 0,
+        hasDayPeriodContext: _hasDayPeriodContext(text),
       );
     }
   }
 
   return null;
+}
+
+bool _isReliableClockTime(
+  ({String text, int hour, int minute, bool hasDayPeriodContext}) clockTime,
+) {
+  return clockTime.hasDayPeriodContext || clockTime.hour > 12;
+}
+
+bool _hasDayPeriodContext(String text) {
+  return text.contains('上午') ||
+      text.contains('中午') ||
+      text.contains('下午') ||
+      text.contains('晚上') ||
+      text.contains('今晚') ||
+      text.contains('今晚上') ||
+      text.contains('傍晚') ||
+      text.contains('明早') ||
+      text.contains('明晚');
 }
 
 int _resolveClockHour({required int hour, required String text}) {
@@ -223,4 +272,36 @@ int? _parseChineseHour(String text) {
     return (digits[parts[0]] ?? 0) * 10 + (digits[parts[1]] ?? 0);
   }
   return digits[text];
+}
+
+int? _nextWeekdayOffset(String text, DateTime now) {
+  final match = RegExp(r'下(周|星期|礼拜)([一二三四五六日天])').firstMatch(text);
+  if (match == null) {
+    return null;
+  }
+
+  final targetWeekday = _parseChineseWeekday(match.group(2)!);
+  if (targetWeekday == null) {
+    return null;
+  }
+
+  final daysUntilNextMonday = DateTime.daysPerWeek - now.weekday + 1;
+  return daysUntilNextMonday + targetWeekday - 1;
+}
+
+String? _firstNextWeekdayText(String text) {
+  return RegExp(r'下(周|星期|礼拜)[一二三四五六日天]').firstMatch(text)?.group(0);
+}
+
+int? _parseChineseWeekday(String text) {
+  return switch (text) {
+    '一' => DateTime.monday,
+    '二' => DateTime.tuesday,
+    '三' => DateTime.wednesday,
+    '四' => DateTime.thursday,
+    '五' => DateTime.friday,
+    '六' => DateTime.saturday,
+    '日' || '天' => DateTime.sunday,
+    _ => null,
+  };
 }

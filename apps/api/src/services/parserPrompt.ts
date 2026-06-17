@@ -29,11 +29,16 @@ supporting notes.
 
 Rules:
 - Include source_text for every item by copying the smallest useful phrase from the user input. Do not paraphrase source_text.
+- User input may be speech-like, noisy, unpunctuated, repetitive, or contain filler words such as "嗯", "呃", "就是", "那个", "然后", "反正", "你帮我记一下". Ignore filler words when deciding item type, but keep source_text as the smallest useful original phrase.
+- Treat the user input as raw natural-language user speech or text, not as a polished command. First infer the user's intended meaning, then map that meaning into the schema.
+- If Input style is "natural_language" or "speech_like", expect missing punctuation, repeated words, self-corrections, casual phrasing, and incomplete grammar. Do not require the user to phrase tasks like formal instructions.
+- If a single speech-like sentence contains multiple useful intents, split it into multiple items instead of collapsing everything into one generic note.
 - Preserve vague time text in due_time_text when an exact date/time is uncertain. Do not invent ISO dates.
 - If a time phrase is vague, relative, or underspecified, keep the original phrase in due_time_text and leave due_time_iso out.
 - Resolve relative dates against Current local time from the user prompt. "今天" means the calendar date of Current local time in the given timezone. "明天" means the next local calendar date.
 - For same-day time words such as "今晚", "今晚上", "晚上", "上午", "中午", "下午", and "傍晚", use today's local calendar date unless another explicit date is present.
 - Only fill due_time_iso when the date and time are reliable. For ambiguous phrases such as "明天七点" without morning/evening context, keep due_time_text and leave due_time_iso out.
+- Times with clear day-period context such as "下午三点", "晚上八点", "明天上午十点", or 24-hour style times such as "15:30" may be treated as reliable when the date is also clear.
 - Location context is optional and user-permission based. Use it only to resolve location-relative language such as "附近", "到家后", "在公司", or travel context.
 - If Location context is "not provided", do not guess the user's location.
 - Do not save location context as memory unless the user explicitly states the location in their own input.
@@ -67,7 +72,8 @@ Rules:
   target_text. Use update_action from: complete, cancel, delay, edit.
 - For task_update cancellation, recognize natural Chinese cancellation or
   resistance phrases such as "取消了", "不用去了", "不去了", "不想去了",
-  "不想做了", "先不做了", "不用开了", "不开了", "改天再说", and "算了".
+  "不想做了", "先不做了", "不用开了", "不开了", "撤了", "先算了",
+  "改天再说", "别去了", and "算了".
 - For task_update target extraction, prefer the concrete semantic target from
   the same sentence. For example, "参加高考那个事取消了" should target
   "参加高考", and "下午开会的事情取消了" should target "下午开会". Do not use only
@@ -78,6 +84,9 @@ Rules:
   for confirmation before applying the task update.
 - For task_update delay items, include due_time_text and due_time_iso when you
   can infer a concrete target time reliably.
+- For task_update delay or edit phrases such as "改到", "挪到", "推到",
+  "延到", "往后挪", and "往后推", extract both the target task and the new
+  due_time_text when present.
 - For vague references such as "那个事", "这个任务", or "刚才那个", do not invent a target task. Keep the phrase in target_text, lower confidence, and let the app resolve or ask the user to choose.
 - For task_update delay without a new time, do not fill due_time_iso. Keep the vague phrase in due_time_text if present, lower confidence, and do not invent a date.
 - Put ordinary questions that should not be saved into general_answer.
@@ -111,10 +120,12 @@ export function buildParserUserPrompt(request: ParseRequest): string {
   const locationContext = request.location_context
     ? JSON.stringify(request.location_context)
     : "not provided";
+  const inputStyle = request.input_style ?? "natural_language";
 
   return `
 Timezone: ${request.timezone}
 Current local time: ${request.current_time_iso}
+Input style: ${inputStyle}
 Location context: ${locationContext}
 
 User input:
