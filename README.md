@@ -1,12 +1,14 @@
 # AI Personal Memory Action System
 
-这是一个面向 Android 与 iOS 的个人记忆与行动整理 App 项目。
+这是一个面向 Android 与 iOS 的个人记忆与行动整理 App 项目。未来可能补充电脑端分析界面，但当前主工程仍以移动端 MVP 和本地优先记忆链路为核心。
 
 核心目标不是做普通 To-do List，而是让用户用自然语言输入任务、状态、经历、偏好和问题，再由 AI 解析成可确认、可修改、可删除的结构化个人记忆。
 
 ## 当前状态
 
 项目已经从 MVP 骨架稳定阶段进入真实手机试用后的可用性修正阶段。核心链路已经能在 Android 真机上通过本地 API proxy 调用 DeepSeek 并写入本地 SQLite。Phase 4A-4E 已完成：待确认批次保留、删除二次确认、Debug 日期切换、时间语义修复、`task_update` 取消/匹配增强、首页建议分组展开、任务业务状态可见化，以及真实 APK + 本地 API proxy 试用链路文档。
+
+当前下一步不是继续扩一个“大而全 AI 管家”，也暂时不推进知识库，而是先回到两个更基础的能力：**AI 对自然语言输入的精细识别** 和 **提醒功能**。长期方向仍包括每日复盘总结、学习目标、学习进展、下一步建议、电脑端分析界面和受控知识库，但这些能力要按阶段逐步落地。
 
 当前已经落地：
 
@@ -41,6 +43,7 @@
 - `docs/architecture/phase-4e-real-apk-trial.md`：Phase 4E 真实 APK + 本地 API proxy 试用链路。
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
+- `docs/architecture/phase-5-reflection-goals-evolution.md`：Phase 5 复盘、学习目标、电脑端和自进化长期路线。
 - `2026-06-05-mvp-next-task-map.md`：当前 Phase 4 任务地图。
 
 ## Apps
@@ -77,6 +80,21 @@
 → ContextBuilder 选择 current_suggestion / task_update_resolution 所需上下文
 → 首页基于今日任务、短期状态、已确认长期画像给简单建议
 ```
+
+## AI 能力边界
+
+当前 `/parse` 链路是结构化解析器，不应该继续承担所有智能能力。
+
+建议后续把 AI 能力拆成不同入口：
+
+```text
+/parse   → 结构化入库：任务、状态、事件、画像候选
+/review  → 复盘总结：日总结、周总结、来源可追溯
+/coach   → 目标对齐：结合目标、进展、卡点给下一步建议
+/memory  → 记忆管理：查看、编辑、删除、恢复、解释来源
+```
+
+这样可以避免一个 prompt 同时负责记账、复盘、学习教练和知识库分析。
 
 ## 技术方向
 
@@ -118,9 +136,9 @@ Phase 3 三星 Android 真机试用说明：App 已经可以真实运行和调�
 
 ## 当前阶段
 
-当前阶段是 **Phase 4：真实试用信任修复阶段**。
+Phase 4 真实试用信任修复已经完成到 4E。当前下一步先聚焦 **解析准确性增强 + 提醒功能**，再进入 Phase 5 复盘、目标对齐与可控自进化规划。
 
-目标：
+Phase 4 目标已经完成：
 
 ```text
 不丢内容
@@ -143,8 +161,20 @@ Phase 3 三星 Android 真机试用说明：App 已经可以真实运行和调�
    - 今天 / 明天 / 未来 / 未安排任务过滤修复。
    - due time 展示规则和日期时间编辑器。
    - 提交：`f62bba1 feat: complete phase 4B time fixes`。
-3. Phase 4C：`task_update` 取消表达和目标匹配增强，当前下一步。
-4. Phase 4D：首页建议解释分组、今日行动展开、多建议展示。
+3. Phase 4C：`task_update` 取消表达和目标匹配增强，已完成。
+4. Phase 4D：首页建议解释分组、今日行动展开、多建议展示，已完成。
+5. Phase 4D.5：任务业务状态 `active / completed / cancelled`，已完成。
+6. Phase 4E：真实 APK + 本地 API proxy + DeepSeek 试用链路，已完成。
+
+当前建议顺序：
+
+1. AI 文字解析增强：先让模型更准确识别任务、状态、事件、取消、延期和模糊时间。
+2. 提醒功能：基于已确认任务的 `dueTime` 增加本地提醒能力。
+3. 每日复盘总结：把当天任务、状态、生活事件整理成可编辑 summary。
+4. 学习目标记录：显式保存用户确认过的学习目标。
+5. 学习进展记录：从复盘中提取今日学习进展和卡点。
+6. 下一步建议：根据目标、进展和卡点提出 1-3 个建议。
+7. 记忆管理增强：显示哪些总结、目标和画像会影响后续建议。
 
 仍然不做：
 
@@ -152,4 +182,4 @@ Phase 3 三星 Android 真机试用说明：App 已经可以真实运行和调�
 - 向量检索。
 - 自动长期画像进化。
 - 云同步。
-- 复杂日 / 周 / 月复盘。
+- 一步到位的电脑端知识库。

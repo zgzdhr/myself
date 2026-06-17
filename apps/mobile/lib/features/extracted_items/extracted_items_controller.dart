@@ -11,6 +11,8 @@ import '../../domain/parse_result.dart';
 import '../../domain/record_status.dart';
 import '../../domain/task_status.dart';
 import '../context/context_builder.dart';
+import 'task_due_inference.dart';
+import 'task_update_matcher.dart';
 
 class SubmitInputResult {
   const SubmitInputResult({
@@ -55,11 +57,13 @@ class ExtractedItemsController {
     required this.database,
     required this.parserClient,
     ContextBuilder? contextBuilder,
+    TaskUpdateMatcher? taskUpdateMatcher,
     String Function()? rawInputIdFactory,
     String Function()? parseResultIdFactory,
     String Function()? officialRecordIdFactory,
     DateTime Function()? nowProvider,
   }) : contextBuilder = contextBuilder ?? const ContextBuilder(),
+       taskUpdateMatcher = taskUpdateMatcher ?? const TaskUpdateMatcher(),
        rawInputIdFactory = rawInputIdFactory ?? const Uuid().v4,
        parseResultIdFactory = parseResultIdFactory ?? const Uuid().v4,
        officialRecordIdFactory = officialRecordIdFactory ?? const Uuid().v4,
@@ -68,6 +72,7 @@ class ExtractedItemsController {
   final db.AppDatabase database;
   final ParserClient parserClient;
   final ContextBuilder contextBuilder;
+  final TaskUpdateMatcher taskUpdateMatcher;
   final String Function() rawInputIdFactory;
   final String Function() parseResultIdFactory;
   final String Function() officialRecordIdFactory;
@@ -249,8 +254,11 @@ class ExtractedItemsController {
     final content = editedContent ?? item.content;
     final fallbackText = title ?? content ?? item.sourceText;
     final taskDue = hasEditedDueTime
-        ? (dueTimeText: editedDueTimeText, dueTime: editedDueTime)
-        : _inferTaskDue(
+        ? InferredTaskDue(
+            dueTimeText: editedDueTimeText,
+            dueTime: editedDueTime,
+          )
+        : inferTaskDue(
             text: '${title ?? ''} ${content ?? ''} ${item.sourceText}',
             now: now,
           );
@@ -364,8 +372,13 @@ class ExtractedItemsController {
       TaskUpdateResolution.needsSelection =>
         selectedTaskId == null
             ? null
-            : _firstTaskUpdateCandidate(intent.candidates, selectedTaskId),
-      TaskUpdateResolution.ready => _firstCandidateOrNull(intent.candidates),
+            : taskUpdateMatcher.firstTaskUpdateCandidate(
+                intent.candidates,
+                selectedTaskId,
+              ),
+      TaskUpdateResolution.ready => taskUpdateMatcher.firstCandidateOrNull(
+        intent.candidates,
+      ),
     };
 
     if (intent.resolution == TaskUpdateResolution.noMatch) {
@@ -388,7 +401,7 @@ class ExtractedItemsController {
       );
     }
 
-    if (_isDelayMissingNewTime(intent)) {
+    if (taskUpdateMatcher.isDelayMissingNewTime(intent)) {
       return TaskUpdateExecutionResult(
         state: TaskUpdateExecutionState.needsSelection,
         candidates: intent.candidates,
@@ -481,8 +494,11 @@ class ExtractedItemsController {
     final content = editedContent ?? item.content;
     final fallbackText = title ?? content ?? item.sourceText;
     final taskDue = hasEditedDueTime
-        ? (dueTimeText: editedDueTimeText, dueTime: editedDueTime)
-        : _inferTaskDue(
+        ? InferredTaskDue(
+            dueTimeText: editedDueTimeText,
+            dueTime: editedDueTime,
+          )
+        : inferTaskDue(
             text: '${title ?? ''} ${content ?? ''} ${item.sourceText}',
             now: now,
           );
@@ -774,7 +790,7 @@ class ExtractedItemsController {
     return switch (type) {
       ItemType.shortTermState => true,
       ItemType.taskCreate =>
-        _inferTaskDue(
+        inferTaskDue(
               text: '${title ?? ''} ${content ?? ''} $sourceText',
               now: now,
             ).dueTime !=
@@ -804,30 +820,15 @@ class ExtractedItemsController {
         ),
     ];
 
-    final normalizedQueries = _taskUpdateMatchQueries(
-      taskUpdateIntent: taskUpdateIntent,
-      sourceText: sourceText,
-    );
-
-    if (normalizedQueries.isEmpty) {
-      return taskUpdateIntent.copyWith(
-        candidates: const [],
-        resolution: TaskUpdateResolution.noMatch,
-      );
-    }
-
-    final matches = _matchTaskUpdateCandidates(
-      activeTaskCandidates: activeTaskCandidates,
-      normalizedQueries: normalizedQueries,
-    );
-    final resolution = _resolveTaskUpdateResolution(
+    final matchResult = taskUpdateMatcher.match(
       intent: taskUpdateIntent,
-      matches: matches,
+      sourceText: sourceText,
+      activeTaskCandidates: activeTaskCandidates,
     );
 
     return taskUpdateIntent.copyWith(
-      candidates: matches,
-      resolution: resolution,
+      candidates: matchResult.candidates,
+      resolution: matchResult.resolution,
     );
   }
 
@@ -871,255 +872,6 @@ class ExtractedItemsController {
     };
   }
 
-  String _normalizeTaskText(String value) {
-    var normalized = value
-        .trim()
-        .replaceAll(RegExp(r'\s+'), '')
-        .replaceAll(RegExp(r'[，。！？、,.!?；;：:]'), '')
-        .toLowerCase();
-
-    const noisePhrases = [
-      '这件事情',
-      '那件事情',
-      '这个事情',
-      '那个事情',
-      '这件事',
-      '那件事',
-      '这个事',
-      '那个事',
-      '这个任务',
-      '那个任务',
-      '的事情',
-      '这事',
-      '那事',
-      '事情',
-      '任务',
-      '一下',
-    ];
-    for (final phrase in noisePhrases) {
-      normalized = normalized.replaceAll(phrase, '');
-    }
-
-    const actionNoise = [
-      '已经做完了',
-      '做完了',
-      '完成了',
-      '搞定了',
-      '处理好了',
-      '不用去了',
-      '不想去了',
-      '不去了',
-      '不用做了',
-      '不想做了',
-      '先不做了',
-      '不用开了',
-      '不想开了',
-      '不开了',
-      '取消掉',
-      '取消了',
-      '取消',
-      '改天再说',
-      '算了',
-    ];
-    for (final phrase in actionNoise) {
-      normalized = normalized.replaceAll(phrase, '');
-    }
-
-    return normalized;
-  }
-
-  List<String> _taskUpdateMatchQueries({
-    required TaskUpdateIntent taskUpdateIntent,
-    required String sourceText,
-  }) {
-    final rawQueries = [
-      taskUpdateIntent.targetTaskTitle,
-      taskUpdateIntent.targetText,
-      sourceText,
-    ];
-
-    final queries = <String>[];
-    for (final rawQuery in rawQueries) {
-      final normalizedQuery = _normalizeTaskText(rawQuery ?? '');
-      if (normalizedQuery.isEmpty || _isGenericTaskTarget(normalizedQuery)) {
-        continue;
-      }
-      if (!queries.contains(normalizedQuery)) {
-        queries.add(normalizedQuery);
-      }
-    }
-    return queries;
-  }
-
-  List<TaskUpdateCandidate> _matchTaskUpdateCandidates({
-    required List<TaskUpdateCandidate> activeTaskCandidates,
-    required List<String> normalizedQueries,
-  }) {
-    final exactMatches = _uniqueTaskUpdateCandidates([
-      for (final candidate in activeTaskCandidates)
-        if (normalizedQueries.contains(_normalizeTaskText(candidate.title)))
-          candidate,
-    ]);
-    if (exactMatches.isNotEmpty) {
-      return exactMatches;
-    }
-
-    final containsMatches = _uniqueTaskUpdateCandidates([
-      for (final candidate in activeTaskCandidates)
-        if (_taskTitleContainsAnyQuery(candidate.title, normalizedQueries))
-          candidate,
-    ]);
-    if (containsMatches.isNotEmpty) {
-      return containsMatches;
-    }
-
-    return _uniqueTaskUpdateCandidates([
-      for (final candidate in activeTaskCandidates)
-        if (_hasStrongTaskTokenOverlap(
-          title: candidate.title,
-          normalizedQueries: normalizedQueries,
-        ))
-          candidate,
-    ]);
-  }
-
-  bool _taskTitleContainsAnyQuery(
-    String title,
-    List<String> normalizedQueries,
-  ) {
-    final normalizedTitle = _normalizeTaskText(title);
-    return normalizedQueries.any(
-      (query) =>
-          normalizedTitle.contains(query) || query.contains(normalizedTitle),
-    );
-  }
-
-  bool _hasStrongTaskTokenOverlap({
-    required String title,
-    required List<String> normalizedQueries,
-  }) {
-    final titleTokens = _taskMatchTokens(title);
-    if (titleTokens.isEmpty) {
-      return false;
-    }
-
-    for (final query in normalizedQueries) {
-      final queryTokens = _taskMatchTokens(query);
-      if (queryTokens.isEmpty) {
-        continue;
-      }
-      if (queryTokens.any(titleTokens.contains)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  List<String> _taskMatchTokens(String value) {
-    final normalized = _normalizeTaskText(value);
-    if (normalized.isEmpty || _isGenericTaskTarget(normalized)) {
-      return const [];
-    }
-
-    const semanticTokens = [
-      '高考',
-      '健身',
-      '开会',
-      '会议',
-      '王总',
-      '张总',
-      '李总',
-      '客户',
-      '资料',
-      '方案',
-      '周报',
-      'ppt',
-      '合同',
-    ];
-
-    final tokens = <String>[];
-    for (final token in semanticTokens) {
-      if (normalized.contains(token.toLowerCase())) {
-        tokens.add(token.toLowerCase());
-      }
-    }
-
-    final chineseChunks = RegExp(r'[\u4e00-\u9fa5]{2,}')
-        .allMatches(normalized)
-        .map((match) => match.group(0)!)
-        .where((chunk) => chunk.length >= 2);
-    for (final chunk in chineseChunks) {
-      if (!tokens.contains(chunk)) {
-        tokens.add(chunk);
-      }
-    }
-
-    final latinChunks = RegExp(r'[a-z0-9]{2,}')
-        .allMatches(normalized)
-        .map((match) => match.group(0)!)
-        .where((chunk) => chunk.length >= 2);
-    for (final chunk in latinChunks) {
-      if (!tokens.contains(chunk)) {
-        tokens.add(chunk);
-      }
-    }
-
-    return tokens;
-  }
-
-  List<TaskUpdateCandidate> _uniqueTaskUpdateCandidates(
-    List<TaskUpdateCandidate> candidates,
-  ) {
-    final seen = <String>{};
-    final unique = <TaskUpdateCandidate>[];
-    for (final candidate in candidates) {
-      if (seen.add(candidate.id)) {
-        unique.add(candidate);
-      }
-    }
-    return unique;
-  }
-
-  TaskUpdateResolution _resolveTaskUpdateResolution({
-    required TaskUpdateIntent intent,
-    required List<TaskUpdateCandidate> matches,
-  }) {
-    if (matches.isEmpty) {
-      return TaskUpdateResolution.noMatch;
-    }
-
-    if (_isDelayMissingNewTime(intent)) {
-      return TaskUpdateResolution.needsSelection;
-    }
-
-    return matches.length == 1
-        ? TaskUpdateResolution.ready
-        : TaskUpdateResolution.needsSelection;
-  }
-
-  bool _isDelayMissingNewTime(TaskUpdateIntent intent) {
-    return intent.action == TaskUpdateAction.delay &&
-        intent.dueTimeText == null &&
-        intent.dueTime == null;
-  }
-
-  bool _isGenericTaskTarget(String normalizedQuery) {
-    const genericTargets = {
-      '那个事',
-      '这个事',
-      '那件事',
-      '这件事',
-      '这个任务',
-      '那个任务',
-      '刚才那个',
-      '之前那个',
-      '刚才',
-      '之前',
-      '它',
-    };
-    return genericTargets.contains(normalizedQuery);
-  }
-
   String _taskUpdateActionToApiValue(TaskUpdateAction action) {
     return switch (action) {
       TaskUpdateAction.complete => 'complete',
@@ -1129,31 +881,13 @@ class ExtractedItemsController {
     };
   }
 
-  TaskUpdateCandidate? _firstCandidateOrNull(
-    List<TaskUpdateCandidate> candidates,
-  ) {
-    return candidates.isEmpty ? null : candidates.first;
-  }
-
-  TaskUpdateCandidate? _firstTaskUpdateCandidate(
-    List<TaskUpdateCandidate> candidates,
-    String id,
-  ) {
-    for (final candidate in candidates) {
-      if (candidate.id == id) {
-        return candidate;
-      }
-    }
-    return null;
-  }
-
   Future<void> _createOfficialRecordFromExtractedItem({
     required ExtractedItem item,
     required String officialRecordId,
     required DateTime now,
   }) async {
     final fallbackText = item.title ?? item.content ?? item.sourceText;
-    final taskDue = _inferTaskDue(
+    final taskDue = inferTaskDue(
       text: '${item.title ?? ''} ${item.content ?? ''} ${item.sourceText}',
       now: now,
     );
@@ -1213,218 +947,5 @@ class ExtractedItemsController {
       case ItemType.profileCandidate:
         break;
     }
-  }
-
-  ({String? dueTimeText, DateTime? dueTime}) _inferTaskDue({
-    required String text,
-    required DateTime now,
-  }) {
-    DateTime atTime(int dayOffset, int hour, [int minute = 0]) {
-      return DateTime(now.year, now.month, now.day + dayOffset, hour, minute);
-    }
-
-    final explicitClockTime = _firstExplicitClockTime(text);
-    DateTime dueTimeFor(int dayOffset, int defaultHour) {
-      if (explicitClockTime == null) {
-        return atTime(dayOffset, defaultHour);
-      }
-      return atTime(
-        dayOffset,
-        _resolveClockHour(hour: explicitClockTime.hour, text: text),
-        explicitClockTime.minute,
-      );
-    }
-
-    String timeTextFor(String fallbackText) {
-      return explicitClockTime?.text ?? fallbackText;
-    }
-
-    if (text.contains('明天上午')) {
-      return (dueTimeText: timeTextFor('明天上午'), dueTime: dueTimeFor(1, 9));
-    }
-
-    if (text.contains('明天下午')) {
-      return (dueTimeText: timeTextFor('明天下午'), dueTime: dueTimeFor(1, 14));
-    }
-
-    if (text.contains('明天晚上') || text.contains('明晚') || text.contains('明天傍晚')) {
-      return (
-        dueTimeText: timeTextFor(text.contains('明天傍晚') ? '明天傍晚' : '明天晚上'),
-        dueTime: dueTimeFor(1, 18),
-      );
-    }
-
-    if (text.contains('明天')) {
-      return (dueTimeText: timeTextFor('明天'), dueTime: dueTimeFor(1, 9));
-    }
-
-    if (_hasExplicitDateOutsideTodayOrTomorrow(text)) {
-      return (dueTimeText: _firstRecognizedTimeText(text), dueTime: null);
-    }
-
-    if (text.contains('今天上午') || text.contains('上午')) {
-      return (
-        dueTimeText: timeTextFor(text.contains('今天上午') ? '今天上午' : '上午'),
-        dueTime: dueTimeFor(0, 9),
-      );
-    }
-
-    if (text.contains('今天中午') || text.contains('中午')) {
-      return (
-        dueTimeText: timeTextFor(text.contains('今天中午') ? '今天中午' : '中午'),
-        dueTime: dueTimeFor(0, 11),
-      );
-    }
-
-    if (text.contains('今天下午') || text.contains('今下午') || text.contains('下午')) {
-      return (
-        dueTimeText: timeTextFor(
-          text.contains('今天下午') || text.contains('今下午') ? '今天下午' : '下午',
-        ),
-        dueTime: dueTimeFor(0, 14),
-      );
-    }
-
-    if (text.contains('今天晚上') ||
-        text.contains('今晚上') ||
-        text.contains('今晚') ||
-        text.contains('晚上') ||
-        text.contains('傍晚')) {
-      return (
-        dueTimeText: timeTextFor(
-          text.contains('今天晚上') || text.contains('今晚上') || text.contains('今晚')
-              ? '今晚'
-              : text.contains('傍晚')
-              ? '傍晚'
-              : '晚上',
-        ),
-        dueTime: dueTimeFor(0, 18),
-      );
-    }
-
-    if (text.contains('今天')) {
-      return (dueTimeText: timeTextFor('今天'), dueTime: dueTimeFor(0, now.hour));
-    }
-
-    if (explicitClockTime != null) {
-      return (
-        dueTimeText: explicitClockTime.text,
-        dueTime: dueTimeFor(0, now.hour),
-      );
-    }
-
-    return (dueTimeText: null, dueTime: null);
-  }
-
-  bool _hasExplicitDateOutsideTodayOrTomorrow(String text) {
-    return RegExp(r'(周|星期|礼拜)[一二三四五六日天]').hasMatch(text) ||
-        RegExp(r'\d{1,2}[月/-]\d{1,2}[日号]?').hasMatch(text) ||
-        RegExp(r'(后天|大后天|下周|下星期|下礼拜)').hasMatch(text);
-  }
-
-  String? _firstRecognizedTimeText(String text) {
-    const timeTexts = [
-      '上午',
-      '中午',
-      '下午',
-      '傍晚',
-      '晚上',
-      '今晚',
-      '今晚上',
-      '今天上午',
-      '今天中午',
-      '今天下午',
-      '今天晚上',
-      '明天上午',
-      '明天下午',
-      '明天晚上',
-      '明天傍晚',
-    ];
-    for (final timeText in timeTexts) {
-      if (text.contains(timeText)) return timeText;
-    }
-    return null;
-  }
-
-  ({String text, int hour, int minute})? _firstExplicitClockTime(String text) {
-    final numericColonMatch = RegExp(
-      r'(\d{1,2})[:：](\d{1,2})',
-    ).firstMatch(text);
-    if (numericColonMatch != null) {
-      return (
-        text: numericColonMatch.group(0)!,
-        hour: int.parse(numericColonMatch.group(1)!),
-        minute: int.parse(numericColonMatch.group(2)!),
-      );
-    }
-
-    final numericPointMatch = RegExp(
-      r'(\d{1,2})点(半|(\d{1,2})分?)?',
-    ).firstMatch(text);
-    if (numericPointMatch != null) {
-      final halfText = numericPointMatch.group(2);
-      final minuteText = numericPointMatch.group(3);
-      return (
-        text: numericPointMatch.group(0)!,
-        hour: int.parse(numericPointMatch.group(1)!),
-        minute: halfText == '半' ? 30 : int.tryParse(minuteText ?? '') ?? 0,
-      );
-    }
-
-    final chinesePointMatch = RegExp(
-      r'([一二两三四五六七八九十]{1,3})点(半)?',
-    ).firstMatch(text);
-    if (chinesePointMatch != null) {
-      final hour = _parseChineseHour(chinesePointMatch.group(1)!);
-      if (hour != null) {
-        return (
-          text: chinesePointMatch.group(0)!,
-          hour: hour,
-          minute: chinesePointMatch.group(2) == '半' ? 30 : 0,
-        );
-      }
-    }
-
-    return null;
-  }
-
-  int _resolveClockHour({required int hour, required String text}) {
-    if (hour == 12) return hour;
-    if (text.contains('下午') ||
-        text.contains('晚上') ||
-        text.contains('今晚') ||
-        text.contains('今晚上') ||
-        text.contains('傍晚') ||
-        text.contains('明晚')) {
-      return hour < 12 ? hour + 12 : hour;
-    }
-    return hour;
-  }
-
-  int? _parseChineseHour(String text) {
-    const digits = {
-      '一': 1,
-      '二': 2,
-      '两': 2,
-      '三': 3,
-      '四': 4,
-      '五': 5,
-      '六': 6,
-      '七': 7,
-      '八': 8,
-      '九': 9,
-    };
-    if (text == '十') return 10;
-    if (text.startsWith('十')) {
-      return 10 + (digits[text.substring(1)] ?? 0);
-    }
-    if (text.endsWith('十')) {
-      return (digits[text.substring(0, 1)] ?? 0) * 10;
-    }
-    if (text.contains('十')) {
-      final parts = text.split('十');
-      return (digits[parts[0]] ?? 0) * 10 + (digits[parts[1]] ?? 0);
-    }
-    return digits[text];
   }
 }

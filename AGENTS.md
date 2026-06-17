@@ -14,9 +14,20 @@
 
 ## 当前规划状态
 
-截至 2026-06-09，项目已经从早期 0-6 阶段的 MVP 建设路线，切换到 **Phase 4：真实试用信任修复阶段**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理都已经完成。
+截至 2026-06-13，项目已经从早期 0-6 阶段的 MVP 建设路线，经过 **Phase 4：真实试用信任修复阶段**，进入 **Phase 5：复盘、目标对齐与可控自进化规划**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理、Phase 4A-4E 信任修复都已经完成。
 
-Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。Phase 4C 已完成：取消类表达、任务匹配噪声清洗和真实失败样例覆盖。Phase 4D 已完成：首页 AI 建议和今日行动可展开，建议依据按任务、当前状态、长期偏好分组展示。Phase 4D.5 已完成：新增 `task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。Phase 4E 已完成：Android debug APK + 本地 API proxy + DeepSeek 真实试用链路文档和构建验证。当前下一步是 **真实试用回收 / Phase 5 记忆管理与可控性增强规划**。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“Phase 4 首页建议 / Phase 5 记忆管理 / Phase 6 双端验证”路线理解当前项目。
+Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。Phase 4C 已完成：取消类表达、任务匹配噪声清洗和真实失败样例覆盖。Phase 4D 已完成：首页 AI 建议和今日行动可展开，建议依据按任务、当前状态、长期偏好分组展示。Phase 4D.5 已完成：新增 `task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。Phase 4E 已完成：Android debug APK + 本地 API proxy + DeepSeek 真实试用链路文档和构建验证。当前下一步是 **Phase 5：复盘、目标对齐与可控自进化规划**。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“Phase 4 首页建议 / Phase 5 记忆管理 / Phase 6 双端验证”路线理解当前项目。
+
+Phase 5 的长期方向包括：每日复盘总结、学习目标、学习进展、下一步建议、电脑端分析界面、受控知识库和可控自进化。但这些不是下一阶段一次性全塞进去的功能。根据 2026-06-17 的最新决策，当前不要先汇集知识库方向，下一步应先补强 AI 对用户输入文字的精细识别，并实现任务提醒能力。
+
+当前架构判断：
+
+- 项目不是屎山，复杂度主要来自个人记忆 App 必要的信任边界。
+- 当前最大架构压力是 `/parse` 结构化解析链路承载了太多“智能”期待。
+- `/parse` 应继续负责结构化入库，不应继续塞复盘、学习教练、知识库分析和自进化逻辑。
+- 后续建议拆分 AI 能力：`/parse` 负责结构化入库，`/review` 负责复盘总结，`/coach` 负责目标对齐和下一步建议，`/memory` 负责记忆查看、编辑、删除、恢复和来源解释。
+- 电脑端适合作为后续分析界面：手机端负责快速语音/文本输入和确认，电脑端负责看详细复盘、目标、进展、卡点和来源依据。知识库后置，当前不要把它作为近期主线。
+- 自进化在本项目里不是“AI 自动替用户进化”，而是用户确认过的目标、进展、偏好、卡点和总结持续沉淀，让后续建议越来越贴近用户。
 
 已确认的核心链路：
 
@@ -64,6 +75,7 @@ Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删�
 - `docs/architecture/mobile-smoke-test.md`：移动端 smoke 验证记录。
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
+- `docs/architecture/phase-5-reflection-goals-evolution.md`：Phase 5 复盘、目标对齐、电脑端和自进化长期路线。
 - `docs/architecture/current-verification.md`：当前自动化验证结果。
 - `docs/architecture/phase-3-verification.md`：Phase 3 验收和真实试用结论。
 - `docs/architecture/phase-3-real-trial-feedback.md`：三星 Android 真机真实试用反馈。
@@ -89,19 +101,22 @@ Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删�
 8. `2026-06-05-mvp-next-task-map.md`：确认当前 Phase 4A/4B/4C/4D/4E 任务地图。
 9. `docs/architecture/chinese-semantic-classification-rules.md`：查看 D0 正式语义规则。
 10. `docs/architecture/task-update-resolution.md`：理解 `task_update` 匹配和后续增强边界。
-11. `docs/architecture/context-builder-design.md`：理解 Context Builder 总设计。
-12. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
-13. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
-14. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
+11. `docs/architecture/phase-5-reflection-goals-evolution.md`：理解 Phase 5 复盘、学习目标、电脑端和自进化边界。
+12. `docs/architecture/context-builder-design.md`：理解 Context Builder 总设计。
+13. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
+14. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
+15. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
 
 ## 目标平台与技术方向
 
-本项目未来明确面向两个移动端版本：
+本项目当前工程明确面向两个移动端版本：
 
 - Android App
 - iOS App
 
 建议优先使用 Flutter 开发一套跨平台移动端代码，同时支持 Android 与 iOS。
+
+长期可能补充电脑端 / Web 分析界面。电脑端不应抢在 Phase 5 小闭环之前做成完整第二客户端；它更适合作为后续的复盘、目标、进展、知识库和来源依据阅读界面。
 
 MVP 推荐技术方向：
 
@@ -685,10 +700,11 @@ myself/
 
 ## 当前下一步
 
-当前下一步是 **真实试用回收 / Phase 5 记忆管理与可控性增强规划**。
+当前下一步是 **AI 文字解析准确性增强 + 任务提醒功能**，之后再进入 Phase 5 复盘、目标对齐与可控自进化规划。
 
-1. 先读 `2026-06-05-mvp-next-task-map.md`，确认 Phase 4A-4E 已完成。
-2. 再看 `docs/architecture/phase-4e-real-apk-trial.md`，按文档复现 Android debug APK + 本地 API proxy + DeepSeek 链路。
-3. 连续做一次真实手机试用，记录新的失败样例、误保存、误匹配、展示不清楚和信任问题。
-4. 根据真实试用结果决定 Phase 5 优先级，默认方向是记忆管理、任务状态可控性、删除/撤销/恢复和试用反馈闭环。
-5. 更复杂的提醒系统、自动画像进化、深度建议、个人问答、summary 注入、向量检索、LLM rerank 都后置。
+1. 先看 `apps/api/src/services/parserPrompt.ts`、`apps/api/src/services/parserSampleSet.ts` 和 `apps/api/test/`，继续补真实中文失败样例，让 AI 更准确识别任务创建、任务取消、延期、状态、事件和模糊时间。
+2. 再看 `apps/mobile/lib/features/extracted_items/task_due_inference.dart`，补齐移动端对明确时间、模糊时间、同日隐含时间的兜底解析。
+3. 然后设计提醒功能：基于已确认任务的 `dueTime` 做本地提醒，不要先做复杂重复提醒、云提醒或多设备同步。
+4. 如果要继续验证当前手机端真实链路，再看 `docs/architecture/phase-4e-real-apk-trial.md`，按文档复现 Android debug APK + 本地 API proxy + DeepSeek 链路。
+5. 等解析和提醒稳定后，再读 `docs/architecture/phase-5-reflection-goals-evolution.md`、`summary-system-design.md` 和 `context-builder-design.md`，进入每日复盘 → 显式学习目标 → 学习进展 → 下一步建议。
+6. 电脑端、通用知识库、向量检索、自动画像进化、深度建议、个人问答、LLM rerank 和完整 Agent 都后置，不能一步到位塞进下一阶段。

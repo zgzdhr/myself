@@ -1,10 +1,12 @@
 # AI Personal Memory Action System：Phase 4 任务地图
 
+> 2026-06-13 更新：Phase 4A-4E 已完成。本文件保留为 Phase 4 真实试用信任修复的历史任务地图，不再代表当前下一步。当前下一步请读 `docs/architecture/phase-5-reflection-goals-evolution.md`，主题是 Phase 5 复盘、目标对齐与可控自进化规划。
+
 ## 0. 当前共识
 
 项目已经不是空项目，也不是“从 0 到 6 阶段搭 MVP”的状态。Flutter App、API proxy、本地 SQLite、DeepSeek 解析、待确认卡片、自动保存、首页建议、记忆管理、ContextBuilder、Phase 3 真机试用都已经存在。
 
-当前阶段是：
+本文件记录的阶段是：
 
 > Phase 4：真实试用信任修复阶段。
 
