@@ -122,7 +122,7 @@ test("retries once when DeepSeek returns invalid JSON, then validates the result
 
   const firstBody = JSON.parse(String(calls[0]?.body));
   assert.equal(firstBody.response_format.type, "json_object");
-  assert.equal(firstBody.temperature, 0.25);
+  assert.equal(firstBody.temperature, 0.35);
   assert.equal(firstBody.messages[1].role, "user");
   assert.match(firstBody.messages[1].content, /Asia\/Shanghai/);
   assert.match(firstBody.messages[1].content, /2026-06-08T17:15:00\.000\+08:00/);

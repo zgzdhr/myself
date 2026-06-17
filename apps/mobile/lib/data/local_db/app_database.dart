@@ -165,6 +165,12 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<Task?> getTaskBySourceExtractedItemId(String extractedItemId) {
+    return (select(tasks)
+          ..where((task) => task.sourceExtractedItemId.equals(extractedItemId)))
+        .getSingleOrNull();
+  }
+
   Future<void> markTaskCompleted({
     required String id,
     required DateTime updatedAt,

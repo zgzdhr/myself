@@ -11,6 +11,7 @@ import '../../domain/parse_result.dart';
 import '../../domain/record_status.dart';
 import '../../domain/task_status.dart';
 import '../context/context_builder.dart';
+import '../reminders/task_reminder_scheduler.dart';
 import 'task_due_inference.dart';
 import 'task_update_matcher.dart';
 
@@ -58,12 +59,16 @@ class ExtractedItemsController {
     required this.parserClient,
     ContextBuilder? contextBuilder,
     TaskUpdateMatcher? taskUpdateMatcher,
+    TaskReminderScheduler? taskReminderScheduler,
     String Function()? rawInputIdFactory,
     String Function()? parseResultIdFactory,
     String Function()? officialRecordIdFactory,
     DateTime Function()? nowProvider,
   }) : contextBuilder = contextBuilder ?? const ContextBuilder(),
        taskUpdateMatcher = taskUpdateMatcher ?? const TaskUpdateMatcher(),
+       taskReminderCoordinator = TaskReminderCoordinator(
+         scheduler: taskReminderScheduler ?? const NoopTaskReminderScheduler(),
+       ),
        rawInputIdFactory = rawInputIdFactory ?? const Uuid().v4,
        parseResultIdFactory = parseResultIdFactory ?? const Uuid().v4,
        officialRecordIdFactory = officialRecordIdFactory ?? const Uuid().v4,
@@ -73,6 +78,7 @@ class ExtractedItemsController {
   final ParserClient parserClient;
   final ContextBuilder contextBuilder;
   final TaskUpdateMatcher taskUpdateMatcher;
+  final TaskReminderCoordinator taskReminderCoordinator;
   final String Function() rawInputIdFactory;
   final String Function() parseResultIdFactory;
   final String Function() officialRecordIdFactory;
@@ -169,6 +175,7 @@ class ExtractedItemsController {
         rawInputId: rawInputId,
         now: now,
       );
+      final remindersToSync = <TaskReminderRequest>[];
 
       await database.transaction(() async {
         await database
@@ -195,14 +202,28 @@ class ExtractedItemsController {
               );
 
           if (_shouldAutoSave(item: item, now: now)) {
-            await _createOfficialRecordFromExtractedItem(
-              item: item,
-              officialRecordId: officialRecordIdFactory(),
-              now: now,
-            );
+            final reminderRequest =
+                await _createOfficialRecordFromExtractedItem(
+                  item: item,
+                  officialRecordId: officialRecordIdFactory(),
+                  now: now,
+                );
+            if (reminderRequest != null) {
+              remindersToSync.add(reminderRequest);
+            }
           }
         }
       });
+
+      for (final reminderRequest in remindersToSync) {
+        await taskReminderCoordinator.sync(
+          taskId: reminderRequest.taskId,
+          title: reminderRequest.title,
+          dueTime: reminderRequest.dueTime,
+          isActive: true,
+          now: now,
+        );
+      }
 
       return SubmitInputResult(
         rawInputId: rawInputId,
@@ -346,6 +367,16 @@ class ExtractedItemsController {
           break;
       }
     });
+
+    if (ItemTypeApiValue.fromApiValue(item.type) == ItemType.taskCreate) {
+      await taskReminderCoordinator.sync(
+        taskId: officialRecordId,
+        title: fallbackText,
+        dueTime: taskDue.dueTime,
+        isActive: true,
+        now: now,
+      );
+    }
   }
 
   Future<void> rejectExtractedItem({required String extractedItemId}) {
@@ -409,12 +440,16 @@ class ExtractedItemsController {
     }
 
     final now = nowProvider();
+    TaskReminderRequest? reminderToSchedule;
+    String? reminderToCancelTaskId;
     await database.transaction(() async {
       switch (intent.action) {
         case TaskUpdateAction.complete:
           await database.markTaskCompleted(id: resolvedTask.id, updatedAt: now);
+          reminderToCancelTaskId = resolvedTask.id;
         case TaskUpdateAction.cancel:
           await database.markTaskCancelled(id: resolvedTask.id, updatedAt: now);
+          reminderToCancelTaskId = resolvedTask.id;
         case TaskUpdateAction.delay:
           await database.updateTaskById(
             id: resolvedTask.id,
@@ -422,6 +457,15 @@ class ExtractedItemsController {
             dueTime: intent.dueTime,
             updatedAt: now,
           );
+          if (intent.dueTime == null) {
+            reminderToCancelTaskId = resolvedTask.id;
+          } else {
+            reminderToSchedule = TaskReminderRequest(
+              taskId: resolvedTask.id,
+              title: resolvedTask.title,
+              dueTime: intent.dueTime!,
+            );
+          }
         case TaskUpdateAction.edit:
           await database.updateTaskById(
             id: resolvedTask.id,
@@ -437,6 +481,26 @@ class ExtractedItemsController {
       );
     });
 
+    final scheduleRequest = reminderToSchedule;
+    final cancelTaskId = reminderToCancelTaskId;
+    if (scheduleRequest != null) {
+      await taskReminderCoordinator.sync(
+        taskId: scheduleRequest.taskId,
+        title: scheduleRequest.title,
+        dueTime: scheduleRequest.dueTime,
+        isActive: true,
+        now: now,
+      );
+    } else if (cancelTaskId != null) {
+      await taskReminderCoordinator.sync(
+        taskId: cancelTaskId,
+        title: resolvedTask.title,
+        dueTime: null,
+        isActive: false,
+        now: now,
+      );
+    }
+
     return const TaskUpdateExecutionResult(
       state: TaskUpdateExecutionState.applied,
     );
@@ -447,6 +511,9 @@ class ExtractedItemsController {
   }) async {
     final item = await _getExtractedItem(extractedItemId);
     final type = ItemTypeApiValue.fromApiValue(item.type);
+    final taskToCancel = type == ItemType.taskCreate
+        ? await database.getTaskBySourceExtractedItemId(extractedItemId)
+        : null;
 
     await database.transaction(() async {
       switch (type) {
@@ -477,6 +544,16 @@ class ExtractedItemsController {
         updatedAt: nowProvider(),
       );
     });
+
+    if (taskToCancel != null) {
+      await taskReminderCoordinator.sync(
+        taskId: taskToCancel.id,
+        title: taskToCancel.title,
+        dueTime: null,
+        isActive: false,
+        now: nowProvider(),
+      );
+    }
   }
 
   Future<void> editAutoSavedExtractedItem({
@@ -544,6 +621,21 @@ class ExtractedItemsController {
           break;
       }
     });
+
+    if (type == ItemType.taskCreate) {
+      final task = await database.getTaskBySourceExtractedItemId(
+        extractedItemId,
+      );
+      if (task != null) {
+        await taskReminderCoordinator.sync(
+          taskId: task.id,
+          title: fallbackText,
+          dueTime: taskDue.dueTime,
+          isActive: true,
+          now: now,
+        );
+      }
+    }
   }
 
   Future<void> _recordParseFailure({
@@ -881,7 +973,7 @@ class ExtractedItemsController {
     };
   }
 
-  Future<void> _createOfficialRecordFromExtractedItem({
+  Future<TaskReminderRequest?> _createOfficialRecordFromExtractedItem({
     required ExtractedItem item,
     required String officialRecordId,
     required DateTime now,
@@ -911,6 +1003,13 @@ class ExtractedItemsController {
                 updatedAt: now,
               ),
             );
+        return taskDue.dueTime == null
+            ? null
+            : TaskReminderRequest(
+                taskId: officialRecordId,
+                title: fallbackText,
+                dueTime: taskDue.dueTime!,
+              );
       case ItemType.shortTermState:
         await database
             .into(database.shortTermStates)
@@ -927,6 +1026,7 @@ class ExtractedItemsController {
                 updatedAt: now,
               ),
             );
+        return null;
       case ItemType.lifeEvent:
         await database
             .into(database.lifeEvents)
@@ -942,10 +1042,11 @@ class ExtractedItemsController {
                 updatedAt: now,
               ),
             );
+        return null;
       case ItemType.taskUpdate:
       case ItemType.generalAnswer:
       case ItemType.profileCandidate:
-        break;
+        return null;
     }
   }
 }

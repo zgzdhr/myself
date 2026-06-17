@@ -10,6 +10,7 @@ import 'package:mobile/domain/parse_result.dart';
 import 'package:mobile/domain/record_status.dart';
 import 'package:mobile/domain/task_status.dart';
 import 'package:mobile/features/extracted_items/extracted_items_controller.dart';
+import 'package:mobile/features/reminders/task_reminder_scheduler.dart';
 
 void main() {
   late db.AppDatabase database;
@@ -69,6 +70,67 @@ void main() {
       expect(profileItem.status, RecordStatus.pending.value);
     },
   );
+
+  test('auto-saved task schedules a local reminder candidate', () async {
+    final reminderScheduler = _RecordingTaskReminderScheduler();
+    final reminderController = ExtractedItemsController(
+      database: database,
+      parserClient: MockParserClient(
+        parsedAtProvider: () => DateTime.utc(2026, 5, 31),
+      ),
+      taskReminderScheduler: reminderScheduler,
+      rawInputIdFactory: () => 'raw-reminder',
+      parseResultIdFactory: () => 'parse-reminder',
+      officialRecordIdFactory: () => 'task-reminder',
+      nowProvider: () => DateTime.utc(2026, 5, 31, 10),
+    );
+
+    await reminderController.submitInput('明天上午联系王总');
+
+    expect(reminderScheduler.scheduled, hasLength(1));
+    expect(reminderScheduler.scheduled.single.taskId, 'task-reminder');
+    expect(reminderScheduler.scheduled.single.title, '联系王总');
+    expect(reminderScheduler.scheduled.single.dueTime.year, 2026);
+    expect(reminderScheduler.scheduled.single.dueTime.month, 6);
+    expect(reminderScheduler.scheduled.single.dueTime.day, 1);
+    expect(reminderScheduler.scheduled.single.dueTime.hour, 9);
+    expect(reminderScheduler.scheduled.single.dueTime.minute, 0);
+  });
+
+  test('completed task update cancels the existing local reminder', () async {
+    await _insertConfirmedTask(
+      database,
+      id: 'task-existing-reminder',
+      title: '联系王总',
+      dueTime: DateTime.utc(2026, 5, 31, 15),
+    );
+
+    final reminderScheduler = _RecordingTaskReminderScheduler();
+    final taskUpdateController = _buildTaskUpdateController(
+      database,
+      parsedItem: ParsedExtractedItem(
+        localId: 'parsed:0',
+        type: ItemType.taskUpdate,
+        title: '联系王总',
+        sourceText: '联系王总做完了',
+        tags: const ['task'],
+        confidence: 0.94,
+        needUserConfirm: true,
+        parsedAt: DateTime.utc(2026, 5, 31),
+        taskUpdateIntent: const TaskUpdateIntent(
+          action: TaskUpdateAction.complete,
+          targetTaskTitle: '联系王总',
+          targetText: '联系王总',
+        ),
+      ),
+      taskReminderScheduler: reminderScheduler,
+    );
+
+    final result = await taskUpdateController.submitInput('联系王总做完了');
+    await taskUpdateController.applyTaskUpdate(item: result.items.single);
+
+    expect(reminderScheduler.cancelled, ['task-existing-reminder']);
+  });
 
   test(
     'submitInput binds raw input, parse result, and extracted items to the controller-owned rawInputId',
@@ -1183,6 +1245,7 @@ ExtractedItemsController _buildTaskCreateController(
 ExtractedItemsController _buildTaskUpdateController(
   db.AppDatabase database, {
   required ParsedExtractedItem parsedItem,
+  TaskReminderScheduler? taskReminderScheduler,
 }) {
   return ExtractedItemsController(
     database: database,
@@ -1197,6 +1260,7 @@ ExtractedItemsController _buildTaskUpdateController(
     rawInputIdFactory: () => 'raw-3',
     parseResultIdFactory: () => 'parse-3',
     officialRecordIdFactory: () => 'official-task-update',
+    taskReminderScheduler: taskReminderScheduler,
     nowProvider: () => DateTime.utc(2026, 5, 31),
   );
 }
@@ -1301,5 +1365,20 @@ class _ErrorParserClient implements ParserClient {
       code: 'parser_service_error',
       userMessage: '解析服务暂时不可用。',
     );
+  }
+}
+
+class _RecordingTaskReminderScheduler implements TaskReminderScheduler {
+  final scheduled = <TaskReminderRequest>[];
+  final cancelled = <String>[];
+
+  @override
+  Future<void> schedule(TaskReminderRequest request) async {
+    scheduled.add(request);
+  }
+
+  @override
+  Future<void> cancel(String taskId) async {
+    cancelled.add(taskId);
   }
 }

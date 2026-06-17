@@ -82,7 +82,7 @@ export function createDeepSeekParser(config: DeepSeekParserConfig = {}) {
     const model =
       config.model ?? process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash";
     const temperature =
-      config.temperature ?? readParserTemperatureFromEnv() ?? 0.25;
+      config.temperature ?? readParserTemperatureFromEnv() ?? 0.35;
     const timeoutMs = config.timeoutMs ?? 20_000;
 
     let lastError: unknown;

@@ -2,18 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../../data/local_db/app_database.dart';
 import '../../domain/task_status.dart';
+import '../reminders/task_reminder_scheduler.dart';
 import 'delete_confirmation.dart';
 import 'task_time_formatter.dart';
 
 class TasksScreen extends StatefulWidget {
-  const TasksScreen({
+  TasksScreen({
     required this.database,
     this.nowProvider = DateTime.now,
+    TaskReminderScheduler? taskReminderScheduler,
     super.key,
-  });
+  }) : taskReminderCoordinator = TaskReminderCoordinator(
+         scheduler: taskReminderScheduler ?? const NoopTaskReminderScheduler(),
+       );
 
   final AppDatabase database;
   final DateTime Function() nowProvider;
+  final TaskReminderCoordinator taskReminderCoordinator;
 
   @override
   State<TasksScreen> createState() => _TasksScreenState();
@@ -94,6 +99,13 @@ class _TasksScreenState extends State<TasksScreen> {
       dueTime: result.dueTime,
       updatedAt: widget.nowProvider(),
     );
+    await widget.taskReminderCoordinator.sync(
+      taskId: task.id,
+      title: result.title,
+      dueTime: result.dueTime,
+      isActive: TaskStatus.fromValue(task.taskStatus) == TaskStatus.active,
+      now: widget.nowProvider(),
+    );
     _refresh();
   }
 
@@ -110,6 +122,13 @@ class _TasksScreenState extends State<TasksScreen> {
     await widget.database.markTaskDeleted(
       id: task.id,
       updatedAt: widget.nowProvider(),
+    );
+    await widget.taskReminderCoordinator.sync(
+      taskId: task.id,
+      title: task.title,
+      dueTime: null,
+      isActive: false,
+      now: widget.nowProvider(),
     );
     _refresh();
   }
