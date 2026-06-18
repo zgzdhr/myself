@@ -1,6 +1,63 @@
 # Current Verification
 
-## Latest Verification: Phase 5C Settings/Profile Shell
+## Latest Verification: Phase 5A Account and Cloud Data
+
+Date: 2026-06-18
+Scope: Supabase Flutter dependency, environment-based cloud initialization,
+email OTP auth service, profile/settings account state, Supabase schema/RLS
+draft, and account tests
+
+### Summary
+
+- Result: Pass.
+- Mobile app now depends on `supabase_flutter`.
+- Startup initializes Supabase only when both `SUPABASE_URL` and
+  `SUPABASE_PUBLISHABLE_KEY` are passed through `--dart-define`.
+- `CloudAuthService` provides a small account abstraction with a disabled
+  fallback for unconfigured debug/test builds.
+- The "我的" page now shows real cloud/account state:
+  - `未配置云端` when Supabase is missing;
+  - configured but not signed in;
+  - signed in email when a Supabase session exists.
+- Email OTP login and sign-out are wired through Supabase when configured.
+- Supabase schema/RLS draft added at
+  `docs/architecture/supabase/phase-5a-schema.sql`.
+- Phase 5A boundary doc added at
+  `docs/architecture/phase-5a-account-cloud-data.md`.
+
+### Commands Run
+
+```bash
+cd apps/mobile
+flutter pub get
+flutter analyze --no-pub
+flutter test test/features/account/cloud_auth_service_test.dart test/widget_test.dart
+flutter test
+flutter build apk --debug
+```
+
+### Results
+
+- `flutter pub get`: Pass, `supabase_flutter` resolved to `2.15.0`.
+- `flutter analyze --no-pub`: Pass, no issues found.
+- Account + widget tests: Pass, 4 tests passed.
+- Full mobile test suite: Pass, 145 tests passed.
+- `flutter build apk --debug`: Pass, built
+  `build/app/outputs/flutter-apk/app-debug.apk`.
+
+### Notes
+
+- No Supabase secret or service role key is stored in the repo.
+- Real login requires runtime values:
+  `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`.
+- Existing local SQLite records are not automatically uploaded yet.
+- Recommended next implementation is Phase 5B `/review`; optionally store new
+  summaries in Supabase before attempting historical SQLite migration.
+- First Android build after adding Supabase installed Android SDK Platform 34
+  and printed Kotlin Gradle Plugin / deprecated API warnings from transitive
+  plugins. Build completed successfully.
+
+## Previous Verification: Phase 5C Settings/Profile Shell
 
 Date: 2026-06-18
 Scope: Bottom navigation shell, tasks as a first-level tab, review entry

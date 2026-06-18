@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/account/cloud_backend.dart';
 import '../features/memory/tasks_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/review/review_screen.dart';
@@ -72,6 +73,7 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
     final database = ref.watch(appDatabaseProvider);
     final nowProvider = ref.watch(appNowProvider);
     final taskReminderScheduler = ref.watch(taskReminderSchedulerProvider);
+    final cloudAuthService = ref.watch(cloudAuthServiceProvider);
 
     return Scaffold(
       body: IndexedStack(
@@ -88,6 +90,7 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
             database: database,
             nowProvider: nowProvider,
             parserBaseUri: defaultParserBaseUri(),
+            cloudAuthService: cloudAuthService,
           ),
         ],
       ),

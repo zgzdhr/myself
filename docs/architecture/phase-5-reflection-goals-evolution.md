@@ -13,6 +13,10 @@ learning blockers are deferred. The active near-term line is accounts and cloud
 data, daily `/review`, and lightweight reuse of review summaries for daily task
 guidance.
 
+Update later on 2026-06-18: accounts and cloud data are now implemented as a
+first pass with Supabase Flutter, email OTP, and a schema/RLS draft. The next
+active line is daily `/review`.
+
 ## 1. Current Architecture Read
 
 The current project is not overbuilt or chaotic. Its complexity mostly comes

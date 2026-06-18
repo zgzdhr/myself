@@ -170,7 +170,7 @@ void main() {
 
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
-    expect(find.text('未登录'), findsOneWidget);
+    expect(find.text('未配置云端'), findsOneWidget);
     expect(find.text('通知设置'), findsOneWidget);
 
     await tester.drag(find.byType(ListView).last, const Offset(0, -1200));

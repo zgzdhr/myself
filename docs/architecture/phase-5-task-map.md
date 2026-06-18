@@ -19,6 +19,8 @@ Phase 4A-4E 已完成真实 Android 试用后的信任修复，Phase 5 前置 A 
 - App 外壳已升级为 4 个底部入口：首页、任务、复盘、我的。
 - “我的 / 设置”页面骨架已完成：账号、同步、提醒、复盘、AI、隐私、App
   状态等按钮结构已经稳定。
+- Phase 5A 账号与云端数据已完成第一版：Supabase Flutter 依赖、环境变量
+  初始化、邮箱 OTP 登录骨架、退出登录、云端 schema/RLS 草案和数据边界文档。
 - “复盘”页面已完成第一版入口骨架，真实 `/review` 生成逻辑尚未接入。
 
 当前产品判断：
@@ -27,7 +29,7 @@ Phase 4A-4E 已完成真实 Android 试用后的信任修复，Phase 5 前置 A 
 不要继续做大而全知识库。
 不要把学习目标和学习卡点塞进近期范围。
 先把 App 做成可以直接使用的成品：
-账号登录 → 云端数据 → 每日复盘 → 复盘轻量服务每日任务建议。
+账号登录与云端数据已完成第一版 → 每日复盘 → 复盘轻量服务每日任务建议。
 ```
 
 ## 2. 当前 Phase 5 主目标
@@ -143,6 +145,8 @@ Phase 4A-4E 已完成真实 Android 试用后的信任修复，Phase 5 前置 A 
 
 ### Phase 5A：账号与云端数据
 
+完成状态：已于 2026-06-18 完成第一版。
+
 目标：
 
 - 让 App 不再依赖本地 API proxy + 同 Wi-Fi 调试链路，用户可以登录账号后直接使用。
@@ -156,13 +160,28 @@ Phase 4A-4E 已完成真实 Android 试用后的信任修复，Phase 5 前置 A 
 
 第一版要做：
 
-- Supabase 项目配置文档。
-- Flutter Supabase client 接入。
-- 登录 / 注册 / 退出登录页面。
-- 用户 session 持久化。
-- 云端表结构草案和 RLS。
-- 把任务、状态、事件、画像等用户数据增加 `user_id` 归属。
-- 明确本地 SQLite 在云端化后的角色：缓存 / 迁移源 / 离线兜底。
+- Supabase 项目配置文档。已完成：
+  `docs/architecture/phase-5a-account-cloud-data.md`
+- Flutter Supabase client 接入。已完成：
+  `supabase_flutter`
+- 登录 / 注册 / 退出登录页面。已完成邮箱 OTP 登录骨架和退出登录。
+- 用户 session 持久化。由 `supabase_flutter` 内置本地存储负责。
+- 云端表结构草案和 RLS。已完成：
+  `docs/architecture/supabase/phase-5a-schema.sql`
+- 把任务、状态、事件、画像等用户数据增加 `user_id` 归属。已在云端 schema
+  中完成，本地 SQLite 迁移尚未做。
+- 明确本地 SQLite 在云端化后的角色：缓存 / 迁移源 / 离线兜底。已写入
+  Phase 5A 文档。
+
+运行配置：
+
+```bash
+flutter run \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
+```
+
+如果没有传入这两个值，App 仍可运行，但“我的”页会显示“未配置云端”。
 
 暂不做：
 
@@ -171,6 +190,13 @@ Phase 4A-4E 已完成真实 Android 试用后的信任修复，Phase 5 前置 A 
 - 多设备冲突合并；
 - 端到端加密；
 - 复杂离线编辑队列。
+
+后续可选路径：
+
+- 先做 Phase 5B `/review`，只把新生成的 summary 存入云端；
+- 或做本地 SQLite 到 Supabase 的一次性迁移 / 上传工具。
+
+当前建议优先做 Phase 5B，因为它是新数据，不需要先解决历史记录迁移冲突。
 
 ### Phase 5B：每日复盘 `/review`
 

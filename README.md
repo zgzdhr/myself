@@ -8,7 +8,7 @@
 
 项目已经从 MVP 骨架稳定阶段进入真实手机试用后的可用性修正阶段。核心链路已经能在 Android 真机上通过本地 API proxy 调用 DeepSeek 并写入本地 SQLite。Phase 4A-4E 已完成：待确认批次保留、删除二次确认、Debug 日期切换、时间语义修复、`task_update` 取消/匹配增强、首页建议分组展开、任务业务状态可见化，以及真实 APK + 本地 API proxy 试用链路文档。
 
-Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本地任务提醒、底部四栏导航、复盘入口骨架和“我的 / 设置”页面骨架都已落地。当前下一步不是继续扩一个“大而全 AI 管家”，也暂时不推进知识库、学习目标或学习卡点，而是把 App 做成可以直接使用的成品：**账号登录 + 云端数据 + 每日复盘 `/review` + 复盘轻量服务每日任务建议**。
+Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本地任务提醒、底部四栏导航、复盘入口骨架和“我的 / 设置”页面骨架都已落地。Phase 5A 账号与云端数据也已完成第一版：Supabase 初始化、邮箱验证码登录骨架、退出登录、云端 schema/RLS 草案和数据边界文档。当前下一步不是继续扩一个“大而全 AI 管家”，也暂时不推进知识库、学习目标或学习卡点，而是进入 **每日复盘 `/review` + 复盘轻量服务每日任务建议**。
 
 当前已经落地：
 
@@ -31,6 +31,7 @@ Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本�
 - Phase 5 前置 A：AI 文字解析准确性增强，覆盖语音化表达、混合意图、取消、延期和模糊时间。
 - Phase 5 前置 B：本地任务提醒，基于已确认且带未来 `dueTime` 的 active 任务安排系统通知。
 - Phase 5 前置 C：底部导航、复盘入口骨架和“我的 / 设置”页面骨架，包含账号、同步、提醒、复盘、AI、隐私和 App 状态入口。
+- Phase 5A 账号与云端数据：Supabase Flutter 接入、邮箱 OTP 登录骨架、退出登录、云端 schema/RLS 草案和配置文档。
 - 基础测试覆盖，包括 Flutter analyze/test 目标、API typecheck/test 目标，以及 parser、数据库、确认流、记忆管理和隐私失败处理测试。
 
 优先阅读：
@@ -47,6 +48,8 @@ Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本�
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
 - `docs/architecture/phase-5-task-map.md`：Phase 5 中文任务地图，记录当前建议执行顺序。
+- `docs/architecture/phase-5a-account-cloud-data.md`：账号与云端数据第一版实现边界。
+- `docs/architecture/supabase/phase-5a-schema.sql`：Supabase 表结构和 RLS 草案。
 - `docs/architecture/phase-5-reflection-goals-evolution.md`：Phase 5 长期路线文档；注意学习目标和学习卡点已后置，不再是当前任务线。
 - `2026-06-05-mvp-next-task-map.md`：当前 Phase 4 任务地图。
 
@@ -107,7 +110,7 @@ Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本�
 - 状态管理：Riverpod。
 - 后端：最小 Node.js / TypeScript API proxy，用于保护 DeepSeek API Key。
 - AI：DeepSeek 结构化 JSON 输出。
-- 数据策略：当前仍是本地 SQLite；下一阶段转向账号登录和云端数据，手机端保留缓存 / 迁移源 / 离线兜底。
+- 数据策略：当前运行时仍以本地 SQLite 为主；账号登录和云端表/RLS 已接入第一版，下一步决定是先做 `/review` 云端 summary，还是做本地记录到 Supabase 的迁移。
 
 ## 自动写入策略
 
@@ -140,7 +143,7 @@ Phase 3 三星 Android 真机试用说明：App 已经可以真实运行和调�
 
 ## 当前阶段
 
-Phase 4 真实试用信任修复已经完成到 4E。Phase 5 前置 A/B/C 已完成第一轮：解析准确性增强、任务提醒、底部导航、复盘入口和“我的 / 设置”页面已经落地。当前下一步进入 **账号登录 + 云端数据 + 每日复盘 `/review`**。
+Phase 4 真实试用信任修复已经完成到 4E。Phase 5 前置 A/B/C 已完成第一轮：解析准确性增强、任务提醒、底部导航、复盘入口和“我的 / 设置”页面已经落地。Phase 5A 账号与云端数据已完成第一版。当前下一步进入 **每日复盘 `/review`**。
 
 Phase 4 目标已经完成：
 
@@ -172,10 +175,10 @@ Phase 4 目标已经完成：
 
 当前建议顺序：
 
-1. 账号登录：优先邮箱验证码，后续支持退出登录和 session 持久化。
-2. 云端数据：推荐 Supabase Auth + Postgres + Row Level Security；现有 Express API 继续做 DeepSeek proxy。
-3. 每日复盘 `/review`：把当天任务、状态、生活事件和用户补充整理成可编辑 summary。
-4. 复盘轻量服务每日任务：summary 作为弱上下文，帮助首页给出“怎么处理任务”的建议。
+1. 每日复盘 `/review`：把当天任务、状态、生活事件和用户补充整理成可编辑 summary。
+2. 复盘 summary 云端保存：优先考虑先保存新 summary，不急着迁移全部历史 SQLite 记录。
+3. 复盘轻量服务每日任务：summary 作为弱上下文，帮助首页给出“怎么处理任务”的建议。
+4. 本地记录迁移 / 上传：在云端 summary 跑稳后，再考虑任务、状态、事件、画像的迁移。
 5. 可控记忆管理增强：显示哪些任务、状态、事件、画像和复盘会影响后续建议。
 
 仍然不做：
