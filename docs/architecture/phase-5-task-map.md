@@ -89,7 +89,7 @@ Phase 5 的核心不是“加更多智能功能”，而是让 App 从“能记�
 
 ### Phase 5 前置 B：本地任务提醒
 
-完成状态：已于 2026-06-17 完成第一轮业务调度层；系统通知弹窗接入仍需下一步实现。
+完成状态：已于 2026-06-18 完成第一轮系统通知层。
 
 目标：
 
@@ -119,9 +119,14 @@ Phase 5 的核心不是“加更多智能功能”，而是让 App 从“能记�
 
 - 新增 `TaskReminderScheduler` / `TaskReminderCoordinator`，把提醒安排和取消从任务业务逻辑中抽象出来。
 - 任务自动保存、手动确认、任务更新、撤销自动保存、编辑自动保存、任务管理页编辑 / 删除都接入提醒同步入口。
-- 当前默认实现为 `NoopTaskReminderScheduler`，不会真正弹系统通知；后续可替换为 Android/iOS 原生通知或 Flutter 通知插件。
+- 接入成熟插件 `flutter_local_notifications`，默认实现改为系统本地通知。
+- App 启动时初始化通知插件和本地时区；第一次安排提醒时请求 Android / iOS 通知权限。
+- Android 已配置 `POST_NOTIFICATIONS`、`VIBRATE`、`RECEIVE_BOOT_COMPLETED`、定时通知 receiver、启动后恢复 receiver、desugaring 和通知图标。
+- iOS 已配置 `UNUserNotificationCenter` delegate，支持前台通知回调基础接入。
+- Android 调度模式使用 `inexactAllowWhileIdle`，先避开精确闹钟权限和审核复杂度。
 - 完成 / 取消 / 删除 / 清空时间 / 过期时间会取消提醒；active 且未来 `dueTime` 的任务会安排提醒。
 - 新增测试覆盖提醒调度规则、自动保存任务安排提醒、完成任务取消提醒。
+- 已验证：`flutter build ios --simulator --debug --no-codesign` 和 `flutter build apk --debug` 通过。
 
 ### Phase 5A：每日复盘总结
 

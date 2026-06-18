@@ -9,6 +9,7 @@ import '../../data/parser/http_parser_client.dart';
 import '../../data/parser/mock_parser_client.dart';
 import '../../data/parser/parser_client.dart';
 import '../extracted_items/extracted_items_controller.dart';
+import '../reminders/task_reminder_scheduler.dart';
 import 'home_suggestion_service.dart';
 import '../input/input_screen.dart';
 import '../memory/memory_screen.dart';
@@ -98,8 +99,13 @@ final extractedItemsControllerProvider = Provider<ExtractedItemsController>((
   return ExtractedItemsController(
     database: ref.watch(appDatabaseProvider),
     parserClient: ref.watch(parserClientProvider),
+    taskReminderScheduler: ref.watch(taskReminderSchedulerProvider),
     nowProvider: ref.watch(appNowProvider),
   );
+});
+
+final taskReminderSchedulerProvider = Provider<TaskReminderScheduler>((ref) {
+  return SystemTaskReminderScheduler.instance;
 });
 
 final homeSuggestionServiceProvider = Provider<HomeSuggestionService>((ref) {
