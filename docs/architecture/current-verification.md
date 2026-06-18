@@ -1,6 +1,48 @@
 # Current Verification
 
-## Latest Verification: Phase 4B Time Semantics and Today Actions
+## Latest Verification: Phase 5C Settings/Profile Shell
+
+Date: 2026-06-18
+Scope: Bottom navigation shell, tasks as a first-level tab, review entry
+placeholder, and profile/settings page structure
+
+### Summary
+
+- Result: Pass.
+- App shell now has four bottom navigation destinations: 首页, 任务, 复盘, 我的.
+- Tasks are now a first-level navigation entry instead of only being reachable
+  through memory management.
+- Review has a first visible entry point for future `/review` daily summaries.
+- Profile/settings has a stable first version covering account, sync,
+  reminders, review settings, AI/memory, privacy/data, and app/help sections.
+- The settings page intentionally uses placeholder actions for features not yet
+  connected, such as email login, cloud sync, data export, and real review
+  generation.
+
+### Commands Run
+
+```bash
+cd apps/mobile
+flutter analyze --no-pub
+flutter test test/widget_test.dart test/features/memory/memory_management_test.dart
+flutter test
+```
+
+### Results
+
+- `flutter analyze --no-pub`: Pass, no issues found.
+- Targeted widget and memory tests: Pass, 28 tests passed.
+- Full mobile test suite: Pass, 144 tests passed.
+
+### Notes
+
+- Full mobile tests still print an existing Drift debug warning about multiple
+  `AppDatabase` instances in tests. The warning did not fail the suite and was
+  not introduced by this settings/profile change.
+- Two old untracked root files remain outside this change:
+  `2026-06-07-phase3_d0.md` and `2026-06-08-phase3-upgrade.md`.
+
+## Previous Verification: Phase 4B Time Semantics and Today Actions
 
 Date: 2026-06-08
 Scope: Time reference contract, optional location context contract, same-day

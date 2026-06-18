@@ -6,6 +6,13 @@ Status: planning document only. This document records product direction and
 architecture boundaries for future sessions. It does not implement database,
 Flutter, API, desktop, or AI-provider changes.
 
+Update 2026-06-18: this document is now long-term background, not the current
+execution map. The current near-term map is
+`docs/architecture/phase-5-task-map.md`. Learning goals, learning progress, and
+learning blockers are deferred. The active near-term line is accounts and cloud
+data, daily `/review`, and lightweight reuse of review summaries for daily task
+guidance.
+
 ## 1. Current Architecture Read
 
 The current project is not overbuilt or chaotic. Its complexity mostly comes
@@ -108,34 +115,41 @@ This split avoids making `/parse` a single overloaded "AI brain".
 
 ## 5. Phase 5 Recommended Scope
 
-Phase 5 should focus on reflection and goal alignment, not a full desktop
-knowledge base or automatic self-evolution.
+Phase 5 should focus on making the mobile app directly usable, not a full
+desktop knowledge base, automatic self-evolution, or a learning-coach system.
 
 Recommended order:
 
-1. Phase 5A: daily reflection summary
+1. Phase 5A: accounts and cloud data
+   - Add email OTP login.
+   - Move toward cloud-backed user data with user ownership boundaries.
+   - Keep the existing Express API focused on DeepSeek proxy duties.
+   - Avoid complex offline conflict resolution in the first version.
+
+2. Phase 5B: daily reflection summary
    - User can generate a concise summary of today's visible records.
    - Use existing `tasks`, `short_term_states`, and `life_events` first.
    - Store summary as user-visible memory.
    - Allow edit, delete, and regenerate.
 
-2. Phase 5B: learning goal records
-   - Add explicit user-confirmed learning goals, such as UI design or Flutter.
-   - Do not infer long-term goals from one sentence without confirmation.
-
-3. Phase 5C: learning progress records
-   - Extract daily learning progress from reflection input.
-   - Connect progress to confirmed learning goals when confidence is high.
-   - Ask user to confirm when mapping is uncertain.
-
-4. Phase 5D: next-step suggestions
-   - Use confirmed goals, recent progress, blockers, and summaries.
-   - Generate a small set of next steps with explanations.
+3. Phase 5C: lightweight task guidance from reviews
+   - Use daily summaries only as weak context.
+   - Generate small task-handling suggestions with explanations.
    - Do not auto-create tasks unless the user chooses one.
+   - Do not turn one-day summaries into long-term profile.
 
-5. Phase 5E: controllable memory management improvements
-   - Show which summaries and goals can affect suggestions.
+4. Phase 5D: controllable memory management improvements
+   - Show which summaries and profile items can affect suggestions.
    - Support delete, archive, restore, and source inspection.
+
+Deferred from the near-term scope:
+
+- learning goal records;
+- learning progress records;
+- learning blocker extraction;
+- `/coach` goal alignment;
+- desktop analysis UI;
+- broad knowledge-base work.
 
 ## 6. Desktop Direction
 
@@ -250,4 +264,3 @@ daily reflection summary
 → progress linked to goals
 → source-backed next-step suggestions
 ```
-

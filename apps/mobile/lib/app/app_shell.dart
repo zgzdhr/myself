@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/memory/tasks_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/review/review_screen.dart';
+import '../features/settings/profile_settings_screen.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key});
@@ -47,7 +51,76 @@ class AppShell extends StatelessWidget {
           fillColor: Colors.transparent,
         ),
       ),
-      home: const HomeScreen(),
+      home: const _MainNavigationScreen(),
+    );
+  }
+}
+
+class _MainNavigationScreen extends ConsumerStatefulWidget {
+  const _MainNavigationScreen();
+
+  @override
+  ConsumerState<_MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
+  var _selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final database = ref.watch(appDatabaseProvider);
+    final nowProvider = ref.watch(appNowProvider);
+    final taskReminderScheduler = ref.watch(taskReminderSchedulerProvider);
+
+    return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          const HomeScreen(),
+          TasksScreen(
+            database: database,
+            nowProvider: nowProvider,
+            taskReminderScheduler: taskReminderScheduler,
+          ),
+          ReviewScreen(database: database, nowProvider: nowProvider),
+          ProfileSettingsScreen(
+            database: database,
+            nowProvider: nowProvider,
+            parserBaseUri: defaultParserBaseUri(),
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: '首页',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.checklist_rounded),
+            selectedIcon: Icon(Icons.task_alt_rounded),
+            label: '任务',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.edit_note_rounded),
+            selectedIcon: Icon(Icons.fact_check_rounded),
+            label: '复盘',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: '我的',
+          ),
+        ],
+      ),
     );
   }
 }

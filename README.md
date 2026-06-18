@@ -8,12 +8,12 @@
 
 项目已经从 MVP 骨架稳定阶段进入真实手机试用后的可用性修正阶段。核心链路已经能在 Android 真机上通过本地 API proxy 调用 DeepSeek 并写入本地 SQLite。Phase 4A-4E 已完成：待确认批次保留、删除二次确认、Debug 日期切换、时间语义修复、`task_update` 取消/匹配增强、首页建议分组展开、任务业务状态可见化，以及真实 APK + 本地 API proxy 试用链路文档。
 
-当前下一步不是继续扩一个“大而全 AI 管家”，也暂时不推进知识库，而是先回到两个更基础的能力：**AI 对自然语言输入的精细识别** 和 **提醒功能**。长期方向仍包括每日复盘总结、学习目标、学习进展、下一步建议、电脑端分析界面和受控知识库，但这些能力要按阶段逐步落地。
+Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本地任务提醒、底部四栏导航、复盘入口骨架和“我的 / 设置”页面骨架都已落地。当前下一步不是继续扩一个“大而全 AI 管家”，也暂时不推进知识库、学习目标或学习卡点，而是把 App 做成可以直接使用的成品：**账号登录 + 云端数据 + 每日复盘 `/review` + 复盘轻量服务每日任务建议**。
 
 当前已经落地：
 
 - Flutter 移动端项目，包含 Android 与 iOS 原生工程目录。
-- Riverpod App Shell、首页、万能输入页、待确认卡片和记忆入口页面。
+- Riverpod App Shell、底部四栏导航、首页、任务页、复盘入口、我的 / 设置页、万能输入页、待确认卡片和记忆入口页面。
 - Drift / SQLite 本地数据库 schema，覆盖 raw inputs、AI parse results、extracted items、tasks、short-term states、life events、profile items。
 - Parser domain models，包含 `task_create`、`task_update`、`short_term_state`、`life_event`、`general_answer`、`profile_candidate` 等 MVP 类型。
 - Mock Parser 与 HTTP Parser Client，移动端可以先跑 mock，也可以通过本地 API proxy 调真实解析。
@@ -28,6 +28,9 @@
 - Phase 4D 首页与行动区体验：AI 建议和今日行动可展开，建议依据按任务、状态、长期偏好分组展示。
 - Phase 4D.5 任务业务状态：`task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。
 - Phase 4E 真机试用链路：Android debug APK、本地 API proxy、DeepSeek Key 服务端保护、LAN 调试和排查 checklist。
+- Phase 5 前置 A：AI 文字解析准确性增强，覆盖语音化表达、混合意图、取消、延期和模糊时间。
+- Phase 5 前置 B：本地任务提醒，基于已确认且带未来 `dueTime` 的 active 任务安排系统通知。
+- Phase 5 前置 C：底部导航、复盘入口骨架和“我的 / 设置”页面骨架，包含账号、同步、提醒、复盘、AI、隐私和 App 状态入口。
 - 基础测试覆盖，包括 Flutter analyze/test 目标、API typecheck/test 目标，以及 parser、数据库、确认流、记忆管理和隐私失败处理测试。
 
 优先阅读：
@@ -44,7 +47,7 @@
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
 - `docs/architecture/phase-5-task-map.md`：Phase 5 中文任务地图，记录当前建议执行顺序。
-- `docs/architecture/phase-5-reflection-goals-evolution.md`：Phase 5 复盘、学习目标、电脑端和自进化长期路线。
+- `docs/architecture/phase-5-reflection-goals-evolution.md`：Phase 5 长期路线文档；注意学习目标和学习卡点已后置，不再是当前任务线。
 - `2026-06-05-mvp-next-task-map.md`：当前 Phase 4 任务地图。
 
 ## Apps
@@ -91,7 +94,7 @@
 ```text
 /parse   → 结构化入库：任务、状态、事件、画像候选
 /review  → 复盘总结：日总结、周总结、来源可追溯
-/coach   → 目标对齐：结合目标、进展、卡点给下一步建议
+/coach   → 目标对齐：后置能力，未来如需学习目标、进展和卡点再单独设计
 /memory  → 记忆管理：查看、编辑、删除、恢复、解释来源
 ```
 
@@ -104,7 +107,7 @@
 - 状态管理：Riverpod。
 - 后端：最小 Node.js / TypeScript API proxy，用于保护 DeepSeek API Key。
 - AI：DeepSeek 结构化 JSON 输出。
-- 数据策略：local-first，本地优先，云同步后置。
+- 数据策略：当前仍是本地 SQLite；下一阶段转向账号登录和云端数据，手机端保留缓存 / 迁移源 / 离线兜底。
 
 ## 自动写入策略
 
@@ -137,7 +140,7 @@ Phase 3 三星 Android 真机试用说明：App 已经可以真实运行和调�
 
 ## 当前阶段
 
-Phase 4 真实试用信任修复已经完成到 4E。当前下一步先聚焦 **解析准确性增强 + 提醒功能**，再进入 Phase 5 复盘、目标对齐与可控自进化规划。
+Phase 4 真实试用信任修复已经完成到 4E。Phase 5 前置 A/B/C 已完成第一轮：解析准确性增强、任务提醒、底部导航、复盘入口和“我的 / 设置”页面已经落地。当前下一步进入 **账号登录 + 云端数据 + 每日复盘 `/review`**。
 
 Phase 4 目标已经完成：
 
@@ -169,18 +172,17 @@ Phase 4 目标已经完成：
 
 当前建议顺序：
 
-1. AI 文字解析增强：先让模型更准确识别任务、状态、事件、取消、延期和模糊时间。
-2. 提醒功能：基于已确认任务的 `dueTime` 增加本地提醒能力。
-3. 每日复盘总结：把当天任务、状态、生活事件整理成可编辑 summary。
-4. 学习目标记录：显式保存用户确认过的学习目标。
-5. 学习进展记录：从复盘中提取今日学习进展和卡点。
-6. 下一步建议：根据目标、进展和卡点提出 1-3 个建议。
-7. 记忆管理增强：显示哪些总结、目标和画像会影响后续建议。
+1. 账号登录：优先邮箱验证码，后续支持退出登录和 session 持久化。
+2. 云端数据：推荐 Supabase Auth + Postgres + Row Level Security；现有 Express API 继续做 DeepSeek proxy。
+3. 每日复盘 `/review`：把当天任务、状态、生活事件和用户补充整理成可编辑 summary。
+4. 复盘轻量服务每日任务：summary 作为弱上下文，帮助首页给出“怎么处理任务”的建议。
+5. 可控记忆管理增强：显示哪些任务、状态、事件、画像和复盘会影响后续建议。
 
 仍然不做：
 
 - 完整 AI Agent。
 - 向量检索。
 - 自动长期画像进化。
-- 云同步。
+- 学习目标 / 学习进展 / 学习卡点。
+- 云端复杂双向同步和多设备冲突合并。
 - 一步到位的电脑端知识库。
