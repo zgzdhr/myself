@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'cloud_auth_service.dart';
+import 'cloud_sync_service.dart';
 
 const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const supabasePublishableKey = String.fromEnvironment(
@@ -28,4 +29,12 @@ final cloudAuthServiceProvider = Provider<CloudAuthService>((ref) {
   }
 
   return SupabaseCloudAuthService(Supabase.instance.client);
+});
+
+final cloudSyncServiceProvider = Provider<CloudSyncService>((ref) {
+  if (!isCloudBackendConfigured) {
+    return const DisabledCloudSyncService();
+  }
+
+  return SupabaseCloudSyncService(Supabase.instance.client);
 });

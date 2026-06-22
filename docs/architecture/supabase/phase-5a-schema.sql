@@ -214,3 +214,15 @@ create policy "summary_sources owner access"
   for all
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
+
+-- Data API privileges. RLS decides which rows a user may access, but the
+-- authenticated role still needs table privileges when automatic table exposure
+-- is disabled in Supabase project settings.
+grant select, insert, update on public.profiles to authenticated;
+grant select, insert, update on public.raw_inputs to authenticated;
+grant select, insert, update on public.ai_parse_results to authenticated;
+grant select, insert, update on public.extracted_items to authenticated;
+grant select, insert, update on public.tasks to authenticated;
+grant select, insert, update on public.short_term_states to authenticated;
+grant select, insert, update on public.life_events to authenticated;
+grant select, insert, update on public.profile_items to authenticated;

@@ -14,11 +14,11 @@
 
 ## 当前规划状态
 
-截至 2026-06-18，项目已经从早期 0-6 阶段的 MVP 建设路线，经过 **Phase 4：真实试用信任修复阶段**，进入 **Phase 5：账号云端化、每日复盘与设置完善阶段**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理、Phase 4A-4E 信任修复都已经完成。
+截至 2026-06-22，项目已经从早期 0-6 阶段的 MVP 建设路线，经过 **Phase 4：真实试用信任修复阶段**，进入 **Phase 5：账号云端化、每日复盘与设置完善阶段**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理、Phase 4A-4E 信任修复都已经完成。
 
-Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。Phase 4C 已完成：取消类表达、任务匹配噪声清洗和真实失败样例覆盖。Phase 4D 已完成：首页 AI 建议和今日行动可展开，建议依据按任务、当前状态、长期偏好分组展示。Phase 4D.5 已完成：新增 `task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。Phase 4E 已完成：Android debug APK + 本地 API proxy + DeepSeek 真实试用链路文档和构建验证。Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本地任务提醒、底部四栏导航、复盘入口骨架和“我的 / 设置”页面骨架。Phase 5A 账号与云端数据已完成第一版：Supabase Flutter 接入、邮箱 OTP 登录骨架、退出登录、云端 schema/RLS 草案和数据边界文档。当前下一步是 **每日复盘 `/review`**。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“Phase 4 首页建议 / Phase 5 记忆管理 / Phase 6 双端验证”路线理解当前项目。
+Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。Phase 4C 已完成：取消类表达、任务匹配噪声清洗和真实失败样例覆盖。Phase 4D 已完成：首页 AI 建议和今日行动可展开，建议依据按任务、当前状态、长期偏好分组展示。Phase 4D.5 已完成：新增 `task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。Phase 4E 已完成：Android debug APK + 本地 API proxy + DeepSeek 真实试用链路文档和构建验证。Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本地任务提醒、底部四栏导航、复盘入口骨架和“我的 / 设置”页面骨架。Phase 5A 账号与云端数据已完成第一版：Supabase Flutter 接入、邮箱 OTP 登录、退出登录、云端 schema/RLS/表权限、数据边界文档，以及本地 SQLite 到 Supabase 的手动单向同步。当前下一步是 **每日复盘 `/review`**。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“Phase 4 首页建议 / Phase 5 记忆管理 / Phase 6 双端验证”路线理解当前项目。
 
-Phase 5 的长期方向仍可以包括电脑端分析界面、受控知识库和可控自进化，但这些不是近期任务。根据 2026-06-18 的最新决策，学习目标、学习进展和学习卡点全部后置；当前先把 App 做成可以直接使用的成品。账号登录和云端数据已完成第一版，接下来做每日复盘和复盘轻量服务每日任务建议。
+Phase 5 的长期方向仍可以包括电脑端分析界面、受控知识库和可控自进化，但这些不是近期任务。根据 2026-06-18 的最新决策，学习目标、学习进展和学习卡点全部后置；当前先把 App 做成可以直接使用的成品。账号登录和手动云同步已完成第一版，接下来做每日复盘和复盘轻量服务每日任务建议。
 
 当前架构判断：
 
@@ -51,7 +51,7 @@ Phase 5 的长期方向仍可以包括电脑端分析界面、受控知识库和
 - `apps/mobile/lib/features/home/`：首页 UI 和基础建议服务。
 - `apps/mobile/lib/features/review/review_screen.dart`：每日复盘入口骨架，真实 `/review` 尚未接入。
 - `apps/mobile/lib/features/settings/profile_settings_screen.dart`：“我的 / 设置”页面骨架，包含账号、同步、提醒、复盘、AI、隐私和 App 状态入口。
-- `apps/mobile/lib/features/account/`：Supabase 账号初始化、邮箱 OTP 登录抽象和未配置兜底。
+- `apps/mobile/lib/features/account/`：Supabase 账号初始化、邮箱 OTP 登录抽象、未配置兜底和本地到云端手动同步服务。
 - `apps/mobile/lib/features/context/context_builder.dart`：受控 ContextBuilder，目前支持 `current_suggestion` 和 `task_update_resolution`。
 - `apps/mobile/lib/features/memory/`：记忆入口、隐私页、短期状态 / 生活事件 / 长期画像页面。
 - `apps/mobile/lib/data/local_db/`：Drift / SQLite schema 和本地数据库访问。
@@ -707,9 +707,9 @@ myself/
 
 ## 当前下一步
 
-当前下一步是 **每日复盘 `/review`**。AI 文字解析准确性增强、任务提醒、设置 / 个人页面骨架、账号登录和云端数据边界已经完成第一轮。
+当前下一步是 **每日复盘 `/review`**。AI 文字解析准确性增强、任务提醒、设置 / 个人页面骨架、账号登录、Supabase 表权限和本地到云端手动单向同步已经完成第一轮。
 
-1. 先读 `docs/architecture/phase-5-task-map.md`，确认当前路线：Phase 5A 已完成第一版 → 每日复盘 `/review` → 复盘轻量服务任务建议。
+1. 先读 `docs/architecture/phase-5-task-map.md`，确认当前路线：Phase 5A 已完成账号与手动云同步第一版 → 每日复盘 `/review` → 复盘轻量服务任务建议。
 2. 再看 `apps/mobile/lib/app/app_shell.dart`、`apps/mobile/lib/features/settings/profile_settings_screen.dart` 和 `apps/mobile/lib/features/review/review_screen.dart`，理解当前 App 入口和设置骨架。
 3. 再看 `docs/architecture/phase-5a-account-cloud-data.md` 和 `docs/architecture/supabase/phase-5a-schema.sql`，理解 Supabase 配置、schema 和 RLS 边界。
 4. 现有 `apps/api` 继续作为 DeepSeek proxy；不要把完整账号系统塞进当前 Express API。

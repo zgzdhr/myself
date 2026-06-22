@@ -1,5 +1,83 @@
 # Current Verification
 
+## Latest Verification: Phase 5A Manual Cloud Sync
+
+Date: 2026-06-22
+Scope: Supabase table privileges, manual one-way local SQLite to Supabase sync,
+and real AI parser mode on Android emulator
+
+### Summary
+
+- Result: Pass.
+- Supabase `authenticated` role now has `select`, `insert`, and `update`
+  privileges for the user-owned cloud tables used by first sync:
+  - `profiles`
+  - `raw_inputs`
+  - `ai_parse_results`
+  - `extracted_items`
+  - `tasks`
+  - `short_term_states`
+  - `life_events`
+  - `profile_items`
+- RLS remains enabled and still limits access by `auth.uid() = user_id`.
+- Mobile added `CloudSyncService`, which uploads local SQLite records to
+  Supabase in foreign-key order.
+- The current sync is manual and one-way:
+
+```text
+local SQLite -> Supabase
+```
+
+- The app does not yet pull cloud records back into SQLite and does not handle
+  multi-device conflict resolution.
+- Android emulator was relaunched in real parser mode:
+
+```bash
+flutter run -d emulator-5554 \
+  --dart-define=PARSER_MODE=http \
+  --dart-define=PARSER_BASE_URL=http://10.0.2.2:8787 \
+  --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key>
+```
+
+### Commands Run
+
+```bash
+cd apps/mobile
+flutter analyze
+flutter test test/features/account/cloud_auth_service_test.dart
+flutter test
+
+cd apps/api
+npm run dev
+
+curl -sS http://127.0.0.1:8787/health
+curl -sS -X POST http://127.0.0.1:8787/parse \
+  -H 'Content-Type: application/json' \
+  --data '{"text":"明天上午提醒我联系王总","timezone":"Asia/Shanghai","current_time_iso":"2026-06-22T17:55:00+08:00"}'
+```
+
+### Results
+
+- `flutter analyze`: Pass, no issues found.
+- Account service test: Pass.
+- Full mobile test suite: Pass, 145 tests passed.
+- API proxy health: Pass, returned `{"ok":true}`.
+- Real `/parse` request: Pass, returned `task_create` for "联系王总".
+- Manual Supabase sync was user-verified in Table Editor: `profiles` and local
+  business records appeared after pressing sync.
+
+### Notes
+
+- If a submitted input has not yet been confirmed, cloud sync should populate
+  `raw_inputs`, `ai_parse_results`, and `extracted_items`, but not necessarily
+  `tasks`.
+- `tasks` receives a row only after a task card is confirmed locally.
+- Completed or deleted tasks are soft-updated in cloud by status fields rather
+  than physically removed in the first sync version.
+- Recommended next implementation remains Phase 5B `/review`; optional small
+  enhancement is automatic sync after submit / confirm / delete.
+
 ## Latest Verification: Phase 5A Account and Cloud Data
 
 Date: 2026-06-18

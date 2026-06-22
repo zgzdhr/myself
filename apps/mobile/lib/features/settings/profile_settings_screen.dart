@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../data/local_db/app_database.dart';
 import '../../domain/item_type.dart';
 import '../account/cloud_auth_service.dart';
+import '../account/cloud_sync_service.dart';
 import '../memory/memory_screen.dart';
 import '../memory/privacy_screen.dart';
 import '../memory/profile_items_screen.dart';
@@ -14,6 +15,7 @@ class ProfileSettingsScreen extends StatefulWidget {
     required this.nowProvider,
     required this.parserBaseUri,
     required this.cloudAuthService,
+    required this.cloudSyncService,
     super.key,
   });
 
@@ -21,6 +23,7 @@ class ProfileSettingsScreen extends StatefulWidget {
   final DateTime Function() nowProvider;
   final Uri parserBaseUri;
   final CloudAuthService cloudAuthService;
+  final CloudSyncService cloudSyncService;
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -38,6 +41,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   var _dailyPlanReminderEnabled = false;
   var _dailyReviewReminderEnabled = false;
   var _defaultReminderLeadMinutes = 0;
+  String? _lastSyncedCloudProfileUserId;
+  String? _cloudProfileSyncError;
 
   @override
   void initState() {
@@ -76,6 +81,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         builder: (context, authSnapshot) {
           final authState =
               authSnapshot.data ?? widget.cloudAuthService.currentState;
+          _syncCloudProfileIfNeeded(authState);
 
           return FutureBuilder<_ProfileOverviewData>(
             future: _dataFuture,
@@ -98,10 +104,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       title: '通知设置',
                       description: '任务提醒已经接入系统通知。后续会在这里配置提前量、每日计划和复盘提醒。',
                     ),
-                    onSync: () => _openDetail(
-                      title: '数据与同步',
-                      description: '下一阶段会接入云端账号和数据存储，让 App 不再依赖同一个 Wi-Fi 调试环境。',
-                    ),
+                    onSync: () => _syncCloudProfileNow(authState),
                     onPrivacy: () => _openPrivacy(),
                     onAi: () => _openDetail(
                       title: 'AI 设置',
@@ -127,7 +130,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         title: '同步状态',
                         subtitle: _syncSubtitle(authState),
                         trailingText: authState.syncLabel,
-                        onTap: () => _showComingSoon('同步状态'),
+                        onTap: () => _syncCloudProfileNow(authState),
                       ),
                       _SettingsTile(
                         icon: Icons.cloud_sync_rounded,
@@ -511,7 +514,68 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     if (!authState.isSignedIn) {
       return 'Supabase 已配置，登录后可使用账号数据。';
     }
-    return '账号已连接。当前阶段先保留本地数据，下一步接入云端读写和迁移。';
+    if (_cloudProfileSyncError != null) {
+      return '账号已连接，但 profile 写入失败：$_cloudProfileSyncError';
+    }
+    return '账号已连接，已写入云端 profile。业务数据同步将分阶段接入。';
+  }
+
+  void _syncCloudProfileIfNeeded(CloudAuthState authState) {
+    final userId = authState.userId;
+    if (!authState.isConfigured || !authState.isSignedIn || userId == null) {
+      _lastSyncedCloudProfileUserId = null;
+      return;
+    }
+
+    if (_lastSyncedCloudProfileUserId == userId) {
+      return;
+    }
+
+    _lastSyncedCloudProfileUserId = userId;
+    Future<void>(() async {
+      try {
+        await widget.cloudAuthService.ensureCloudProfile();
+        if (!mounted || _cloudProfileSyncError == null) return;
+        setState(() => _cloudProfileSyncError = null);
+      } catch (error) {
+        if (!mounted) return;
+        setState(() => _cloudProfileSyncError = error.toString());
+      }
+    });
+  }
+
+  Future<void> _syncCloudProfileNow(CloudAuthState authState) async {
+    if (!authState.isConfigured) {
+      _openDetail(title: '数据与同步', description: '当前构建没有配置 Supabase，暂时只能使用本地数据。');
+      return;
+    }
+
+    if (!authState.isSignedIn) {
+      _openDetail(
+        title: '数据与同步',
+        description: '请先登录账号。登录后可以先写入云端 profile，用来验证账号、RLS 和 Supabase 表权限。',
+      );
+      return;
+    }
+
+    try {
+      await widget.cloudAuthService.ensureCloudProfile();
+      final result = await widget.cloudSyncService.syncFromLocal(
+        widget.database,
+      );
+      _lastSyncedCloudProfileUserId = authState.userId;
+      if (!mounted) return;
+      setState(() => _cloudProfileSyncError = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('云端同步完成，共 ${result.totalCount} 条本地记录。')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _cloudProfileSyncError = error.toString());
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('云端写入失败：$error')));
+    }
   }
 
   Future<void> _openEmailOtpSignIn() async {
@@ -841,6 +905,7 @@ class _EmailOtpSignInSheetState extends State<_EmailOtpSignInSheet> {
 
     try {
       await widget.authService.verifyEmailOtp(email: email, token: token);
+      await widget.authService.ensureCloudProfile();
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (error) {

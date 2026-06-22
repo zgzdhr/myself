@@ -1,9 +1,10 @@
 # Phase 5A Account and Cloud Data
 
-Date: 2026-06-18
+Date: 2026-06-18, updated 2026-06-22
 
-Status: first implementation complete. This document records the account and
-cloud-data boundary that new sessions should follow.
+Status: first account implementation plus first one-way cloud sync complete.
+This document records the account and cloud-data boundary that new sessions
+should follow.
 
 ## 1. What Phase 5A Implements
 
@@ -27,10 +28,19 @@ Implemented in this phase:
 - Sign out from the "我的" page.
 - Cloud data schema and RLS draft:
   - `docs/architecture/supabase/phase-5a-schema.sql`.
+- Manual one-way sync from local SQLite to Supabase:
+  - `raw_inputs`;
+  - `ai_parse_results`;
+  - `extracted_items`;
+  - `tasks`;
+  - `short_term_states`;
+  - `life_events`;
+  - `profile_items`.
+- The sync path first upserts `profiles`, then upserts local records in foreign
+  key order. Existing cloud rows with the same id are updated.
 
 Not implemented yet:
 
-- migrating existing local SQLite records into Supabase;
 - bidirectional offline sync;
 - multi-device conflict resolution;
 - third-party login;
@@ -103,8 +113,15 @@ will need daily review storage and source traceability.
 
 ## 5. Local SQLite Role After Phase 5A
 
-SQLite remains the current runtime data store for tasks, states, events, and
-profile items. After Supabase login is stable, SQLite should become:
+SQLite remains the primary runtime display store for tasks, states, events, and
+profile items. The first cloud sync is manual and one-way:
+
+```text
+local SQLite -> Supabase
+```
+
+The app does not yet read records back from Supabase into local SQLite, and it
+does not merge edits across devices. SQLite should become:
 
 - cache for fast local display;
 - migration source for existing user data;
@@ -117,19 +134,35 @@ Do not implement automatic two-way sync until these decisions are made:
 - source deletion propagation to summaries;
 - whether local raw inputs should be uploaded by default.
 
-## 6. Suggested Next Step
+## 6. First Sync Verification
+
+The first manual sync is triggered from the "我的" page through the data/sync
+entry. Verification should check Supabase Table Editor after pressing sync:
+
+- `profiles` contains the signed-in `user_id` and email.
+- `raw_inputs` contains the original user input text.
+- `ai_parse_results` contains the AI parse envelope.
+- `extracted_items` contains the pending or confirmed AI-extracted rows.
+- `tasks` contains confirmed tasks only after the user confirms a task card.
+
+If only `raw_inputs`, `ai_parse_results`, and `extracted_items` appear, that is
+expected when the user has submitted input but has not confirmed the extracted
+task yet.
+
+## 7. Suggested Next Step
 
 Next session should choose one of two paths:
 
-1. Build a one-way migration/upload tool from local SQLite to Supabase for
-   signed-in users.
-2. Build Phase 5B `/review` first and store only summaries in Supabase while
+1. Add automatic sync after submit/confirm/delete actions.
+2. Build Phase 5B `/review` first and store summaries in Supabase while
    formal records remain local.
+3. Start a proper two-way sync design with device ids and conflict rules.
 
-The safer path is usually option 2, because review storage is new data and does
-not require migrating existing local records.
+The safer next step is usually option 1, because it turns the current manual
+sync into a more natural product behavior without taking on multi-device
+conflict resolution yet.
 
-## 7. Source References
+## 8. Source References
 
 - Supabase Flutter quickstart:
   https://supabase.com/docs/guides/getting-started/quickstarts/flutter

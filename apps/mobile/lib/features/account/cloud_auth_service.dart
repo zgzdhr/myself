@@ -48,6 +48,8 @@ abstract class CloudAuthService {
 
   Future<void> verifyEmailOtp({required String email, required String token});
 
+  Future<void> ensureCloudProfile();
+
   Future<void> signOut();
 }
 
@@ -69,6 +71,11 @@ class DisabledCloudAuthService extends CloudAuthService {
 
   @override
   Future<void> verifyEmailOtp({required String email, required String token}) {
+    throw const CloudAuthNotConfiguredException();
+  }
+
+  @override
+  Future<void> ensureCloudProfile() {
     throw const CloudAuthNotConfiguredException();
   }
 
@@ -111,6 +118,20 @@ class SupabaseCloudAuthService extends CloudAuthService {
   }
 
   @override
+  Future<void> ensureCloudProfile() async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const CloudAuthNotSignedInException();
+    }
+
+    await _client.from('profiles').upsert({
+      'user_id': user.id,
+      'email': user.email,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'user_id');
+  }
+
+  @override
   Future<void> signOut() {
     return _client.auth.signOut();
   }
@@ -136,5 +157,14 @@ class CloudAuthNotConfiguredException implements Exception {
   @override
   String toString() {
     return 'Supabase 尚未配置。请用 --dart-define 传入 SUPABASE_URL 和 SUPABASE_PUBLISHABLE_KEY。';
+  }
+}
+
+class CloudAuthNotSignedInException implements Exception {
+  const CloudAuthNotSignedInException();
+
+  @override
+  String toString() {
+    return '用户尚未登录，无法写入云端 profile。';
   }
 }

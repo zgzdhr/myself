@@ -74,6 +74,7 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
     final nowProvider = ref.watch(appNowProvider);
     final taskReminderScheduler = ref.watch(taskReminderSchedulerProvider);
     final cloudAuthService = ref.watch(cloudAuthServiceProvider);
+    final cloudSyncService = ref.watch(cloudSyncServiceProvider);
 
     return Scaffold(
       body: IndexedStack(
@@ -91,6 +92,7 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
             nowProvider: nowProvider,
             parserBaseUri: defaultParserBaseUri(),
             cloudAuthService: cloudAuthService,
+            cloudSyncService: cloudSyncService,
           ),
         ],
       ),
