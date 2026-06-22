@@ -108,6 +108,8 @@ create table if not exists public.summaries (
   summary_type text not null,
   title text not null,
   content text not null,
+  encouragement text,
+  improvement_notes text,
   task_guidance text,
   open_items jsonb not null default '[]'::jsonb,
   time_range_start timestamptz,

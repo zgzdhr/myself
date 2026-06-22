@@ -1,5 +1,124 @@
 # Current Verification
 
+## Latest Verification: Phase 5C Review-Informed Home Guidance
+
+Date: 2026-06-22
+Scope: Supabase summary field migration, review summary weak context, and
+homepage task guidance
+
+### Summary
+
+- Result: Pass.
+- Supabase project `myself` (`rzztfwzgivhwtqmbdztr`) was updated through the
+  Supabase tool with migration `add_review_summary_reflection_fields`.
+- `public.summaries` now has:
+  - `encouragement text`;
+  - `improvement_notes text`.
+- Supabase table inspection verified both columns exist and RLS remains enabled
+  on `public.summaries`.
+- `ContextBuilder.buildCurrentSuggestion` now loads recent active / edited
+  `daily_summary` records as weak context.
+- `HomeSuggestionService` now includes “近期复盘” in suggestion reasons when a
+  recent summary is available.
+- The “复盘结果参与首页建议” switch is wired to runtime home suggestion logic.
+- Review summaries do not change task sorting, do not override tasks/states/
+  profile items, and do not become long-term profile facts.
+- Phase 5 task map now records the upcoming AI time-planning / class-schedule
+  calendar direction and references Super Productivity, Tasks.org, Vikunja, and
+  AppFlowy as product references.
+
+### Commands And Tools Run
+
+```sql
+alter table public.summaries
+  add column if not exists encouragement text,
+  add column if not exists improvement_notes text;
+```
+
+```bash
+cd apps/mobile
+dart format lib/data/local_db/app_database.dart lib/features/context/context_builder.dart lib/features/home/home_suggestion_service.dart test/features/context/context_builder_test.dart test/features/home/home_suggestion_service_test.dart
+flutter analyze
+flutter test test/features/context/context_builder_test.dart test/features/home/home_suggestion_service_test.dart
+flutter test
+```
+
+### Results
+
+- Supabase migration: Pass.
+- Supabase table verification: Pass; `summaries` includes both new columns.
+- `flutter analyze`: Pass, no issues found.
+- Targeted 5C mobile tests: Pass, 30 tests passed.
+- Full mobile test suite: Pass, 150 tests passed.
+
+### Notes
+
+- The current “复盘结果参与首页建议” switch is runtime-only; persisting the
+  preference across app restarts remains a small follow-up.
+- AI time planning is now recorded as Phase 5D, but it remains a user-confirmed
+  planning draft flow, not autonomous task mutation.
+
+## Latest Verification: Phase 5B Daily Review First Version
+
+Date: 2026-06-22
+Scope: `/review` API boundary, local summary storage, month/week/day review UI,
+and summary sync fields
+
+### Summary
+
+- Result: Pass, with one existing API test caveat noted below.
+- API added an independent `/review` route, schema, prompt, and DeepSeek review
+  service. `/parse` remains unchanged as the structured intake path.
+- Mobile added local `summaries` and `summary_sources` tables with Drift
+  migration version 3.
+- The review tab now uses a month → week → day folder structure.
+- Daily review generation supports optional user notes and stores:
+  - daily summary;
+  - encouragement;
+  - improvement notes;
+  - task guidance;
+  - open items;
+  - source references.
+- Manual cloud sync now includes `summaries` and `summary_sources`.
+- Supabase schema draft adds `encouragement` and `improvement_notes` to
+  `summaries`. This has since been applied through the Supabase tool in the
+  Phase 5C verification above.
+
+### Commands Run
+
+```bash
+cd apps/mobile
+flutter pub run build_runner build --delete-conflicting-outputs
+dart format lib test
+flutter analyze
+flutter test test/data/local_db/app_database_test.dart test/widget_test.dart
+flutter test
+
+cd apps/api
+npm run typecheck
+node --test --import tsx test/reviewResultSchema.test.ts test/deepseekReview.test.ts
+npm run test
+```
+
+### Results
+
+- Drift code generation: Pass.
+- `flutter analyze`: Pass, no issues found.
+- Targeted mobile tests: Pass.
+- Full mobile test suite: Pass, 146 tests passed.
+- `npm run typecheck`: Pass.
+- Targeted review API tests: Pass, 4 tests passed.
+- `npm run test`: 70 tests passed; `test/privacyLogging.test.ts` still hangs
+  with the previously known server/fetch lifecycle issue and was cancelled.
+
+### Notes
+
+- Existing Supabase projects that already created the Phase 5A schema need the
+  new `summaries.encouragement` and `summaries.improvement_notes` columns before
+  syncing generated reviews.
+- Phase 5C remains responsible for letting review summaries weakly influence
+  homepage task guidance. Phase 5B only stores and displays the review.
+
 ## Latest Verification: Phase 5A Manual Cloud Sync
 
 Date: 2026-06-22

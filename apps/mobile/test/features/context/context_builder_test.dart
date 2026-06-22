@@ -187,6 +187,44 @@ void main() {
     ]);
   });
 
+  test(
+    'includes recent daily summaries as weak current suggestion context',
+    () async {
+      await _insertSummary(
+        database,
+        id: 'summary-active',
+        title: '6月5日复盘',
+        content: '今天启动偏慢，但完成了联系客户。',
+        taskGuidance: '明天可以先做 10 分钟启动版。',
+        status: RecordStatus.confirmed,
+        day: now,
+      );
+      await _insertSummary(
+        database,
+        id: 'summary-deleted',
+        title: '已删除复盘',
+        content: '这条不应出现',
+        taskGuidance: null,
+        status: RecordStatus.deleted,
+        day: now.subtract(const Duration(days: 1)),
+      );
+
+      final package = await builder.buildCurrentSuggestion(
+        database: database,
+        now: now,
+      );
+
+      expect(package.relevantSummaries.map((summary) => summary.title), [
+        '6月5日复盘',
+      ]);
+      expect(package.relevantSummaries.single.taskGuidance, contains('10 分钟'));
+      expect(package.memoryExplanations.map((entry) => entry.sourceType), [
+        'summaries',
+      ]);
+      expect(package.memoryExplanations.single.reason, contains('弱上下文'));
+    },
+  );
+
   test('does not treat pending extracted items as truth', () async {
     await _insertPendingExtractedProfile(database, now: now);
 
@@ -548,6 +586,9 @@ void main() {
       expect(package.confirmedProfileItems.map((profile) => profile.content), [
         for (final profile in homeContext.profileItems) profile.content,
       ]);
+      expect(package.relevantSummaries.map((summary) => summary.content), [
+        for (final summary in homeContext.summaries) summary.content,
+      ]);
     },
   );
 }
@@ -678,6 +719,34 @@ Future<void> _insertProfile(
           status: status.value,
           createdAt: DateTime.utc(2026, 6, 5),
           updatedAt: DateTime.utc(2026, 6, 5),
+        ),
+      );
+}
+
+Future<void> _insertSummary(
+  AppDatabase database, {
+  required String id,
+  required String title,
+  required String content,
+  required String? taskGuidance,
+  required RecordStatus status,
+  required DateTime day,
+}) {
+  return database
+      .into(database.summaries)
+      .insert(
+        SummariesCompanion.insert(
+          id: id,
+          summaryType: 'daily_summary',
+          title: title,
+          content: content,
+          taskGuidance: Value(taskGuidance),
+          timeRangeStart: DateTime.utc(day.year, day.month, day.day),
+          timeRangeEnd: DateTime.utc(day.year, day.month, day.day + 1),
+          status: status.value,
+          generatedBy: 'deepseek',
+          createdAt: day,
+          updatedAt: day,
         ),
       );
 }

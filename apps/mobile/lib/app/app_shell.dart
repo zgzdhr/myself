@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/review/http_review_client.dart';
 import '../features/account/cloud_backend.dart';
 import '../features/memory/tasks_screen.dart';
 import '../features/home/home_screen.dart';
@@ -86,7 +87,11 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
             nowProvider: nowProvider,
             taskReminderScheduler: taskReminderScheduler,
           ),
-          ReviewScreen(database: database, nowProvider: nowProvider),
+          ReviewScreen(
+            database: database,
+            nowProvider: nowProvider,
+            reviewClient: HttpReviewClient(baseUri: defaultParserBaseUri()),
+          ),
           ProfileSettingsScreen(
             database: database,
             nowProvider: nowProvider,

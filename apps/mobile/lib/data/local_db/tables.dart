@@ -110,3 +110,45 @@ class ProfileItems extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+class Summaries extends Table {
+  TextColumn get id => text()();
+  TextColumn get summaryType => text().named('summary_type')();
+  TextColumn get title => text()();
+  TextColumn get content => text()();
+  TextColumn get encouragement => text().nullable()();
+  TextColumn get improvementNotes =>
+      text().named('improvement_notes').nullable()();
+  TextColumn get taskGuidance => text().named('task_guidance').nullable()();
+  TextColumn get openItemsJson =>
+      text().named('open_items_json').withDefault(const Constant('[]'))();
+  DateTimeColumn get timeRangeStart => dateTime().named('time_range_start')();
+  DateTimeColumn get timeRangeEnd => dateTime().named('time_range_end')();
+  TextColumn get status => text()();
+  TextColumn get generatedBy => text().named('generated_by')();
+  TextColumn get modelName => text().named('model_name').nullable()();
+  TextColumn get promptVersion => text().named('prompt_version').nullable()();
+  RealColumn get confidence => real().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get userEditedAt =>
+      dateTime().named('user_edited_at').nullable()();
+  DateTimeColumn get deletedAt => dateTime().named('deleted_at').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class SummarySources extends Table {
+  TextColumn get id => text()();
+  TextColumn get summaryId =>
+      text().named('summary_id').references(Summaries, #id)();
+  TextColumn get sourceTable => text().named('source_table')();
+  TextColumn get sourceRecordId => text().named('source_record_id')();
+  TextColumn get sourceStatusAtGeneration =>
+      text().named('source_status_at_generation').nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

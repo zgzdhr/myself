@@ -16,6 +16,7 @@ class HomeSuggestionContext {
     this.todayTasks = const [],
     required this.shortTermStates,
     required this.profileItems,
+    this.summaries = const [],
   });
 
   final DateTime now;
@@ -23,6 +24,7 @@ class HomeSuggestionContext {
   final List<HomeTask> todayTasks;
   final List<HomeShortTermState> shortTermStates;
   final List<HomeProfileItem> profileItems;
+  final List<HomeSummary> summaries;
 }
 
 class HomeTask {
@@ -66,16 +68,32 @@ class HomeProfileItem {
   final String content;
 }
 
+class HomeSummary {
+  const HomeSummary({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.taskGuidance,
+  });
+
+  final String id;
+  final String title;
+  final String content;
+  final String? taskGuidance;
+}
+
 class HomeSuggestionService {
   const HomeSuggestionService();
 
   Future<HomeSuggestionContext> loadContext({
     required AppDatabase database,
     required DateTime now,
+    bool includeReviewSummaries = true,
   }) async {
     final package = await const ContextBuilder().buildCurrentSuggestion(
       database: database,
       now: now,
+      includeSummaries: includeReviewSummaries,
     );
 
     return HomeSuggestionContext(
@@ -113,15 +131,24 @@ class HomeSuggestionService {
         for (final profile in package.confirmedProfileItems)
           HomeProfileItem(id: profile.id, content: profile.content),
       ],
+      summaries: [
+        for (final summary in package.relevantSummaries)
+          HomeSummary(
+            id: summary.id,
+            title: summary.title,
+            content: summary.content,
+            taskGuidance: summary.taskGuidance,
+          ),
+      ],
     );
   }
 
   List<HomeSuggestion> buildSuggestions(HomeSuggestionContext context) {
     if (context.tasks.isEmpty) {
-      return const [
+      return [
         HomeSuggestion(
           text: '目前没有需要优先处理的任务，可以先补充一条今天最重要的事情。',
-          reason: '首页建议只使用已确认任务、未过期短期状态和已确认长期画像。',
+          reason: _buildEmptyReason(context),
         ),
       ];
     }
@@ -189,7 +216,32 @@ class HomeSuggestionService {
       parts.add('| 长期偏好：$profilesText');
     }
 
+    if (context.summaries.isNotEmpty) {
+      parts.add('| 近期复盘：${_summaryHint(context.summaries.first)}');
+    }
+
     return parts.join(' ');
+  }
+
+  String _buildEmptyReason(HomeSuggestionContext context) {
+    final parts = <String>['首页建议只使用已确认任务、未过期短期状态、已确认长期画像和近期复盘弱上下文。'];
+    if (context.summaries.isNotEmpty) {
+      parts.add('近期复盘：${_summaryHint(context.summaries.first)}');
+    }
+    return parts.join(' ');
+  }
+
+  String _summaryHint(HomeSummary summary) {
+    final taskGuidance = summary.taskGuidance?.trim();
+    final text = taskGuidance != null && taskGuidance.isNotEmpty
+        ? taskGuidance
+        : summary.content.trim();
+    return _clip(text, 42);
+  }
+
+  String _clip(String value, int maxLength) {
+    if (value.length <= maxLength) return value;
+    return '${value.substring(0, maxLength)}...';
   }
 
   bool _hasLowEnergy(List<HomeShortTermState> states) {

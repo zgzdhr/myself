@@ -10,12 +10,18 @@ import {
   type PrivacyLogger,
   type PrivacyLogEntry,
 } from "./routes/parse.js";
+import {
+  createReviewRouter,
+  type GenerateReview,
+} from "./routes/review.js";
 import { createDeepSeekParser } from "./services/deepseekParser.js";
+import { createDeepSeekReview } from "./services/deepseekReview.js";
 
 export type { PrivacyLogEntry };
 
 type CreateApiAppOptions = {
   parseText?: ParseText;
+  generateReview?: GenerateReview;
   logger?: PrivacyLogger;
 };
 
@@ -29,6 +35,7 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
   const app = express();
   const logger = options.logger ?? defaultPrivacyLogger;
   const parseText = options.parseText ?? createDeepSeekParser();
+  const generateReview = options.generateReview ?? createDeepSeekReview();
 
   app.use(cors());
   app.use(express.json({ limit: "1mb" }));
@@ -39,6 +46,12 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
 
   app.use(
     createParseRouter(parseText, {
+      logger,
+      requestIdFactory: randomUUID,
+    }),
+  );
+  app.use(
+    createReviewRouter(generateReview, {
       logger,
       requestIdFactory: randomUUID,
     }),

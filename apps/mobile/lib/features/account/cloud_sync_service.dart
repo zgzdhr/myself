@@ -14,6 +14,8 @@ class CloudSyncResult {
     required this.shortTermStateCount,
     required this.lifeEventCount,
     required this.profileItemCount,
+    required this.summaryCount,
+    required this.summarySourceCount,
   });
 
   final int rawInputCount;
@@ -23,6 +25,8 @@ class CloudSyncResult {
   final int shortTermStateCount;
   final int lifeEventCount;
   final int profileItemCount;
+  final int summaryCount;
+  final int summarySourceCount;
 
   int get totalCount =>
       rawInputCount +
@@ -31,7 +35,9 @@ class CloudSyncResult {
       taskCount +
       shortTermStateCount +
       lifeEventCount +
-      profileItemCount;
+      profileItemCount +
+      summaryCount +
+      summarySourceCount;
 }
 
 abstract class CloudSyncService {
@@ -71,6 +77,8 @@ class SupabaseCloudSyncService extends CloudSyncService {
         .get();
     final lifeEvents = await database.select(database.lifeEvents).get();
     final profileItems = await database.select(database.profileItems).get();
+    final summaries = await database.select(database.summaries).get();
+    final summarySources = await database.select(database.summarySources).get();
 
     await _upsert('raw_inputs', [
       for (final row in rawInputs)
@@ -185,6 +193,45 @@ class SupabaseCloudSyncService extends CloudSyncService {
         },
     ]);
 
+    await _upsert('summaries', [
+      for (final row in summaries)
+        {
+          'id': row.id,
+          'user_id': userId,
+          'summary_type': row.summaryType,
+          'title': row.title,
+          'content': row.content,
+          'encouragement': row.encouragement,
+          'improvement_notes': row.improvementNotes,
+          'task_guidance': row.taskGuidance,
+          'open_items': _json(row.openItemsJson, fallback: const []),
+          'time_range_start': _date(row.timeRangeStart),
+          'time_range_end': _date(row.timeRangeEnd),
+          'status': row.status,
+          'generated_by': row.generatedBy,
+          'model_name': row.modelName,
+          'prompt_version': row.promptVersion,
+          'confidence': row.confidence,
+          'created_at': _date(row.createdAt),
+          'updated_at': _date(row.updatedAt),
+          'user_edited_at': _dateOrNull(row.userEditedAt),
+          'deleted_at': _dateOrNull(row.deletedAt),
+        },
+    ]);
+
+    await _upsert('summary_sources', [
+      for (final row in summarySources)
+        {
+          'id': row.id,
+          'user_id': userId,
+          'summary_id': row.summaryId,
+          'source_table': row.sourceTable,
+          'source_record_id': row.sourceRecordId,
+          'source_status_at_generation': row.sourceStatusAtGeneration,
+          'created_at': _date(row.createdAt),
+        },
+    ]);
+
     return CloudSyncResult(
       rawInputCount: rawInputs.length,
       aiParseResultCount: aiParseResults.length,
@@ -193,6 +240,8 @@ class SupabaseCloudSyncService extends CloudSyncService {
       shortTermStateCount: shortTermStates.length,
       lifeEventCount: lifeEvents.length,
       profileItemCount: profileItems.length,
+      summaryCount: summaries.length,
+      summarySourceCount: summarySources.length,
     );
   }
 

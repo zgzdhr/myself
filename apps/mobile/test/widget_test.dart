@@ -165,8 +165,9 @@ void main() {
 
     await tester.tap(find.text('复盘'));
     await tester.pumpAndSettle();
-    expect(find.text('今天复盘了吗？'), findsOneWidget);
-    expect(find.text('生成今日复盘'), findsOneWidget);
+    expect(find.textContaining('年'), findsWidgets);
+    expect(find.text('第1周'), findsOneWidget);
+    expect(find.byIcon(Icons.folder_rounded), findsWidgets);
 
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();

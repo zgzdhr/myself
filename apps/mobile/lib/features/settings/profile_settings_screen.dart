@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local_db/app_database.dart';
 import '../../domain/item_type.dart';
@@ -8,8 +9,9 @@ import '../account/cloud_sync_service.dart';
 import '../memory/memory_screen.dart';
 import '../memory/privacy_screen.dart';
 import '../memory/profile_items_screen.dart';
+import 'user_preference_providers.dart';
 
-class ProfileSettingsScreen extends StatefulWidget {
+class ProfileSettingsScreen extends ConsumerStatefulWidget {
   const ProfileSettingsScreen({
     required this.database,
     required this.nowProvider,
@@ -26,17 +28,17 @@ class ProfileSettingsScreen extends StatefulWidget {
   final CloudSyncService cloudSyncService;
 
   @override
-  State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
+  ConsumerState<ProfileSettingsScreen> createState() =>
+      _ProfileSettingsScreenState();
 }
 
-class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
+class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   static const _appVersion = String.fromEnvironment(
     'APP_VERSION',
     defaultValue: '1.0.0+1',
   );
 
   late Future<_ProfileOverviewData> _dataFuture;
-  var _reviewAffectsHome = true;
   var _taskReminderEnabled = true;
   var _dailyPlanReminderEnabled = false;
   var _dailyReviewReminderEnabled = false;
@@ -73,6 +75,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final reviewAffectsHome = ref.watch(reviewAffectsHomeProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('我的')),
       body: StreamBuilder<CloudAuthState>(
@@ -276,9 +280,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         secondary: const Icon(Icons.lightbulb_outline_rounded),
                         title: const Text('复盘结果参与首页建议'),
                         subtitle: const Text('只作为轻上下文，不自动改任务或画像。'),
-                        value: _reviewAffectsHome,
+                        value: reviewAffectsHome,
                         onChanged: (value) {
-                          setState(() => _reviewAffectsHome = value);
+                          ref
+                              .read(reviewAffectsHomeProvider.notifier)
+                              .setEnabled(value);
                         },
                       ),
                       _SettingsTile(

@@ -156,6 +156,70 @@ void main() {
       expect(visibleTasks.single.taskStatus, TaskStatus.cancelled.value);
     },
   );
+
+  test('stores, edits, and soft deletes daily summaries', () async {
+    final now = DateTime.utc(2026, 6, 22, 20);
+    final dayStart = DateTime.utc(2026, 6, 22);
+
+    await database.saveDailySummary(
+      updatedAt: now,
+      summary: Summary(
+        id: 'summary-1',
+        summaryType: 'daily_summary',
+        title: '6月22日复盘',
+        content: '今天完成了一个关键任务。',
+        encouragement: '能推进关键任务，说明你在恢复节奏。',
+        improvementNotes: '上午启动偏慢，明天可以先做低阻力任务。',
+        taskGuidance: '明天先处理明确截止时间的任务。',
+        openItemsJson: '["等王总反馈"]',
+        timeRangeStart: dayStart,
+        timeRangeEnd: dayStart.add(const Duration(days: 1)),
+        status: RecordStatus.confirmed.value,
+        generatedBy: 'deepseek',
+        modelName: null,
+        promptVersion: 'review-daily-v1',
+        confidence: 0.8,
+        createdAt: now,
+        updatedAt: now,
+        userEditedAt: null,
+        deletedAt: null,
+      ),
+      sources: [
+        SummarySourcesCompanion.insert(
+          id: 'source-1',
+          summaryId: 'summary-1',
+          sourceTable: 'tasks',
+          sourceRecordId: 'task-1',
+          sourceStatusAtGeneration: const Value('confirmed'),
+          createdAt: now,
+        ),
+      ],
+    );
+
+    var summary = await database.getSummaryForDay(dayStart);
+    expect(summary?.encouragement, contains('恢复节奏'));
+    expect(await database.getSourcesForSummary('summary-1'), hasLength(1));
+
+    await database.updateSummaryContent(
+      id: 'summary-1',
+      content: '今天完成了关键任务，并且复盘了启动偏慢的问题。',
+      encouragement: '继续保持这个节奏。',
+      improvementNotes: '明天先启动一个小任务。',
+      taskGuidance: '先做短任务，再处理开放事项。',
+      updatedAt: now.add(const Duration(minutes: 5)),
+    );
+
+    summary = await database.getSummaryForDay(dayStart);
+    expect(summary?.status, RecordStatus.edited.value);
+    expect(summary?.content, contains('启动偏慢'));
+
+    await database.markSummaryDeleted(
+      id: 'summary-1',
+      updatedAt: now.add(const Duration(minutes: 10)),
+    );
+
+    expect(await database.getSummaryForDay(dayStart), null);
+  });
 }
 
 Future<void> _insertRawInput(AppDatabase database, {required DateTime now}) {

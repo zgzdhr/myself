@@ -111,6 +111,7 @@ void main() {
       expect(context.profileItems.map((profile) => profile.content), [
         '用户不喜欢太频繁的提醒',
       ]);
+      expect(context.summaries, isEmpty);
     },
   );
 
@@ -241,6 +242,72 @@ void main() {
     expect(suggestions.first.reason, contains('不喜欢太频繁的提醒'));
   });
 
+  test('reason can mention recent review summary as weak context', () {
+    final suggestions = service.buildSuggestions(
+      HomeSuggestionContext(
+        now: now,
+        tasks: [
+          HomeTask(
+            id: 'task-1',
+            title: '准备周会材料',
+            priority: 'medium',
+            dueTime: now.add(const Duration(hours: 1)),
+          ),
+        ],
+        shortTermStates: const [],
+        profileItems: const [],
+        summaries: const [
+          HomeSummary(
+            id: 'summary-1',
+            title: '5月31日复盘',
+            content: '今天启动偏慢，但完成了关键沟通。',
+            taskGuidance: '明天可以先做 10 分钟启动版。',
+          ),
+        ],
+      ),
+    );
+
+    expect(suggestions.first.reason, contains('近期复盘'));
+    expect(suggestions.first.reason, contains('10 分钟启动版'));
+  });
+
+  test('loads recent daily summaries for home suggestions', () async {
+    await _insertSummary(
+      database,
+      id: 'summary-1',
+      title: '5月31日复盘',
+      content: '今天有点累，但完成了联系王总。',
+      taskGuidance: '明天先处理明确截止时间的任务。',
+      status: RecordStatus.confirmed,
+      day: now,
+    );
+
+    final context = await service.loadContext(database: database, now: now);
+
+    expect(context.summaries.map((summary) => summary.title), ['5月31日复盘']);
+    expect(context.summaries.single.taskGuidance, contains('明确截止时间'));
+  });
+
+  test('can disable review summaries for home suggestions', () async {
+    await _insertSummary(
+      database,
+      id: 'summary-1',
+      title: '5月31日复盘',
+      content: '今天有点累，但完成了联系王总。',
+      taskGuidance: '明天先处理明确截止时间的任务。',
+      status: RecordStatus.confirmed,
+      day: now,
+    );
+
+    final context = await service.loadContext(
+      database: database,
+      now: now,
+      includeReviewSummaries: false,
+    );
+
+    expect(context.summaries, isEmpty);
+  });
+
   test('reason does not contain raw input text', () {
     final suggestions = service.buildSuggestions(
       HomeSuggestionContext(
@@ -276,42 +343,48 @@ void main() {
     expect(suggestions.first.reason, contains('已确认'));
   });
 
-  test('general answer parse rows do not create context for home suggestions', () async {
-    final cleanDatabase = AppDatabase(
-      DatabaseConnection(
-        NativeDatabase.memory(),
-        closeStreamsSynchronously: true,
-      ),
-    );
-    addTearDown(cleanDatabase.close);
+  test(
+    'general answer parse rows do not create context for home suggestions',
+    () async {
+      final cleanDatabase = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      addTearDown(cleanDatabase.close);
 
-    await cleanDatabase
-        .into(cleanDatabase.rawInputs)
-        .insert(
-          RawInputsCompanion.insert(
-            id: 'raw-general',
-            inputText: 'Flutter 是什么？',
-            createdAt: now,
-          ),
-        );
-    await cleanDatabase
-        .into(cleanDatabase.aiParseResults)
-        .insert(
-          AiParseResultsCompanion.insert(
-            id: 'parse-general',
-            rawInputId: 'raw-general',
-            rawJson: '{"items":[{"type":"general_answer"}]}',
-            validationState: 'valid',
-            createdAt: now,
-          ),
-        );
+      await cleanDatabase
+          .into(cleanDatabase.rawInputs)
+          .insert(
+            RawInputsCompanion.insert(
+              id: 'raw-general',
+              inputText: 'Flutter 是什么？',
+              createdAt: now,
+            ),
+          );
+      await cleanDatabase
+          .into(cleanDatabase.aiParseResults)
+          .insert(
+            AiParseResultsCompanion.insert(
+              id: 'parse-general',
+              rawInputId: 'raw-general',
+              rawJson: '{"items":[{"type":"general_answer"}]}',
+              validationState: 'valid',
+              createdAt: now,
+            ),
+          );
 
-    final context = await service.loadContext(database: cleanDatabase, now: now);
+      final context = await service.loadContext(
+        database: cleanDatabase,
+        now: now,
+      );
 
-    expect(context.tasks, isEmpty);
-    expect(context.shortTermStates, isEmpty);
-    expect(context.profileItems, isEmpty);
-  });
+      expect(context.tasks, isEmpty);
+      expect(context.shortTermStates, isEmpty);
+      expect(context.profileItems, isEmpty);
+    },
+  );
 }
 
 Future<void> _insertSourceRows(
@@ -423,6 +496,34 @@ Future<void> _insertProfile(
           status: status.value,
           createdAt: DateTime.utc(2026, 5, 31),
           updatedAt: DateTime.utc(2026, 5, 31),
+        ),
+      );
+}
+
+Future<void> _insertSummary(
+  AppDatabase database, {
+  required String id,
+  required String title,
+  required String content,
+  required String? taskGuidance,
+  required RecordStatus status,
+  required DateTime day,
+}) {
+  return database
+      .into(database.summaries)
+      .insert(
+        SummariesCompanion.insert(
+          id: id,
+          summaryType: 'daily_summary',
+          title: title,
+          content: content,
+          taskGuidance: Value(taskGuidance),
+          timeRangeStart: DateTime.utc(day.year, day.month, day.day),
+          timeRangeEnd: DateTime.utc(day.year, day.month, day.day + 1),
+          status: status.value,
+          generatedBy: 'deepseek',
+          createdAt: day,
+          updatedAt: day,
         ),
       );
 }

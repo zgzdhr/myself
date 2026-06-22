@@ -4086,6 +4086,1554 @@ class ProfileItemsCompanion extends UpdateCompanion<ProfileItem> {
   }
 }
 
+class $SummariesTable extends Summaries
+    with TableInfo<$SummariesTable, Summary> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SummariesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _summaryTypeMeta = const VerificationMeta(
+    'summaryType',
+  );
+  @override
+  late final GeneratedColumn<String> summaryType = GeneratedColumn<String>(
+    'summary_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _encouragementMeta = const VerificationMeta(
+    'encouragement',
+  );
+  @override
+  late final GeneratedColumn<String> encouragement = GeneratedColumn<String>(
+    'encouragement',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _improvementNotesMeta = const VerificationMeta(
+    'improvementNotes',
+  );
+  @override
+  late final GeneratedColumn<String> improvementNotes = GeneratedColumn<String>(
+    'improvement_notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taskGuidanceMeta = const VerificationMeta(
+    'taskGuidance',
+  );
+  @override
+  late final GeneratedColumn<String> taskGuidance = GeneratedColumn<String>(
+    'task_guidance',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _openItemsJsonMeta = const VerificationMeta(
+    'openItemsJson',
+  );
+  @override
+  late final GeneratedColumn<String> openItemsJson = GeneratedColumn<String>(
+    'open_items_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _timeRangeStartMeta = const VerificationMeta(
+    'timeRangeStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timeRangeStart =
+      GeneratedColumn<DateTime>(
+        'time_range_start',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _timeRangeEndMeta = const VerificationMeta(
+    'timeRangeEnd',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timeRangeEnd = GeneratedColumn<DateTime>(
+    'time_range_end',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _generatedByMeta = const VerificationMeta(
+    'generatedBy',
+  );
+  @override
+  late final GeneratedColumn<String> generatedBy = GeneratedColumn<String>(
+    'generated_by',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modelNameMeta = const VerificationMeta(
+    'modelName',
+  );
+  @override
+  late final GeneratedColumn<String> modelName = GeneratedColumn<String>(
+    'model_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _promptVersionMeta = const VerificationMeta(
+    'promptVersion',
+  );
+  @override
+  late final GeneratedColumn<String> promptVersion = GeneratedColumn<String>(
+    'prompt_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _confidenceMeta = const VerificationMeta(
+    'confidence',
+  );
+  @override
+  late final GeneratedColumn<double> confidence = GeneratedColumn<double>(
+    'confidence',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userEditedAtMeta = const VerificationMeta(
+    'userEditedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> userEditedAt = GeneratedColumn<DateTime>(
+    'user_edited_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    summaryType,
+    title,
+    content,
+    encouragement,
+    improvementNotes,
+    taskGuidance,
+    openItemsJson,
+    timeRangeStart,
+    timeRangeEnd,
+    status,
+    generatedBy,
+    modelName,
+    promptVersion,
+    confidence,
+    createdAt,
+    updatedAt,
+    userEditedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'summaries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Summary> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('summary_type')) {
+      context.handle(
+        _summaryTypeMeta,
+        summaryType.isAcceptableOrUnknown(
+          data['summary_type']!,
+          _summaryTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_summaryTypeMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('encouragement')) {
+      context.handle(
+        _encouragementMeta,
+        encouragement.isAcceptableOrUnknown(
+          data['encouragement']!,
+          _encouragementMeta,
+        ),
+      );
+    }
+    if (data.containsKey('improvement_notes')) {
+      context.handle(
+        _improvementNotesMeta,
+        improvementNotes.isAcceptableOrUnknown(
+          data['improvement_notes']!,
+          _improvementNotesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('task_guidance')) {
+      context.handle(
+        _taskGuidanceMeta,
+        taskGuidance.isAcceptableOrUnknown(
+          data['task_guidance']!,
+          _taskGuidanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('open_items_json')) {
+      context.handle(
+        _openItemsJsonMeta,
+        openItemsJson.isAcceptableOrUnknown(
+          data['open_items_json']!,
+          _openItemsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('time_range_start')) {
+      context.handle(
+        _timeRangeStartMeta,
+        timeRangeStart.isAcceptableOrUnknown(
+          data['time_range_start']!,
+          _timeRangeStartMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timeRangeStartMeta);
+    }
+    if (data.containsKey('time_range_end')) {
+      context.handle(
+        _timeRangeEndMeta,
+        timeRangeEnd.isAcceptableOrUnknown(
+          data['time_range_end']!,
+          _timeRangeEndMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timeRangeEndMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('generated_by')) {
+      context.handle(
+        _generatedByMeta,
+        generatedBy.isAcceptableOrUnknown(
+          data['generated_by']!,
+          _generatedByMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_generatedByMeta);
+    }
+    if (data.containsKey('model_name')) {
+      context.handle(
+        _modelNameMeta,
+        modelName.isAcceptableOrUnknown(data['model_name']!, _modelNameMeta),
+      );
+    }
+    if (data.containsKey('prompt_version')) {
+      context.handle(
+        _promptVersionMeta,
+        promptVersion.isAcceptableOrUnknown(
+          data['prompt_version']!,
+          _promptVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('confidence')) {
+      context.handle(
+        _confidenceMeta,
+        confidence.isAcceptableOrUnknown(data['confidence']!, _confidenceMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('user_edited_at')) {
+      context.handle(
+        _userEditedAtMeta,
+        userEditedAt.isAcceptableOrUnknown(
+          data['user_edited_at']!,
+          _userEditedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Summary map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Summary(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      summaryType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}summary_type'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      encouragement: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encouragement'],
+      ),
+      improvementNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}improvement_notes'],
+      ),
+      taskGuidance: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_guidance'],
+      ),
+      openItemsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}open_items_json'],
+      )!,
+      timeRangeStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}time_range_start'],
+      )!,
+      timeRangeEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}time_range_end'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      generatedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}generated_by'],
+      )!,
+      modelName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_name'],
+      ),
+      promptVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prompt_version'],
+      ),
+      confidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}confidence'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      userEditedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}user_edited_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $SummariesTable createAlias(String alias) {
+    return $SummariesTable(attachedDatabase, alias);
+  }
+}
+
+class Summary extends DataClass implements Insertable<Summary> {
+  final String id;
+  final String summaryType;
+  final String title;
+  final String content;
+  final String? encouragement;
+  final String? improvementNotes;
+  final String? taskGuidance;
+  final String openItemsJson;
+  final DateTime timeRangeStart;
+  final DateTime timeRangeEnd;
+  final String status;
+  final String generatedBy;
+  final String? modelName;
+  final String? promptVersion;
+  final double? confidence;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? userEditedAt;
+  final DateTime? deletedAt;
+  const Summary({
+    required this.id,
+    required this.summaryType,
+    required this.title,
+    required this.content,
+    this.encouragement,
+    this.improvementNotes,
+    this.taskGuidance,
+    required this.openItemsJson,
+    required this.timeRangeStart,
+    required this.timeRangeEnd,
+    required this.status,
+    required this.generatedBy,
+    this.modelName,
+    this.promptVersion,
+    this.confidence,
+    required this.createdAt,
+    required this.updatedAt,
+    this.userEditedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['summary_type'] = Variable<String>(summaryType);
+    map['title'] = Variable<String>(title);
+    map['content'] = Variable<String>(content);
+    if (!nullToAbsent || encouragement != null) {
+      map['encouragement'] = Variable<String>(encouragement);
+    }
+    if (!nullToAbsent || improvementNotes != null) {
+      map['improvement_notes'] = Variable<String>(improvementNotes);
+    }
+    if (!nullToAbsent || taskGuidance != null) {
+      map['task_guidance'] = Variable<String>(taskGuidance);
+    }
+    map['open_items_json'] = Variable<String>(openItemsJson);
+    map['time_range_start'] = Variable<DateTime>(timeRangeStart);
+    map['time_range_end'] = Variable<DateTime>(timeRangeEnd);
+    map['status'] = Variable<String>(status);
+    map['generated_by'] = Variable<String>(generatedBy);
+    if (!nullToAbsent || modelName != null) {
+      map['model_name'] = Variable<String>(modelName);
+    }
+    if (!nullToAbsent || promptVersion != null) {
+      map['prompt_version'] = Variable<String>(promptVersion);
+    }
+    if (!nullToAbsent || confidence != null) {
+      map['confidence'] = Variable<double>(confidence);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || userEditedAt != null) {
+      map['user_edited_at'] = Variable<DateTime>(userEditedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  SummariesCompanion toCompanion(bool nullToAbsent) {
+    return SummariesCompanion(
+      id: Value(id),
+      summaryType: Value(summaryType),
+      title: Value(title),
+      content: Value(content),
+      encouragement: encouragement == null && nullToAbsent
+          ? const Value.absent()
+          : Value(encouragement),
+      improvementNotes: improvementNotes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(improvementNotes),
+      taskGuidance: taskGuidance == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taskGuidance),
+      openItemsJson: Value(openItemsJson),
+      timeRangeStart: Value(timeRangeStart),
+      timeRangeEnd: Value(timeRangeEnd),
+      status: Value(status),
+      generatedBy: Value(generatedBy),
+      modelName: modelName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelName),
+      promptVersion: promptVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(promptVersion),
+      confidence: confidence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confidence),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      userEditedAt: userEditedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userEditedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Summary.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Summary(
+      id: serializer.fromJson<String>(json['id']),
+      summaryType: serializer.fromJson<String>(json['summaryType']),
+      title: serializer.fromJson<String>(json['title']),
+      content: serializer.fromJson<String>(json['content']),
+      encouragement: serializer.fromJson<String?>(json['encouragement']),
+      improvementNotes: serializer.fromJson<String?>(json['improvementNotes']),
+      taskGuidance: serializer.fromJson<String?>(json['taskGuidance']),
+      openItemsJson: serializer.fromJson<String>(json['openItemsJson']),
+      timeRangeStart: serializer.fromJson<DateTime>(json['timeRangeStart']),
+      timeRangeEnd: serializer.fromJson<DateTime>(json['timeRangeEnd']),
+      status: serializer.fromJson<String>(json['status']),
+      generatedBy: serializer.fromJson<String>(json['generatedBy']),
+      modelName: serializer.fromJson<String?>(json['modelName']),
+      promptVersion: serializer.fromJson<String?>(json['promptVersion']),
+      confidence: serializer.fromJson<double?>(json['confidence']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      userEditedAt: serializer.fromJson<DateTime?>(json['userEditedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'summaryType': serializer.toJson<String>(summaryType),
+      'title': serializer.toJson<String>(title),
+      'content': serializer.toJson<String>(content),
+      'encouragement': serializer.toJson<String?>(encouragement),
+      'improvementNotes': serializer.toJson<String?>(improvementNotes),
+      'taskGuidance': serializer.toJson<String?>(taskGuidance),
+      'openItemsJson': serializer.toJson<String>(openItemsJson),
+      'timeRangeStart': serializer.toJson<DateTime>(timeRangeStart),
+      'timeRangeEnd': serializer.toJson<DateTime>(timeRangeEnd),
+      'status': serializer.toJson<String>(status),
+      'generatedBy': serializer.toJson<String>(generatedBy),
+      'modelName': serializer.toJson<String?>(modelName),
+      'promptVersion': serializer.toJson<String?>(promptVersion),
+      'confidence': serializer.toJson<double?>(confidence),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'userEditedAt': serializer.toJson<DateTime?>(userEditedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Summary copyWith({
+    String? id,
+    String? summaryType,
+    String? title,
+    String? content,
+    Value<String?> encouragement = const Value.absent(),
+    Value<String?> improvementNotes = const Value.absent(),
+    Value<String?> taskGuidance = const Value.absent(),
+    String? openItemsJson,
+    DateTime? timeRangeStart,
+    DateTime? timeRangeEnd,
+    String? status,
+    String? generatedBy,
+    Value<String?> modelName = const Value.absent(),
+    Value<String?> promptVersion = const Value.absent(),
+    Value<double?> confidence = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> userEditedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Summary(
+    id: id ?? this.id,
+    summaryType: summaryType ?? this.summaryType,
+    title: title ?? this.title,
+    content: content ?? this.content,
+    encouragement: encouragement.present
+        ? encouragement.value
+        : this.encouragement,
+    improvementNotes: improvementNotes.present
+        ? improvementNotes.value
+        : this.improvementNotes,
+    taskGuidance: taskGuidance.present ? taskGuidance.value : this.taskGuidance,
+    openItemsJson: openItemsJson ?? this.openItemsJson,
+    timeRangeStart: timeRangeStart ?? this.timeRangeStart,
+    timeRangeEnd: timeRangeEnd ?? this.timeRangeEnd,
+    status: status ?? this.status,
+    generatedBy: generatedBy ?? this.generatedBy,
+    modelName: modelName.present ? modelName.value : this.modelName,
+    promptVersion: promptVersion.present
+        ? promptVersion.value
+        : this.promptVersion,
+    confidence: confidence.present ? confidence.value : this.confidence,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    userEditedAt: userEditedAt.present ? userEditedAt.value : this.userEditedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Summary copyWithCompanion(SummariesCompanion data) {
+    return Summary(
+      id: data.id.present ? data.id.value : this.id,
+      summaryType: data.summaryType.present
+          ? data.summaryType.value
+          : this.summaryType,
+      title: data.title.present ? data.title.value : this.title,
+      content: data.content.present ? data.content.value : this.content,
+      encouragement: data.encouragement.present
+          ? data.encouragement.value
+          : this.encouragement,
+      improvementNotes: data.improvementNotes.present
+          ? data.improvementNotes.value
+          : this.improvementNotes,
+      taskGuidance: data.taskGuidance.present
+          ? data.taskGuidance.value
+          : this.taskGuidance,
+      openItemsJson: data.openItemsJson.present
+          ? data.openItemsJson.value
+          : this.openItemsJson,
+      timeRangeStart: data.timeRangeStart.present
+          ? data.timeRangeStart.value
+          : this.timeRangeStart,
+      timeRangeEnd: data.timeRangeEnd.present
+          ? data.timeRangeEnd.value
+          : this.timeRangeEnd,
+      status: data.status.present ? data.status.value : this.status,
+      generatedBy: data.generatedBy.present
+          ? data.generatedBy.value
+          : this.generatedBy,
+      modelName: data.modelName.present ? data.modelName.value : this.modelName,
+      promptVersion: data.promptVersion.present
+          ? data.promptVersion.value
+          : this.promptVersion,
+      confidence: data.confidence.present
+          ? data.confidence.value
+          : this.confidence,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      userEditedAt: data.userEditedAt.present
+          ? data.userEditedAt.value
+          : this.userEditedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Summary(')
+          ..write('id: $id, ')
+          ..write('summaryType: $summaryType, ')
+          ..write('title: $title, ')
+          ..write('content: $content, ')
+          ..write('encouragement: $encouragement, ')
+          ..write('improvementNotes: $improvementNotes, ')
+          ..write('taskGuidance: $taskGuidance, ')
+          ..write('openItemsJson: $openItemsJson, ')
+          ..write('timeRangeStart: $timeRangeStart, ')
+          ..write('timeRangeEnd: $timeRangeEnd, ')
+          ..write('status: $status, ')
+          ..write('generatedBy: $generatedBy, ')
+          ..write('modelName: $modelName, ')
+          ..write('promptVersion: $promptVersion, ')
+          ..write('confidence: $confidence, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('userEditedAt: $userEditedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    summaryType,
+    title,
+    content,
+    encouragement,
+    improvementNotes,
+    taskGuidance,
+    openItemsJson,
+    timeRangeStart,
+    timeRangeEnd,
+    status,
+    generatedBy,
+    modelName,
+    promptVersion,
+    confidence,
+    createdAt,
+    updatedAt,
+    userEditedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Summary &&
+          other.id == this.id &&
+          other.summaryType == this.summaryType &&
+          other.title == this.title &&
+          other.content == this.content &&
+          other.encouragement == this.encouragement &&
+          other.improvementNotes == this.improvementNotes &&
+          other.taskGuidance == this.taskGuidance &&
+          other.openItemsJson == this.openItemsJson &&
+          other.timeRangeStart == this.timeRangeStart &&
+          other.timeRangeEnd == this.timeRangeEnd &&
+          other.status == this.status &&
+          other.generatedBy == this.generatedBy &&
+          other.modelName == this.modelName &&
+          other.promptVersion == this.promptVersion &&
+          other.confidence == this.confidence &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.userEditedAt == this.userEditedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class SummariesCompanion extends UpdateCompanion<Summary> {
+  final Value<String> id;
+  final Value<String> summaryType;
+  final Value<String> title;
+  final Value<String> content;
+  final Value<String?> encouragement;
+  final Value<String?> improvementNotes;
+  final Value<String?> taskGuidance;
+  final Value<String> openItemsJson;
+  final Value<DateTime> timeRangeStart;
+  final Value<DateTime> timeRangeEnd;
+  final Value<String> status;
+  final Value<String> generatedBy;
+  final Value<String?> modelName;
+  final Value<String?> promptVersion;
+  final Value<double?> confidence;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> userEditedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const SummariesCompanion({
+    this.id = const Value.absent(),
+    this.summaryType = const Value.absent(),
+    this.title = const Value.absent(),
+    this.content = const Value.absent(),
+    this.encouragement = const Value.absent(),
+    this.improvementNotes = const Value.absent(),
+    this.taskGuidance = const Value.absent(),
+    this.openItemsJson = const Value.absent(),
+    this.timeRangeStart = const Value.absent(),
+    this.timeRangeEnd = const Value.absent(),
+    this.status = const Value.absent(),
+    this.generatedBy = const Value.absent(),
+    this.modelName = const Value.absent(),
+    this.promptVersion = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.userEditedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SummariesCompanion.insert({
+    required String id,
+    required String summaryType,
+    required String title,
+    required String content,
+    this.encouragement = const Value.absent(),
+    this.improvementNotes = const Value.absent(),
+    this.taskGuidance = const Value.absent(),
+    this.openItemsJson = const Value.absent(),
+    required DateTime timeRangeStart,
+    required DateTime timeRangeEnd,
+    required String status,
+    required String generatedBy,
+    this.modelName = const Value.absent(),
+    this.promptVersion = const Value.absent(),
+    this.confidence = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.userEditedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       summaryType = Value(summaryType),
+       title = Value(title),
+       content = Value(content),
+       timeRangeStart = Value(timeRangeStart),
+       timeRangeEnd = Value(timeRangeEnd),
+       status = Value(status),
+       generatedBy = Value(generatedBy),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Summary> custom({
+    Expression<String>? id,
+    Expression<String>? summaryType,
+    Expression<String>? title,
+    Expression<String>? content,
+    Expression<String>? encouragement,
+    Expression<String>? improvementNotes,
+    Expression<String>? taskGuidance,
+    Expression<String>? openItemsJson,
+    Expression<DateTime>? timeRangeStart,
+    Expression<DateTime>? timeRangeEnd,
+    Expression<String>? status,
+    Expression<String>? generatedBy,
+    Expression<String>? modelName,
+    Expression<String>? promptVersion,
+    Expression<double>? confidence,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? userEditedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (summaryType != null) 'summary_type': summaryType,
+      if (title != null) 'title': title,
+      if (content != null) 'content': content,
+      if (encouragement != null) 'encouragement': encouragement,
+      if (improvementNotes != null) 'improvement_notes': improvementNotes,
+      if (taskGuidance != null) 'task_guidance': taskGuidance,
+      if (openItemsJson != null) 'open_items_json': openItemsJson,
+      if (timeRangeStart != null) 'time_range_start': timeRangeStart,
+      if (timeRangeEnd != null) 'time_range_end': timeRangeEnd,
+      if (status != null) 'status': status,
+      if (generatedBy != null) 'generated_by': generatedBy,
+      if (modelName != null) 'model_name': modelName,
+      if (promptVersion != null) 'prompt_version': promptVersion,
+      if (confidence != null) 'confidence': confidence,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (userEditedAt != null) 'user_edited_at': userEditedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SummariesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? summaryType,
+    Value<String>? title,
+    Value<String>? content,
+    Value<String?>? encouragement,
+    Value<String?>? improvementNotes,
+    Value<String?>? taskGuidance,
+    Value<String>? openItemsJson,
+    Value<DateTime>? timeRangeStart,
+    Value<DateTime>? timeRangeEnd,
+    Value<String>? status,
+    Value<String>? generatedBy,
+    Value<String?>? modelName,
+    Value<String?>? promptVersion,
+    Value<double?>? confidence,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? userEditedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return SummariesCompanion(
+      id: id ?? this.id,
+      summaryType: summaryType ?? this.summaryType,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      encouragement: encouragement ?? this.encouragement,
+      improvementNotes: improvementNotes ?? this.improvementNotes,
+      taskGuidance: taskGuidance ?? this.taskGuidance,
+      openItemsJson: openItemsJson ?? this.openItemsJson,
+      timeRangeStart: timeRangeStart ?? this.timeRangeStart,
+      timeRangeEnd: timeRangeEnd ?? this.timeRangeEnd,
+      status: status ?? this.status,
+      generatedBy: generatedBy ?? this.generatedBy,
+      modelName: modelName ?? this.modelName,
+      promptVersion: promptVersion ?? this.promptVersion,
+      confidence: confidence ?? this.confidence,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      userEditedAt: userEditedAt ?? this.userEditedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (summaryType.present) {
+      map['summary_type'] = Variable<String>(summaryType.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (encouragement.present) {
+      map['encouragement'] = Variable<String>(encouragement.value);
+    }
+    if (improvementNotes.present) {
+      map['improvement_notes'] = Variable<String>(improvementNotes.value);
+    }
+    if (taskGuidance.present) {
+      map['task_guidance'] = Variable<String>(taskGuidance.value);
+    }
+    if (openItemsJson.present) {
+      map['open_items_json'] = Variable<String>(openItemsJson.value);
+    }
+    if (timeRangeStart.present) {
+      map['time_range_start'] = Variable<DateTime>(timeRangeStart.value);
+    }
+    if (timeRangeEnd.present) {
+      map['time_range_end'] = Variable<DateTime>(timeRangeEnd.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (generatedBy.present) {
+      map['generated_by'] = Variable<String>(generatedBy.value);
+    }
+    if (modelName.present) {
+      map['model_name'] = Variable<String>(modelName.value);
+    }
+    if (promptVersion.present) {
+      map['prompt_version'] = Variable<String>(promptVersion.value);
+    }
+    if (confidence.present) {
+      map['confidence'] = Variable<double>(confidence.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (userEditedAt.present) {
+      map['user_edited_at'] = Variable<DateTime>(userEditedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SummariesCompanion(')
+          ..write('id: $id, ')
+          ..write('summaryType: $summaryType, ')
+          ..write('title: $title, ')
+          ..write('content: $content, ')
+          ..write('encouragement: $encouragement, ')
+          ..write('improvementNotes: $improvementNotes, ')
+          ..write('taskGuidance: $taskGuidance, ')
+          ..write('openItemsJson: $openItemsJson, ')
+          ..write('timeRangeStart: $timeRangeStart, ')
+          ..write('timeRangeEnd: $timeRangeEnd, ')
+          ..write('status: $status, ')
+          ..write('generatedBy: $generatedBy, ')
+          ..write('modelName: $modelName, ')
+          ..write('promptVersion: $promptVersion, ')
+          ..write('confidence: $confidence, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('userEditedAt: $userEditedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SummarySourcesTable extends SummarySources
+    with TableInfo<$SummarySourcesTable, SummarySource> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SummarySourcesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _summaryIdMeta = const VerificationMeta(
+    'summaryId',
+  );
+  @override
+  late final GeneratedColumn<String> summaryId = GeneratedColumn<String>(
+    'summary_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES summaries (id)',
+    ),
+  );
+  static const VerificationMeta _sourceTableMeta = const VerificationMeta(
+    'sourceTable',
+  );
+  @override
+  late final GeneratedColumn<String> sourceTable = GeneratedColumn<String>(
+    'source_table',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceRecordIdMeta = const VerificationMeta(
+    'sourceRecordId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceRecordId = GeneratedColumn<String>(
+    'source_record_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceStatusAtGenerationMeta =
+      const VerificationMeta('sourceStatusAtGeneration');
+  @override
+  late final GeneratedColumn<String> sourceStatusAtGeneration =
+      GeneratedColumn<String>(
+        'source_status_at_generation',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    summaryId,
+    sourceTable,
+    sourceRecordId,
+    sourceStatusAtGeneration,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'summary_sources';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SummarySource> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('summary_id')) {
+      context.handle(
+        _summaryIdMeta,
+        summaryId.isAcceptableOrUnknown(data['summary_id']!, _summaryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_summaryIdMeta);
+    }
+    if (data.containsKey('source_table')) {
+      context.handle(
+        _sourceTableMeta,
+        sourceTable.isAcceptableOrUnknown(
+          data['source_table']!,
+          _sourceTableMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceTableMeta);
+    }
+    if (data.containsKey('source_record_id')) {
+      context.handle(
+        _sourceRecordIdMeta,
+        sourceRecordId.isAcceptableOrUnknown(
+          data['source_record_id']!,
+          _sourceRecordIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceRecordIdMeta);
+    }
+    if (data.containsKey('source_status_at_generation')) {
+      context.handle(
+        _sourceStatusAtGenerationMeta,
+        sourceStatusAtGeneration.isAcceptableOrUnknown(
+          data['source_status_at_generation']!,
+          _sourceStatusAtGenerationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SummarySource map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SummarySource(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      summaryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}summary_id'],
+      )!,
+      sourceTable: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_table'],
+      )!,
+      sourceRecordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_record_id'],
+      )!,
+      sourceStatusAtGeneration: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_status_at_generation'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SummarySourcesTable createAlias(String alias) {
+    return $SummarySourcesTable(attachedDatabase, alias);
+  }
+}
+
+class SummarySource extends DataClass implements Insertable<SummarySource> {
+  final String id;
+  final String summaryId;
+  final String sourceTable;
+  final String sourceRecordId;
+  final String? sourceStatusAtGeneration;
+  final DateTime createdAt;
+  const SummarySource({
+    required this.id,
+    required this.summaryId,
+    required this.sourceTable,
+    required this.sourceRecordId,
+    this.sourceStatusAtGeneration,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['summary_id'] = Variable<String>(summaryId);
+    map['source_table'] = Variable<String>(sourceTable);
+    map['source_record_id'] = Variable<String>(sourceRecordId);
+    if (!nullToAbsent || sourceStatusAtGeneration != null) {
+      map['source_status_at_generation'] = Variable<String>(
+        sourceStatusAtGeneration,
+      );
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  SummarySourcesCompanion toCompanion(bool nullToAbsent) {
+    return SummarySourcesCompanion(
+      id: Value(id),
+      summaryId: Value(summaryId),
+      sourceTable: Value(sourceTable),
+      sourceRecordId: Value(sourceRecordId),
+      sourceStatusAtGeneration: sourceStatusAtGeneration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceStatusAtGeneration),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SummarySource.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SummarySource(
+      id: serializer.fromJson<String>(json['id']),
+      summaryId: serializer.fromJson<String>(json['summaryId']),
+      sourceTable: serializer.fromJson<String>(json['sourceTable']),
+      sourceRecordId: serializer.fromJson<String>(json['sourceRecordId']),
+      sourceStatusAtGeneration: serializer.fromJson<String?>(
+        json['sourceStatusAtGeneration'],
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'summaryId': serializer.toJson<String>(summaryId),
+      'sourceTable': serializer.toJson<String>(sourceTable),
+      'sourceRecordId': serializer.toJson<String>(sourceRecordId),
+      'sourceStatusAtGeneration': serializer.toJson<String?>(
+        sourceStatusAtGeneration,
+      ),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  SummarySource copyWith({
+    String? id,
+    String? summaryId,
+    String? sourceTable,
+    String? sourceRecordId,
+    Value<String?> sourceStatusAtGeneration = const Value.absent(),
+    DateTime? createdAt,
+  }) => SummarySource(
+    id: id ?? this.id,
+    summaryId: summaryId ?? this.summaryId,
+    sourceTable: sourceTable ?? this.sourceTable,
+    sourceRecordId: sourceRecordId ?? this.sourceRecordId,
+    sourceStatusAtGeneration: sourceStatusAtGeneration.present
+        ? sourceStatusAtGeneration.value
+        : this.sourceStatusAtGeneration,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  SummarySource copyWithCompanion(SummarySourcesCompanion data) {
+    return SummarySource(
+      id: data.id.present ? data.id.value : this.id,
+      summaryId: data.summaryId.present ? data.summaryId.value : this.summaryId,
+      sourceTable: data.sourceTable.present
+          ? data.sourceTable.value
+          : this.sourceTable,
+      sourceRecordId: data.sourceRecordId.present
+          ? data.sourceRecordId.value
+          : this.sourceRecordId,
+      sourceStatusAtGeneration: data.sourceStatusAtGeneration.present
+          ? data.sourceStatusAtGeneration.value
+          : this.sourceStatusAtGeneration,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SummarySource(')
+          ..write('id: $id, ')
+          ..write('summaryId: $summaryId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('sourceRecordId: $sourceRecordId, ')
+          ..write('sourceStatusAtGeneration: $sourceStatusAtGeneration, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    summaryId,
+    sourceTable,
+    sourceRecordId,
+    sourceStatusAtGeneration,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SummarySource &&
+          other.id == this.id &&
+          other.summaryId == this.summaryId &&
+          other.sourceTable == this.sourceTable &&
+          other.sourceRecordId == this.sourceRecordId &&
+          other.sourceStatusAtGeneration == this.sourceStatusAtGeneration &&
+          other.createdAt == this.createdAt);
+}
+
+class SummarySourcesCompanion extends UpdateCompanion<SummarySource> {
+  final Value<String> id;
+  final Value<String> summaryId;
+  final Value<String> sourceTable;
+  final Value<String> sourceRecordId;
+  final Value<String?> sourceStatusAtGeneration;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const SummarySourcesCompanion({
+    this.id = const Value.absent(),
+    this.summaryId = const Value.absent(),
+    this.sourceTable = const Value.absent(),
+    this.sourceRecordId = const Value.absent(),
+    this.sourceStatusAtGeneration = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SummarySourcesCompanion.insert({
+    required String id,
+    required String summaryId,
+    required String sourceTable,
+    required String sourceRecordId,
+    this.sourceStatusAtGeneration = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       summaryId = Value(summaryId),
+       sourceTable = Value(sourceTable),
+       sourceRecordId = Value(sourceRecordId),
+       createdAt = Value(createdAt);
+  static Insertable<SummarySource> custom({
+    Expression<String>? id,
+    Expression<String>? summaryId,
+    Expression<String>? sourceTable,
+    Expression<String>? sourceRecordId,
+    Expression<String>? sourceStatusAtGeneration,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (summaryId != null) 'summary_id': summaryId,
+      if (sourceTable != null) 'source_table': sourceTable,
+      if (sourceRecordId != null) 'source_record_id': sourceRecordId,
+      if (sourceStatusAtGeneration != null)
+        'source_status_at_generation': sourceStatusAtGeneration,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SummarySourcesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? summaryId,
+    Value<String>? sourceTable,
+    Value<String>? sourceRecordId,
+    Value<String?>? sourceStatusAtGeneration,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return SummarySourcesCompanion(
+      id: id ?? this.id,
+      summaryId: summaryId ?? this.summaryId,
+      sourceTable: sourceTable ?? this.sourceTable,
+      sourceRecordId: sourceRecordId ?? this.sourceRecordId,
+      sourceStatusAtGeneration:
+          sourceStatusAtGeneration ?? this.sourceStatusAtGeneration,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (summaryId.present) {
+      map['summary_id'] = Variable<String>(summaryId.value);
+    }
+    if (sourceTable.present) {
+      map['source_table'] = Variable<String>(sourceTable.value);
+    }
+    if (sourceRecordId.present) {
+      map['source_record_id'] = Variable<String>(sourceRecordId.value);
+    }
+    if (sourceStatusAtGeneration.present) {
+      map['source_status_at_generation'] = Variable<String>(
+        sourceStatusAtGeneration.value,
+      );
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SummarySourcesCompanion(')
+          ..write('id: $id, ')
+          ..write('summaryId: $summaryId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('sourceRecordId: $sourceRecordId, ')
+          ..write('sourceStatusAtGeneration: $sourceStatusAtGeneration, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4098,6 +5646,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $LifeEventsTable lifeEvents = $LifeEventsTable(this);
   late final $ProfileItemsTable profileItems = $ProfileItemsTable(this);
+  late final $SummariesTable summaries = $SummariesTable(this);
+  late final $SummarySourcesTable summarySources = $SummarySourcesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4110,6 +5660,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     shortTermStates,
     lifeEvents,
     profileItems,
+    summaries,
+    summarySources,
   ];
 }
 
@@ -8414,6 +9966,951 @@ typedef $$ProfileItemsTableProcessedTableManager =
         bool sourceExtractedItemId,
       })
     >;
+typedef $$SummariesTableCreateCompanionBuilder =
+    SummariesCompanion Function({
+      required String id,
+      required String summaryType,
+      required String title,
+      required String content,
+      Value<String?> encouragement,
+      Value<String?> improvementNotes,
+      Value<String?> taskGuidance,
+      Value<String> openItemsJson,
+      required DateTime timeRangeStart,
+      required DateTime timeRangeEnd,
+      required String status,
+      required String generatedBy,
+      Value<String?> modelName,
+      Value<String?> promptVersion,
+      Value<double?> confidence,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> userEditedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$SummariesTableUpdateCompanionBuilder =
+    SummariesCompanion Function({
+      Value<String> id,
+      Value<String> summaryType,
+      Value<String> title,
+      Value<String> content,
+      Value<String?> encouragement,
+      Value<String?> improvementNotes,
+      Value<String?> taskGuidance,
+      Value<String> openItemsJson,
+      Value<DateTime> timeRangeStart,
+      Value<DateTime> timeRangeEnd,
+      Value<String> status,
+      Value<String> generatedBy,
+      Value<String?> modelName,
+      Value<String?> promptVersion,
+      Value<double?> confidence,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> userEditedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$SummariesTableReferences
+    extends BaseReferences<_$AppDatabase, $SummariesTable, Summary> {
+  $$SummariesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SummarySourcesTable, List<SummarySource>>
+  _summarySourcesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.summarySources,
+    aliasName: $_aliasNameGenerator(
+      db.summaries.id,
+      db.summarySources.summaryId,
+    ),
+  );
+
+  $$SummarySourcesTableProcessedTableManager get summarySourcesRefs {
+    final manager = $$SummarySourcesTableTableManager(
+      $_db,
+      $_db.summarySources,
+    ).filter((f) => f.summaryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_summarySourcesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$SummariesTableFilterComposer
+    extends Composer<_$AppDatabase, $SummariesTable> {
+  $$SummariesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get summaryType => $composableBuilder(
+    column: $table.summaryType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encouragement => $composableBuilder(
+    column: $table.encouragement,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get improvementNotes => $composableBuilder(
+    column: $table.improvementNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskGuidance => $composableBuilder(
+    column: $table.taskGuidance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get openItemsJson => $composableBuilder(
+    column: $table.openItemsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timeRangeStart => $composableBuilder(
+    column: $table.timeRangeStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timeRangeEnd => $composableBuilder(
+    column: $table.timeRangeEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get generatedBy => $composableBuilder(
+    column: $table.generatedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelName => $composableBuilder(
+    column: $table.modelName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get userEditedAt => $composableBuilder(
+    column: $table.userEditedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> summarySourcesRefs(
+    Expression<bool> Function($$SummarySourcesTableFilterComposer f) f,
+  ) {
+    final $$SummarySourcesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.summarySources,
+      getReferencedColumn: (t) => t.summaryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SummarySourcesTableFilterComposer(
+            $db: $db,
+            $table: $db.summarySources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SummariesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SummariesTable> {
+  $$SummariesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get summaryType => $composableBuilder(
+    column: $table.summaryType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encouragement => $composableBuilder(
+    column: $table.encouragement,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get improvementNotes => $composableBuilder(
+    column: $table.improvementNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskGuidance => $composableBuilder(
+    column: $table.taskGuidance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get openItemsJson => $composableBuilder(
+    column: $table.openItemsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timeRangeStart => $composableBuilder(
+    column: $table.timeRangeStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timeRangeEnd => $composableBuilder(
+    column: $table.timeRangeEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get generatedBy => $composableBuilder(
+    column: $table.generatedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelName => $composableBuilder(
+    column: $table.modelName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get userEditedAt => $composableBuilder(
+    column: $table.userEditedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SummariesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SummariesTable> {
+  $$SummariesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get summaryType => $composableBuilder(
+    column: $table.summaryType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get encouragement => $composableBuilder(
+    column: $table.encouragement,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get improvementNotes => $composableBuilder(
+    column: $table.improvementNotes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get taskGuidance => $composableBuilder(
+    column: $table.taskGuidance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get openItemsJson => $composableBuilder(
+    column: $table.openItemsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get timeRangeStart => $composableBuilder(
+    column: $table.timeRangeStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get timeRangeEnd => $composableBuilder(
+    column: $table.timeRangeEnd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get generatedBy => $composableBuilder(
+    column: $table.generatedBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modelName =>
+      $composableBuilder(column: $table.modelName, builder: (column) => column);
+
+  GeneratedColumn<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get userEditedAt => $composableBuilder(
+    column: $table.userEditedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> summarySourcesRefs<T extends Object>(
+    Expression<T> Function($$SummarySourcesTableAnnotationComposer a) f,
+  ) {
+    final $$SummarySourcesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.summarySources,
+      getReferencedColumn: (t) => t.summaryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SummarySourcesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.summarySources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SummariesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SummariesTable,
+          Summary,
+          $$SummariesTableFilterComposer,
+          $$SummariesTableOrderingComposer,
+          $$SummariesTableAnnotationComposer,
+          $$SummariesTableCreateCompanionBuilder,
+          $$SummariesTableUpdateCompanionBuilder,
+          (Summary, $$SummariesTableReferences),
+          Summary,
+          PrefetchHooks Function({bool summarySourcesRefs})
+        > {
+  $$SummariesTableTableManager(_$AppDatabase db, $SummariesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SummariesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SummariesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SummariesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> summaryType = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<String?> encouragement = const Value.absent(),
+                Value<String?> improvementNotes = const Value.absent(),
+                Value<String?> taskGuidance = const Value.absent(),
+                Value<String> openItemsJson = const Value.absent(),
+                Value<DateTime> timeRangeStart = const Value.absent(),
+                Value<DateTime> timeRangeEnd = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> generatedBy = const Value.absent(),
+                Value<String?> modelName = const Value.absent(),
+                Value<String?> promptVersion = const Value.absent(),
+                Value<double?> confidence = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> userEditedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SummariesCompanion(
+                id: id,
+                summaryType: summaryType,
+                title: title,
+                content: content,
+                encouragement: encouragement,
+                improvementNotes: improvementNotes,
+                taskGuidance: taskGuidance,
+                openItemsJson: openItemsJson,
+                timeRangeStart: timeRangeStart,
+                timeRangeEnd: timeRangeEnd,
+                status: status,
+                generatedBy: generatedBy,
+                modelName: modelName,
+                promptVersion: promptVersion,
+                confidence: confidence,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                userEditedAt: userEditedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String summaryType,
+                required String title,
+                required String content,
+                Value<String?> encouragement = const Value.absent(),
+                Value<String?> improvementNotes = const Value.absent(),
+                Value<String?> taskGuidance = const Value.absent(),
+                Value<String> openItemsJson = const Value.absent(),
+                required DateTime timeRangeStart,
+                required DateTime timeRangeEnd,
+                required String status,
+                required String generatedBy,
+                Value<String?> modelName = const Value.absent(),
+                Value<String?> promptVersion = const Value.absent(),
+                Value<double?> confidence = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> userEditedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SummariesCompanion.insert(
+                id: id,
+                summaryType: summaryType,
+                title: title,
+                content: content,
+                encouragement: encouragement,
+                improvementNotes: improvementNotes,
+                taskGuidance: taskGuidance,
+                openItemsJson: openItemsJson,
+                timeRangeStart: timeRangeStart,
+                timeRangeEnd: timeRangeEnd,
+                status: status,
+                generatedBy: generatedBy,
+                modelName: modelName,
+                promptVersion: promptVersion,
+                confidence: confidence,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                userEditedAt: userEditedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SummariesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({summarySourcesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (summarySourcesRefs) db.summarySources,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (summarySourcesRefs)
+                    await $_getPrefetchedData<
+                      Summary,
+                      $SummariesTable,
+                      SummarySource
+                    >(
+                      currentTable: table,
+                      referencedTable: $$SummariesTableReferences
+                          ._summarySourcesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$SummariesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).summarySourcesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.summaryId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SummariesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SummariesTable,
+      Summary,
+      $$SummariesTableFilterComposer,
+      $$SummariesTableOrderingComposer,
+      $$SummariesTableAnnotationComposer,
+      $$SummariesTableCreateCompanionBuilder,
+      $$SummariesTableUpdateCompanionBuilder,
+      (Summary, $$SummariesTableReferences),
+      Summary,
+      PrefetchHooks Function({bool summarySourcesRefs})
+    >;
+typedef $$SummarySourcesTableCreateCompanionBuilder =
+    SummarySourcesCompanion Function({
+      required String id,
+      required String summaryId,
+      required String sourceTable,
+      required String sourceRecordId,
+      Value<String?> sourceStatusAtGeneration,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$SummarySourcesTableUpdateCompanionBuilder =
+    SummarySourcesCompanion Function({
+      Value<String> id,
+      Value<String> summaryId,
+      Value<String> sourceTable,
+      Value<String> sourceRecordId,
+      Value<String?> sourceStatusAtGeneration,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$SummarySourcesTableReferences
+    extends BaseReferences<_$AppDatabase, $SummarySourcesTable, SummarySource> {
+  $$SummarySourcesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SummariesTable _summaryIdTable(_$AppDatabase db) =>
+      db.summaries.createAlias(
+        $_aliasNameGenerator(db.summarySources.summaryId, db.summaries.id),
+      );
+
+  $$SummariesTableProcessedTableManager get summaryId {
+    final $_column = $_itemColumn<String>('summary_id')!;
+
+    final manager = $$SummariesTableTableManager(
+      $_db,
+      $_db.summaries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_summaryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SummarySourcesTableFilterComposer
+    extends Composer<_$AppDatabase, $SummarySourcesTable> {
+  $$SummarySourcesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceRecordId => $composableBuilder(
+    column: $table.sourceRecordId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceStatusAtGeneration => $composableBuilder(
+    column: $table.sourceStatusAtGeneration,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SummariesTableFilterComposer get summaryId {
+    final $$SummariesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.summaryId,
+      referencedTable: $db.summaries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SummariesTableFilterComposer(
+            $db: $db,
+            $table: $db.summaries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SummarySourcesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SummarySourcesTable> {
+  $$SummarySourcesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceRecordId => $composableBuilder(
+    column: $table.sourceRecordId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceStatusAtGeneration => $composableBuilder(
+    column: $table.sourceStatusAtGeneration,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SummariesTableOrderingComposer get summaryId {
+    final $$SummariesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.summaryId,
+      referencedTable: $db.summaries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SummariesTableOrderingComposer(
+            $db: $db,
+            $table: $db.summaries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SummarySourcesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SummarySourcesTable> {
+  $$SummarySourcesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceRecordId => $composableBuilder(
+    column: $table.sourceRecordId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceStatusAtGeneration => $composableBuilder(
+    column: $table.sourceStatusAtGeneration,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$SummariesTableAnnotationComposer get summaryId {
+    final $$SummariesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.summaryId,
+      referencedTable: $db.summaries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SummariesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.summaries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SummarySourcesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SummarySourcesTable,
+          SummarySource,
+          $$SummarySourcesTableFilterComposer,
+          $$SummarySourcesTableOrderingComposer,
+          $$SummarySourcesTableAnnotationComposer,
+          $$SummarySourcesTableCreateCompanionBuilder,
+          $$SummarySourcesTableUpdateCompanionBuilder,
+          (SummarySource, $$SummarySourcesTableReferences),
+          SummarySource,
+          PrefetchHooks Function({bool summaryId})
+        > {
+  $$SummarySourcesTableTableManager(
+    _$AppDatabase db,
+    $SummarySourcesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SummarySourcesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SummarySourcesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SummarySourcesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> summaryId = const Value.absent(),
+                Value<String> sourceTable = const Value.absent(),
+                Value<String> sourceRecordId = const Value.absent(),
+                Value<String?> sourceStatusAtGeneration = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SummarySourcesCompanion(
+                id: id,
+                summaryId: summaryId,
+                sourceTable: sourceTable,
+                sourceRecordId: sourceRecordId,
+                sourceStatusAtGeneration: sourceStatusAtGeneration,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String summaryId,
+                required String sourceTable,
+                required String sourceRecordId,
+                Value<String?> sourceStatusAtGeneration = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SummarySourcesCompanion.insert(
+                id: id,
+                summaryId: summaryId,
+                sourceTable: sourceTable,
+                sourceRecordId: sourceRecordId,
+                sourceStatusAtGeneration: sourceStatusAtGeneration,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SummarySourcesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({summaryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (summaryId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.summaryId,
+                                referencedTable: $$SummarySourcesTableReferences
+                                    ._summaryIdTable(db),
+                                referencedColumn:
+                                    $$SummarySourcesTableReferences
+                                        ._summaryIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SummarySourcesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SummarySourcesTable,
+      SummarySource,
+      $$SummarySourcesTableFilterComposer,
+      $$SummarySourcesTableOrderingComposer,
+      $$SummarySourcesTableAnnotationComposer,
+      $$SummarySourcesTableCreateCompanionBuilder,
+      $$SummarySourcesTableUpdateCompanionBuilder,
+      (SummarySource, $$SummarySourcesTableReferences),
+      SummarySource,
+      PrefetchHooks Function({bool summaryId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8432,4 +10929,8 @@ class $AppDatabaseManager {
       $$LifeEventsTableTableManager(_db, _db.lifeEvents);
   $$ProfileItemsTableTableManager get profileItems =>
       $$ProfileItemsTableTableManager(_db, _db.profileItems);
+  $$SummariesTableTableManager get summaries =>
+      $$SummariesTableTableManager(_db, _db.summaries);
+  $$SummarySourcesTableTableManager get summarySources =>
+      $$SummarySourcesTableTableManager(_db, _db.summarySources);
 }

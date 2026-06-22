@@ -20,13 +20,15 @@ part 'app_database.g.dart';
     ShortTermStates,
     LifeEvents,
     ProfileItems,
+    Summaries,
+    SummarySources,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -39,6 +41,10 @@ class AppDatabase extends _$AppDatabase {
             "status = '${RecordStatus.confirmed.value}' "
             "WHERE status = '${RecordStatus.archived.value}'",
           );
+        }
+        if (from < 3) {
+          await m.createTable(summaries);
+          await m.createTable(summarySources);
         }
       },
     );
@@ -419,5 +425,207 @@ class AppDatabase extends _$AppDatabase {
             ))
             .get();
     return rows.length;
+  }
+
+  Future<List<Task>> getTasksForRange({
+    required DateTime start,
+    required DateTime end,
+  }) {
+    return (select(tasks)
+          ..where(
+            (task) =>
+                task.status.equals(RecordStatus.confirmed.value) &
+                ((task.dueTime.isBiggerOrEqualValue(start) &
+                        task.dueTime.isSmallerThanValue(end)) |
+                    (task.dueTime.isNull() &
+                        task.createdAt.isBiggerOrEqualValue(start) &
+                        task.createdAt.isSmallerThanValue(end))),
+          )
+          ..orderBy([(task) => OrderingTerm(expression: task.dueTime)]))
+        .get();
+  }
+
+  Future<List<ShortTermState>> getShortTermStatesForRange({
+    required DateTime start,
+    required DateTime end,
+  }) {
+    return (select(shortTermStates)
+          ..where(
+            (state) =>
+                state.status.equals(RecordStatus.confirmed.value) &
+                state.createdAt.isBiggerOrEqualValue(start) &
+                state.createdAt.isSmallerThanValue(end),
+          )
+          ..orderBy([(state) => OrderingTerm(expression: state.createdAt)]))
+        .get();
+  }
+
+  Future<List<LifeEvent>> getLifeEventsForRange({
+    required DateTime start,
+    required DateTime end,
+  }) {
+    return (select(lifeEvents)
+          ..where(
+            (event) =>
+                event.status.equals(RecordStatus.confirmed.value) &
+                event.createdAt.isBiggerOrEqualValue(start) &
+                event.createdAt.isSmallerThanValue(end),
+          )
+          ..orderBy([(event) => OrderingTerm(expression: event.createdAt)]))
+        .get();
+  }
+
+  Future<List<Summary>> getSummariesForRange({
+    required DateTime start,
+    required DateTime end,
+    String summaryType = 'daily_summary',
+  }) {
+    return (select(summaries)
+          ..where(
+            (summary) =>
+                summary.summaryType.equals(summaryType) &
+                (summary.status.equals(RecordStatus.confirmed.value) |
+                    summary.status.equals(RecordStatus.edited.value)) &
+                summary.timeRangeStart.isBiggerOrEqualValue(start) &
+                summary.timeRangeStart.isSmallerThanValue(end),
+          )
+          ..orderBy([(summary) => OrderingTerm.desc(summary.timeRangeStart)]))
+        .get();
+  }
+
+  Future<Summary?> getSummaryForDay(DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return (select(summaries)
+          ..where(
+            (summary) =>
+                summary.summaryType.equals('daily_summary') &
+                (summary.status.equals(RecordStatus.confirmed.value) |
+                    summary.status.equals(RecordStatus.edited.value)) &
+                summary.timeRangeStart.isBiggerOrEqualValue(start) &
+                summary.timeRangeStart.isSmallerThanValue(end),
+          )
+          ..orderBy([(summary) => OrderingTerm.desc(summary.updatedAt)]))
+        .getSingleOrNull();
+  }
+
+  Future<List<Summary>> getRecentDailySummaries({
+    required DateTime now,
+    int days = 7,
+    int limit = 3,
+  }) {
+    final end = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).add(const Duration(days: 1));
+    final start = end.subtract(Duration(days: days));
+
+    return (select(summaries)
+          ..where(
+            (summary) =>
+                summary.summaryType.equals('daily_summary') &
+                (summary.status.equals(RecordStatus.confirmed.value) |
+                    summary.status.equals(RecordStatus.edited.value)) &
+                summary.timeRangeStart.isBiggerOrEqualValue(start) &
+                summary.timeRangeStart.isSmallerThanValue(end),
+          )
+          ..orderBy([(summary) => OrderingTerm.desc(summary.timeRangeStart)])
+          ..limit(limit))
+        .get();
+  }
+
+  Future<List<SummarySource>> getSourcesForSummary(String summaryId) {
+    return (select(summarySources)
+          ..where((source) => source.summaryId.equals(summaryId))
+          ..orderBy([(source) => OrderingTerm(expression: source.createdAt)]))
+        .get();
+  }
+
+  Future<void> saveDailySummary({
+    required Summary summary,
+    required List<SummarySourcesCompanion> sources,
+    required DateTime updatedAt,
+  }) async {
+    await transaction(() async {
+      await (update(summaries)..where(
+            (row) =>
+                row.summaryType.equals(summary.summaryType) &
+                row.timeRangeStart.equals(summary.timeRangeStart) &
+                row.id.equals(summary.id).not(),
+          ))
+          .write(
+            SummariesCompanion(
+              status: Value(RecordStatus.archived.value),
+              updatedAt: Value(updatedAt),
+            ),
+          );
+
+      await into(summaries).insertOnConflictUpdate(
+        SummariesCompanion.insert(
+          id: summary.id,
+          summaryType: summary.summaryType,
+          title: summary.title,
+          content: summary.content,
+          encouragement: Value(summary.encouragement),
+          improvementNotes: Value(summary.improvementNotes),
+          taskGuidance: Value(summary.taskGuidance),
+          openItemsJson: Value(summary.openItemsJson),
+          timeRangeStart: summary.timeRangeStart,
+          timeRangeEnd: summary.timeRangeEnd,
+          status: summary.status,
+          generatedBy: summary.generatedBy,
+          modelName: Value(summary.modelName),
+          promptVersion: Value(summary.promptVersion),
+          confidence: Value(summary.confidence),
+          createdAt: summary.createdAt,
+          updatedAt: summary.updatedAt,
+          userEditedAt: Value(summary.userEditedAt),
+          deletedAt: Value(summary.deletedAt),
+        ),
+      );
+
+      await (delete(
+        summarySources,
+      )..where((source) => source.summaryId.equals(summary.id))).go();
+
+      for (final source in sources) {
+        await into(summarySources).insert(source);
+      }
+    });
+  }
+
+  Future<void> updateSummaryContent({
+    required String id,
+    required String content,
+    String? encouragement,
+    String? improvementNotes,
+    String? taskGuidance,
+    required DateTime updatedAt,
+  }) {
+    return (update(summaries)..where((summary) => summary.id.equals(id))).write(
+      SummariesCompanion(
+        content: Value(content),
+        encouragement: Value(encouragement),
+        improvementNotes: Value(improvementNotes),
+        taskGuidance: Value(taskGuidance),
+        status: Value(RecordStatus.edited.value),
+        updatedAt: Value(updatedAt),
+        userEditedAt: Value(updatedAt),
+      ),
+    );
+  }
+
+  Future<void> markSummaryDeleted({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(summaries)..where((summary) => summary.id.equals(id))).write(
+      SummariesCompanion(
+        status: Value(RecordStatus.deleted.value),
+        updatedAt: Value(updatedAt),
+        deletedAt: Value(updatedAt),
+      ),
+    );
   }
 }

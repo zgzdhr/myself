@@ -10,6 +10,7 @@ import '../../data/parser/mock_parser_client.dart';
 import '../../data/parser/parser_client.dart';
 import '../extracted_items/extracted_items_controller.dart';
 import '../reminders/task_reminder_scheduler.dart';
+import '../settings/user_preference_providers.dart';
 import 'home_suggestion_service.dart';
 import '../input/input_screen.dart';
 import '../memory/memory_screen.dart';
@@ -127,6 +128,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final database = ref.watch(appDatabaseProvider);
     final suggestionService = ref.watch(homeSuggestionServiceProvider);
     final nowProvider = ref.watch(appNowProvider);
+    final reviewAffectsHome = ref.watch(reviewAffectsHomeProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EE),
@@ -143,6 +145,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           future: suggestionService.loadContext(
             database: database,
             now: nowProvider(),
+            includeReviewSummaries: reviewAffectsHome,
           ),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {

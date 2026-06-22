@@ -34,10 +34,14 @@ class ContextBuilder {
   Future<ContextPackage> buildCurrentSuggestion({
     required AppDatabase database,
     required DateTime now,
+    bool includeSummaries = true,
   }) async {
     final suggestionTasks = await database.getSuggestionTasks(now: now);
     final states = await database.getActiveShortTermStates(now: now);
     final profiles = await database.getActiveProfileItems();
+    final summaries = includeSummaries
+        ? await database.getRecentDailySummaries(now: now)
+        : <Summary>[];
     final excludedReasonCounts = await _loadExcludedReasonCounts(
       database: database,
       now: now,
@@ -94,11 +98,22 @@ class ContextBuilder {
         for (final profile in profiles)
           ContextProfileItem(id: profile.id, content: profile.content),
       ],
+      relevantSummaries: [
+        for (final summary in summaries)
+          ContextSummary(
+            id: summary.id,
+            title: summary.title,
+            content: summary.content,
+            taskGuidance: summary.taskGuidance,
+            timeRangeStart: summary.timeRangeStart,
+          ),
+      ],
       memoryExplanations: _buildMemoryExplanations(
         now: now,
         tasks: contextTasks,
         states: states,
         profiles: profiles,
+        summaries: summaries,
       ),
       excludedReasonCounts: excludedReasonCounts,
     );
@@ -155,6 +170,7 @@ class ContextBuilder {
     final tasks = await database.select(database.tasks).get();
     final states = await database.select(database.shortTermStates).get();
     final profiles = await database.select(database.profileItems).get();
+    final summaries = await database.select(database.summaries).get();
     final extractedItems = await database.select(database.extractedItems).get();
     final rawInputs = await database.select(database.rawInputs).get();
 
@@ -165,6 +181,7 @@ class ContextBuilder {
       'expired': 0,
       'inactive_tasks': 0,
       'unconfirmed_profile_candidate': 0,
+      'inactive_summaries': 0,
       'raw_inputs_default_excluded': rawInputs.length,
     };
 
@@ -191,6 +208,15 @@ class ContextBuilder {
     for (final profile in profiles) {
       if (profile.status == RecordStatus.deleted.value) {
         counts['deleted'] = counts['deleted']! + 1;
+      }
+    }
+
+    for (final summary in summaries) {
+      if (summary.status == RecordStatus.deleted.value) {
+        counts['deleted'] = counts['deleted']! + 1;
+      } else if (summary.status != RecordStatus.confirmed.value &&
+          summary.status != RecordStatus.edited.value) {
+        counts['inactive_summaries'] = counts['inactive_summaries']! + 1;
       }
     }
 
@@ -229,6 +255,7 @@ class ContextBuilder {
     required List<ContextTask> tasks,
     required List<ShortTermState> states,
     required List<ProfileItem> profiles,
+    required List<Summary> summaries,
   }) {
     return [
       for (final task in tasks)
@@ -251,6 +278,13 @@ class ContextBuilder {
           sourceId: profile.id,
           label: '长期偏好：${profile.content}',
           reason: '用户已确认的长期画像，参与当前建议语气调整。',
+        ),
+      for (final summary in summaries)
+        ContextMemoryExplanation(
+          sourceType: 'summaries',
+          sourceId: summary.id,
+          label: '近期复盘：${summary.title}',
+          reason: '用户可见的近期复盘，只作为任务处理建议的弱上下文。',
         ),
     ];
   }
@@ -303,6 +337,7 @@ class ContextPackage {
     required this.unscheduledTasks,
     required this.activeShortTermStates,
     required this.confirmedProfileItems,
+    required this.relevantSummaries,
     required this.memoryExplanations,
     required this.excludedReasonCounts,
   });
@@ -316,6 +351,7 @@ class ContextPackage {
   final List<ContextTask> unscheduledTasks;
   final List<ContextShortTermState> activeShortTermStates;
   final List<ContextProfileItem> confirmedProfileItems;
+  final List<ContextSummary> relevantSummaries;
   final List<ContextMemoryExplanation> memoryExplanations;
   final Map<String, int> excludedReasonCounts;
 
@@ -330,6 +366,7 @@ class ContextPackage {
         'unscheduled_tasks': unscheduledTasks.length,
         'active_short_term_states': activeShortTermStates.length,
         'confirmed_profile_items': confirmedProfileItems.length,
+        'relevant_summaries': relevantSummaries.length,
       },
       'excluded_reason_counts': excludedReasonCounts,
       'memory_explanation_counts':
@@ -375,6 +412,22 @@ class ContextProfileItem {
 
   final String id;
   final String content;
+}
+
+class ContextSummary {
+  const ContextSummary({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.taskGuidance,
+    required this.timeRangeStart,
+  });
+
+  final String id;
+  final String title;
+  final String content;
+  final String? taskGuidance;
+  final DateTime timeRangeStart;
 }
 
 class ContextMemoryExplanation {
