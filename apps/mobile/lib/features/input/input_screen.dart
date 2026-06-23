@@ -183,7 +183,7 @@ class _InputScreenState extends State<InputScreen> {
         ];
       });
       await _refreshPendingBatches();
-      if (result.items.any((item) => item.status == RecordStatus.confirmed)) {
+      if (result.items.isNotEmpty) {
         widget.onRecordsChanged?.call();
       }
     } on ParserFailure catch (error) {

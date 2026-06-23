@@ -61,6 +61,9 @@ class _RecordingTaskReminderScheduler implements TaskReminderScheduler {
   final cancelled = <String>[];
 
   @override
+  Future<bool?> requestPermissions() async => true;
+
+  @override
   Future<void> schedule(TaskReminderRequest request) async {
     scheduled.add(request);
   }

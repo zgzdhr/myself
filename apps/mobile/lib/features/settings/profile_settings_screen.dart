@@ -9,6 +9,7 @@ import '../account/cloud_sync_service.dart';
 import '../memory/memory_screen.dart';
 import '../memory/privacy_screen.dart';
 import '../memory/profile_items_screen.dart';
+import '../reminders/task_reminder_scheduler.dart';
 import 'user_preference_providers.dart';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
@@ -18,6 +19,8 @@ class ProfileSettingsScreen extends ConsumerStatefulWidget {
     required this.parserBaseUri,
     required this.cloudAuthService,
     required this.cloudSyncService,
+    required this.taskReminderScheduler,
+    this.refreshVersion = 0,
     super.key,
   });
 
@@ -26,6 +29,8 @@ class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final Uri parserBaseUri;
   final CloudAuthService cloudAuthService;
   final CloudSyncService cloudSyncService;
+  final TaskReminderScheduler taskReminderScheduler;
+  final int refreshVersion;
 
   @override
   ConsumerState<ProfileSettingsScreen> createState() =>
@@ -50,6 +55,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void initState() {
     super.initState();
     _dataFuture = _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfileSettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshVersion != widget.refreshVersion ||
+        oldWidget.database != widget.database) {
+      _dataFuture = _load();
+    }
   }
 
   Future<_ProfileOverviewData> _load() async {
@@ -187,9 +201,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         title: const Text('任务提醒'),
                         subtitle: const Text('只在任务快开始时提醒，不提醒普通编辑或删除。'),
                         value: _taskReminderEnabled,
-                        onChanged: (value) {
-                          setState(() => _taskReminderEnabled = value);
-                        },
+                        onChanged: _setTaskReminderEnabled,
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
@@ -571,17 +583,59 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
       );
       _lastSyncedCloudProfileUserId = authState.userId;
       if (!mounted) return;
-      setState(() => _cloudProfileSyncError = null);
+      setState(() {
+        _cloudProfileSyncError = null;
+        _dataFuture = _load();
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('云端同步完成，共 ${result.totalCount} 条本地记录。')),
       );
     } catch (error) {
       if (!mounted) return;
-      setState(() => _cloudProfileSyncError = error.toString());
+      setState(() => _cloudProfileSyncError = _friendlyCloudSyncError(error));
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('云端写入失败：$error')));
+      ).showSnackBar(SnackBar(content: Text('云端写入失败：$_cloudProfileSyncError')));
     }
+  }
+
+  Future<void> _setTaskReminderEnabled(bool value) async {
+    if (!value) {
+      setState(() => _taskReminderEnabled = false);
+      return;
+    }
+
+    final granted = await widget.taskReminderScheduler.requestPermissions();
+    if (!mounted) return;
+
+    setState(() => _taskReminderEnabled = true);
+    final message = granted == false
+        ? '系统没有授予通知权限，请到手机系统设置里允许通知。'
+        : '任务提醒已开启。创建带具体时间的任务后，会按任务时间提醒。';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _friendlyCloudSyncError(Object error) {
+    if (error is CloudAuthNotConfiguredException) {
+      return '当前构建没有配置 Supabase。';
+    }
+    if (error is CloudAuthNotSignedInException) {
+      return '请先登录账号。';
+    }
+    final message = error.toString();
+    if (message.contains('permission denied') ||
+        message.contains('row-level security') ||
+        message.contains('42501')) {
+      return '云端表权限不足，已检查 RLS / GRANT 配置。';
+    }
+    if (message.contains('Failed host lookup') ||
+        message.contains('SocketException') ||
+        message.contains('Network is unreachable')) {
+      return '当前网络无法连接 Supabase，请检查网络或 VPN。';
+    }
+    return message.length > 160 ? '${message.substring(0, 160)}...' : message;
   }
 
   Future<void> _openEmailOtpSignIn() async {
@@ -1070,29 +1124,44 @@ class _QuickActionButton extends StatelessWidget {
 }
 
 class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({required this.title, required this.children});
+  const _SettingsSection({
+    required this.title,
+    required this.children,
+  });
 
   final String title;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
+    return Card(
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.only(bottom: 8),
+          iconColor: const Color(0xFF53736A),
+          collapsedIconColor: const Color(0xFF8A8278),
+          leading: const Icon(Icons.folder_rounded, color: Color(0xFF53736A)),
+          title: Text(
             title,
             style: const TextStyle(
-              color: Color(0xFF746E66),
-              fontSize: 14,
+              color: Color(0xFF1D1D1F),
+              fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
           ),
+          subtitle: Text(
+            '${children.length} 项设置',
+            style: const TextStyle(
+              color: Color(0xFF746E66),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          children: children,
         ),
-        Card(child: Column(children: children)),
-      ],
+      ),
     );
   }
 }

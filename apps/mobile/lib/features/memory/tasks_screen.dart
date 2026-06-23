@@ -11,6 +11,8 @@ class TasksScreen extends StatefulWidget {
     required this.database,
     this.nowProvider = DateTime.now,
     TaskReminderScheduler? taskReminderScheduler,
+    this.refreshVersion = 0,
+    this.onRecordsChanged,
     super.key,
   }) : taskReminderCoordinator = TaskReminderCoordinator(
          scheduler: taskReminderScheduler ?? const NoopTaskReminderScheduler(),
@@ -19,6 +21,8 @@ class TasksScreen extends StatefulWidget {
   final AppDatabase database;
   final DateTime Function() nowProvider;
   final TaskReminderCoordinator taskReminderCoordinator;
+  final int refreshVersion;
+  final VoidCallback? onRecordsChanged;
 
   @override
   State<TasksScreen> createState() => _TasksScreenState();
@@ -31,6 +35,15 @@ class _TasksScreenState extends State<TasksScreen> {
   void initState() {
     super.initState();
     _dataFuture = _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant TasksScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshVersion != widget.refreshVersion ||
+        oldWidget.database != widget.database) {
+      _dataFuture = _load();
+    }
   }
 
   Future<_TaskViewData> _load() async {
@@ -107,6 +120,7 @@ class _TasksScreenState extends State<TasksScreen> {
       now: widget.nowProvider(),
     );
     _refresh();
+    widget.onRecordsChanged?.call();
   }
 
   Future<void> _delete(Task task) async {
@@ -131,6 +145,7 @@ class _TasksScreenState extends State<TasksScreen> {
       now: widget.nowProvider(),
     );
     _refresh();
+    widget.onRecordsChanged?.call();
   }
 
   void _refresh() {

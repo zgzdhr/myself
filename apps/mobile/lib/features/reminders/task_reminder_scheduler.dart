@@ -18,6 +18,8 @@ class TaskReminderRequest {
 }
 
 abstract interface class TaskReminderScheduler {
+  Future<bool?> requestPermissions();
+
   Future<void> schedule(TaskReminderRequest request);
 
   Future<void> cancel(String taskId);
@@ -25,6 +27,9 @@ abstract interface class TaskReminderScheduler {
 
 class NoopTaskReminderScheduler implements TaskReminderScheduler {
   const NoopTaskReminderScheduler();
+
+  @override
+  Future<bool?> requestPermissions() async => false;
 
   @override
   Future<void> schedule(TaskReminderRequest request) async {}
@@ -71,6 +76,12 @@ class SystemTaskReminderScheduler implements TaskReminderScheduler {
   }
 
   @override
+  Future<bool?> requestPermissions() async {
+    await initialize();
+    return _requestPermissionsIfNeeded(force: true);
+  }
+
+  @override
   Future<void> schedule(TaskReminderRequest request) async {
     await initialize();
     await _requestPermissionsIfNeeded();
@@ -101,19 +112,20 @@ class SystemTaskReminderScheduler implements TaskReminderScheduler {
     await _notifications.cancel(id: _notificationIdForTask(taskId));
   }
 
-  Future<void> _requestPermissionsIfNeeded() async {
-    if (_permissionRequested || kIsWeb) {
-      return;
+  Future<bool?> _requestPermissionsIfNeeded({bool force = false}) async {
+    if ((!force && _permissionRequested) || kIsWeb) {
+      return null;
     }
 
+    bool? granted;
     if (Platform.isAndroid) {
-      await _notifications
+      granted = await _notifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.requestNotificationsPermission();
     } else if (Platform.isIOS || Platform.isMacOS) {
-      await _notifications
+      granted = await _notifications
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
           >()
@@ -121,6 +133,7 @@ class SystemTaskReminderScheduler implements TaskReminderScheduler {
     }
 
     _permissionRequested = true;
+    return granted;
   }
 
   Future<void> _configureLocalTimeZone() async {

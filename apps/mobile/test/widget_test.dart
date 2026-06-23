@@ -174,11 +174,23 @@ void main() {
     expect(find.text('未配置云端'), findsOneWidget);
     expect(find.text('通知设置'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView).last, const Offset(0, -1200));
+    await tester.scrollUntilVisible(
+      find.text('复盘设置'),
+      500,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('复盘设置'));
     await tester.pumpAndSettle();
     expect(find.text('复盘结果参与首页建议'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView).last, const Offset(0, -2200));
+    await tester.scrollUntilVisible(
+      find.text('App 与帮助'),
+      500,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('App 与帮助'));
     await tester.pumpAndSettle();
     expect(find.text('API 连接状态'), findsOneWidget);
   });

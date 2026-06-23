@@ -25,6 +25,19 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return database;
 });
 
+class AppDataRefresh extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() {
+    state += 1;
+  }
+}
+
+final appDataRefreshProvider = NotifierProvider<AppDataRefresh, int>(
+  AppDataRefresh.new,
+);
+
 final parserClientProvider = Provider<ParserClient>((ref) {
   const parserMode = String.fromEnvironment(
     'PARSER_MODE',
@@ -136,6 +149,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final suggestionService = ref.watch(homeSuggestionServiceProvider);
     final nowProvider = ref.watch(appNowProvider);
     final reviewAffectsHome = ref.watch(reviewAffectsHomeProvider);
+    final dataRefreshVersion = ref.watch(appDataRefreshProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EE),
@@ -148,7 +162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           });
         },
         afterInput: FutureBuilder<HomeSuggestionContext>(
-          key: ValueKey(_refreshVersion),
+          key: ValueKey('$_refreshVersion:$dataRefreshVersion'),
           future: suggestionService.loadContext(
             database: database,
             now: nowProvider(),
@@ -171,6 +185,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           },
         ),
         onRecordsChanged: () {
+          ref.read(appDataRefreshProvider.notifier).bump();
           setState(() {
             _refreshVersion += 1;
           });

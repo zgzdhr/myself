@@ -77,6 +77,7 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
     final taskReminderScheduler = ref.watch(taskReminderSchedulerProvider);
     final cloudAuthService = ref.watch(cloudAuthServiceProvider);
     final cloudSyncService = ref.watch(cloudSyncServiceProvider);
+    final dataRefreshVersion = ref.watch(appDataRefreshProvider);
 
     return Scaffold(
       body: IndexedStack(
@@ -87,6 +88,10 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
             database: database,
             nowProvider: nowProvider,
             taskReminderScheduler: taskReminderScheduler,
+            refreshVersion: dataRefreshVersion,
+            onRecordsChanged: () {
+              ref.read(appDataRefreshProvider.notifier).bump();
+            },
           ),
           ReviewScreen(
             database: database,
@@ -100,6 +105,8 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
             parserBaseUri: defaultParserBaseUri(),
             cloudAuthService: cloudAuthService,
             cloudSyncService: cloudSyncService,
+            taskReminderScheduler: taskReminderScheduler,
+            refreshVersion: dataRefreshVersion,
           ),
         ],
       ),
