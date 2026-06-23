@@ -196,7 +196,7 @@ class _InputScreenState extends State<InputScreen> {
         _errorMessage =
             (error.code == 'empty_input' || error.code == 'input_too_long')
             ? error.userMessage
-            : parserFailureDisplayMessage;
+            : '$parserFailureDisplayMessage\n原因：${_safeParserFailureDetail(error)}';
       });
     } finally {
       if (mounted) {
@@ -205,6 +205,16 @@ class _InputScreenState extends State<InputScreen> {
         });
       }
     }
+  }
+
+  String _safeParserFailureDetail(ParserFailure error) {
+    return switch (error.code) {
+      'network_error' => '暂时无法连接解析服务，请检查网络或后端地址。',
+      'network_timeout' => '解析服务响应超时，请稍后再试。',
+      'parser_service_error' => '解析服务暂时不可用，请稍后再试。',
+      'invalid_response' => '解析结果格式异常，请稍后再试。',
+      _ => '整理失败，请稍后再试。',
+    };
   }
 
   Future<void> _confirm(ExtractedItem item) async {

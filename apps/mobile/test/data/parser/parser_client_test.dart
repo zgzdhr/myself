@@ -48,11 +48,24 @@ void main() {
             parserBaseUrl: '',
             apiBaseUrl: 'http://127.0.0.1:8787',
             isAndroid: false,
+            isRelease: false,
           ),
           Uri.parse('http://127.0.0.1:8787'),
         );
       },
     );
+
+    test('release builds fall back to the public API when no URL is provided', () {
+      expect(
+        defaultParserBaseUri(
+          parserBaseUrl: '',
+          apiBaseUrl: '',
+          isAndroid: true,
+          isRelease: true,
+        ),
+        Uri.parse(productionParserBaseUrl),
+      );
+    });
 
     test(
       'calls the API proxy parse route and maps JSON into ParseResult',

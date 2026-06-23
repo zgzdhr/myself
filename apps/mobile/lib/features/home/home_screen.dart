@@ -17,6 +17,8 @@ import '../memory/memory_screen.dart';
 
 part 'home_screen_widgets.dart';
 
+const productionParserBaseUrl = 'https://myself-three-plum.vercel.app';
+
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
   ref.onDispose(database.close);
@@ -78,6 +80,7 @@ Uri defaultParserBaseUri({
   String parserBaseUrl = const String.fromEnvironment('PARSER_BASE_URL'),
   String apiBaseUrl = const String.fromEnvironment('API_BASE_URL'),
   bool? isAndroid,
+  bool isRelease = kReleaseMode,
 }) {
   final configuredBaseUrl = parserBaseUrl.isNotEmpty
       ? parserBaseUrl
@@ -85,6 +88,10 @@ Uri defaultParserBaseUri({
 
   if (configuredBaseUrl.isNotEmpty) {
     return Uri.parse(configuredBaseUrl);
+  }
+
+  if (isRelease) {
+    return Uri.parse(productionParserBaseUrl);
   }
 
   if (isAndroid ?? Platform.isAndroid) {

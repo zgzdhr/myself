@@ -45,7 +45,9 @@ void main() {
     await tester.tap(find.text('整理'));
     await tester.pumpAndSettle();
 
-    expect(find.text('这次我没能稳定解析成可保存的数据。你可以重试，或者先手动记录。'), findsOneWidget);
+    expect(find.textContaining('这次我没能稳定解析成可保存的数据'), findsOneWidget);
+    expect(find.textContaining('暂时无法连接解析服务'), findsOneWidget);
+    expect(find.textContaining('raw socket failure'), findsNothing);
   });
 
   testWidgets('input screen rejects input that is too long', (
