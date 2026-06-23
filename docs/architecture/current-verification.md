@@ -1,5 +1,88 @@
 # Current Verification
 
+## Latest Verification: Public API Proxy And Android APK
+
+Date: 2026-06-23
+Scope: Vercel production deployment for `apps/api`, public AI proxy smoke, and
+Android release APK build for phone-data testing
+
+### Summary
+
+- Result: Pass.
+- Vercel project `myself` was created under team `zgzdhrs-projects`.
+- `apps/api` now has a Vercel serverless entrypoint and routing config:
+  - `apps/api/api/index.ts`;
+  - `apps/api/vercel.json`;
+  - `apps/api/.vercelignore`.
+- Vercel production URL:
+  - `https://myself-three-plum.vercel.app`
+- Vercel production environment variables were configured for:
+  - `DEEPSEEK_API_KEY`;
+  - `DEEPSEEK_BASE_URL`;
+  - `DEEPSEEK_MODEL`.
+- Public endpoint smoke passed for:
+  - `GET /health`;
+  - `POST /parse`;
+  - `POST /review`;
+  - `POST /plan`.
+- Android release APK was built with:
+  - `PARSER_MODE=http`;
+  - `PARSER_BASE_URL=https://myself-three-plum.vercel.app`;
+  - `SUPABASE_URL=https://rzztfwzgivhwtqmbdztr.supabase.co`;
+  - `SUPABASE_PUBLISHABLE_KEY=sb_publishable_...`.
+- APK output:
+  - `apps/mobile/build/app/outputs/flutter-apk/app-release.apk`;
+  - copied for handoff/testing to `/private/tmp/myself-public-api-release-2026-06-23.apk`.
+
+### Commands Run
+
+```bash
+cd apps/api
+npm run typecheck
+node --test --import tsx test/parseResultSchema.test.ts test/reviewResultSchema.test.ts test/planResultSchema.test.ts test/deepseekParser.test.ts test/deepseekReview.test.ts test/deepseekPlan.test.ts
+vercel project add myself --scope zgzdhrs-projects
+vercel link --yes --team zgzdhrs-projects --project myself
+vercel --prod --scope zgzdhrs-projects
+```
+
+```bash
+curl -sS https://myself-three-plum.vercel.app/health
+curl -sS -X POST https://myself-three-plum.vercel.app/parse ...
+curl -sS -X POST https://myself-three-plum.vercel.app/review ...
+curl -sS -X POST https://myself-three-plum.vercel.app/plan ...
+```
+
+```bash
+cd apps/mobile
+FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn flutter build apk --release \
+  --dart-define=PARSER_MODE=http \
+  --dart-define=PARSER_BASE_URL=https://myself-three-plum.vercel.app \
+  --dart-define=SUPABASE_URL=https://rzztfwzgivhwtqmbdztr.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+### Results
+
+- API typecheck: Pass.
+- API targeted tests: Pass, 26 tests passed.
+- Vercel production deployment: Pass.
+- Public `/health`: Pass, returned `{"ok":true}`.
+- Public `/parse`: Pass, returned a valid `task_create`.
+- Public `/review`: Pass, returned a valid daily review JSON.
+- Public `/plan`: Pass, returned valid time blocks.
+- Android release APK build: Pass, generated a 62 MB APK.
+
+### Notes
+
+- The Android release build currently uses the debug signing config defined in
+  `android/app/build.gradle.kts`. This is acceptable for private sideload
+  testing, but not for app-store release.
+- The application id is still `com.example.mobile` and the Android label is
+  still `mobile`. Rename these before a public release.
+- The first release build failed against `storage.googleapis.com` because of a
+  TLS/download issue; rebuilding with `FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn`
+  succeeded.
+
 ## Latest Verification: Phase 5D AI Time Planning
 
 Date: 2026-06-23

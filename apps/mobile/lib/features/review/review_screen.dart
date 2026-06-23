@@ -586,7 +586,7 @@ class _MonthReviewFolders extends StatelessWidget {
                     crossAxisCount: 4,
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
-                    childAspectRatio: 1.25,
+                    childAspectRatio: 1.05,
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
                     children: [
