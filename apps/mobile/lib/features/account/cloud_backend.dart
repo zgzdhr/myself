@@ -12,6 +12,11 @@ const supabasePublishableKey = String.fromEnvironment(
 bool get isCloudBackendConfigured =>
     supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
 
+var _cloudBackendInitialized = false;
+
+bool get isCloudBackendAvailable =>
+    isCloudBackendConfigured && _cloudBackendInitialized;
+
 Future<void> initializeCloudBackendFromEnvironment() async {
   if (!isCloudBackendConfigured) {
     return;
@@ -21,10 +26,11 @@ Future<void> initializeCloudBackendFromEnvironment() async {
     url: supabaseUrl,
     publishableKey: supabasePublishableKey,
   );
+  _cloudBackendInitialized = true;
 }
 
 final cloudAuthServiceProvider = Provider<CloudAuthService>((ref) {
-  if (!isCloudBackendConfigured) {
+  if (!isCloudBackendAvailable) {
     return const DisabledCloudAuthService();
   }
 
@@ -32,7 +38,7 @@ final cloudAuthServiceProvider = Provider<CloudAuthService>((ref) {
 });
 
 final cloudSyncServiceProvider = Provider<CloudSyncService>((ref) {
-  if (!isCloudBackendConfigured) {
+  if (!isCloudBackendAvailable) {
     return const DisabledCloudSyncService();
   }
 
