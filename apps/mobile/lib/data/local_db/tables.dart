@@ -152,3 +152,63 @@ class SummarySources extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+class SchedulePlans extends Table {
+  TextColumn get id => text()();
+  DateTimeColumn get planDate => dateTime().named('plan_date')();
+  TextColumn get title => text()();
+  TextColumn get overview => text()();
+  TextColumn get suggestionsJson =>
+      text().named('suggestions_json').withDefault(const Constant('[]'))();
+  TextColumn get unscheduledTaskIdsJson => text()
+      .named('unscheduled_task_ids_json')
+      .withDefault(const Constant('[]'))();
+  TextColumn get status => text()();
+  TextColumn get generatedBy => text().named('generated_by')();
+  TextColumn get modelName => text().named('model_name').nullable()();
+  TextColumn get promptVersion => text().named('prompt_version').nullable()();
+  RealColumn get confidence => real().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get confirmedAt =>
+      dateTime().named('confirmed_at').nullable()();
+  DateTimeColumn get userEditedAt =>
+      dateTime().named('user_edited_at').nullable()();
+  DateTimeColumn get deletedAt => dateTime().named('deleted_at').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class ScheduleBlocks extends Table {
+  TextColumn get id => text()();
+  TextColumn get planId =>
+      text().named('plan_id').references(SchedulePlans, #id)();
+  TextColumn get title => text()();
+  TextColumn get blockType => text().named('block_type')();
+  DateTimeColumn get startTime => dateTime().named('start_time')();
+  DateTimeColumn get endTime => dateTime().named('end_time')();
+  TextColumn get taskId => text().named('task_id').nullable()();
+  TextColumn get note => text().nullable()();
+  TextColumn get reason => text()();
+  IntColumn get sortOrder => integer().named('sort_order')();
+  TextColumn get status => text()();
+  RealColumn get confidence => real().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class ScheduleBlockSources extends Table {
+  TextColumn get id => text()();
+  TextColumn get blockId =>
+      text().named('block_id').references(ScheduleBlocks, #id)();
+  TextColumn get sourceTable => text().named('source_table')();
+  TextColumn get sourceRecordId => text().named('source_record_id')();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

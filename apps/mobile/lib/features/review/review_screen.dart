@@ -5,22 +5,26 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/local_db/app_database.dart';
+import '../../data/plan/plan_client.dart';
 import '../../data/review/review_client.dart';
 import '../../domain/record_status.dart';
 import '../../domain/review_result.dart';
 import '../../domain/task_status.dart';
+import 'schedule_plan_screen.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
     required this.database,
     required this.nowProvider,
     required this.reviewClient,
+    required this.planClient,
     super.key,
   });
 
   final AppDatabase database;
   final DateTime Function() nowProvider;
   final ReviewClient reviewClient;
+  final PlanClient planClient;
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -94,53 +98,73 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('复盘')),
-      body: RefreshIndicator(
-        onRefresh: _reload,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('复盘'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.fact_check_rounded), text: '每日复盘'),
+              Tab(icon: Icon(Icons.calendar_month_rounded), text: '时间规划'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            _MonthHeader(
-              month: _visibleMonth,
-              onPrevious: () => _changeMonth(-1),
-              onNext: () => _changeMonth(1),
+            RefreshIndicator(
+              onRefresh: _reload,
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  _MonthHeader(
+                    month: _visibleMonth,
+                    onPrevious: () => _changeMonth(-1),
+                    onNext: () => _changeMonth(1),
+                  ),
+                  const SizedBox(height: 12),
+                  FutureBuilder<_ReviewMonthData>(
+                    future: _monthFuture,
+                    builder: (context, snapshot) {
+                      final data = snapshot.data;
+                      if (data == null) {
+                        return const _LoadingCard(label: '正在整理复盘目录...');
+                      }
+                      return _MonthReviewFolders(
+                        data: data,
+                        selectedDay: _selectedDay,
+                        onSelectDay: _selectDay,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  FutureBuilder<_ReviewDayData>(
+                    future: _dayFuture,
+                    builder: (context, snapshot) {
+                      final data = snapshot.data;
+                      if (data == null) {
+                        return const _LoadingCard(label: '正在读取当天记录...');
+                      }
+                      return _DayReviewPanel(
+                        data: data,
+                        isGenerating: _isGenerating,
+                        onGenerate: () => _generateReview(data),
+                        onEdit: data.summary == null
+                            ? null
+                            : () => _editSummary(data.summary!),
+                        onDelete: data.summary == null
+                            ? null
+                            : () => _deleteSummary(data.summary!),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-            FutureBuilder<_ReviewMonthData>(
-              future: _monthFuture,
-              builder: (context, snapshot) {
-                final data = snapshot.data;
-                if (data == null) {
-                  return const _LoadingCard(label: '正在整理复盘目录...');
-                }
-                return _MonthReviewFolders(
-                  data: data,
-                  selectedDay: _selectedDay,
-                  onSelectDay: _selectDay,
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            FutureBuilder<_ReviewDayData>(
-              future: _dayFuture,
-              builder: (context, snapshot) {
-                final data = snapshot.data;
-                if (data == null) {
-                  return const _LoadingCard(label: '正在读取当天记录...');
-                }
-                return _DayReviewPanel(
-                  data: data,
-                  isGenerating: _isGenerating,
-                  onGenerate: () => _generateReview(data),
-                  onEdit: data.summary == null
-                      ? null
-                      : () => _editSummary(data.summary!),
-                  onDelete: data.summary == null
-                      ? null
-                      : () => _deleteSummary(data.summary!),
-                );
-              },
+            SchedulePlanScreen(
+              database: widget.database,
+              nowProvider: widget.nowProvider,
+              planClient: widget.planClient,
             ),
           ],
         ),

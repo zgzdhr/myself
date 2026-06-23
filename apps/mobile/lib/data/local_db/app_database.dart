@@ -22,13 +22,16 @@ part 'app_database.g.dart';
     ProfileItems,
     Summaries,
     SummarySources,
+    SchedulePlans,
+    ScheduleBlocks,
+    ScheduleBlockSources,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -45,6 +48,11 @@ class AppDatabase extends _$AppDatabase {
         if (from < 3) {
           await m.createTable(summaries);
           await m.createTable(summarySources);
+        }
+        if (from < 4) {
+          await m.createTable(schedulePlans);
+          await m.createTable(scheduleBlocks);
+          await m.createTable(scheduleBlockSources);
         }
       },
     );
@@ -535,6 +543,32 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  Future<List<Summary>> getRecentDailySummariesBeforeOrOn({
+    required DateTime day,
+    int days = 7,
+    int limit = 3,
+  }) {
+    final end = DateTime(
+      day.year,
+      day.month,
+      day.day,
+    ).add(const Duration(days: 1));
+    final start = end.subtract(Duration(days: days));
+
+    return (select(summaries)
+          ..where(
+            (summary) =>
+                summary.summaryType.equals('daily_summary') &
+                (summary.status.equals(RecordStatus.confirmed.value) |
+                    summary.status.equals(RecordStatus.edited.value)) &
+                summary.timeRangeStart.isBiggerOrEqualValue(start) &
+                summary.timeRangeStart.isSmallerThanValue(end),
+          )
+          ..orderBy([(summary) => OrderingTerm.desc(summary.timeRangeStart)])
+          ..limit(limit))
+        .get();
+  }
+
   Future<List<SummarySource>> getSourcesForSummary(String summaryId) {
     return (select(summarySources)
           ..where((source) => source.summaryId.equals(summaryId))
@@ -622,6 +656,215 @@ class AppDatabase extends _$AppDatabase {
   }) {
     return (update(summaries)..where((summary) => summary.id.equals(id))).write(
       SummariesCompanion(
+        status: Value(RecordStatus.deleted.value),
+        updatedAt: Value(updatedAt),
+        deletedAt: Value(updatedAt),
+      ),
+    );
+  }
+
+  Future<SchedulePlan?> getSchedulePlanForDay(DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return (select(schedulePlans)
+          ..where(
+            (plan) =>
+                (plan.status.equals(RecordStatus.pending.value) |
+                    plan.status.equals(RecordStatus.confirmed.value) |
+                    plan.status.equals(RecordStatus.edited.value)) &
+                plan.planDate.isBiggerOrEqualValue(start) &
+                plan.planDate.isSmallerThanValue(end),
+          )
+          ..orderBy([(plan) => OrderingTerm.desc(plan.updatedAt)]))
+        .getSingleOrNull();
+  }
+
+  Future<List<SchedulePlan>> getSchedulePlansForRange({
+    required DateTime start,
+    required DateTime end,
+  }) {
+    return (select(schedulePlans)
+          ..where(
+            (plan) =>
+                (plan.status.equals(RecordStatus.pending.value) |
+                    plan.status.equals(RecordStatus.confirmed.value) |
+                    plan.status.equals(RecordStatus.edited.value)) &
+                plan.planDate.isBiggerOrEqualValue(start) &
+                plan.planDate.isSmallerThanValue(end),
+          )
+          ..orderBy([(plan) => OrderingTerm.desc(plan.planDate)]))
+        .get();
+  }
+
+  Future<List<ScheduleBlock>> getScheduleBlocksForPlan(String planId) {
+    return (select(scheduleBlocks)
+          ..where(
+            (block) =>
+                block.planId.equals(planId) &
+                block.status.equals(RecordStatus.deleted.value).not(),
+          )
+          ..orderBy([
+            (block) => OrderingTerm(expression: block.sortOrder),
+            (block) => OrderingTerm(expression: block.startTime),
+          ]))
+        .get();
+  }
+
+  Future<List<ScheduleBlockSource>> getSourcesForScheduleBlock(String blockId) {
+    return (select(scheduleBlockSources)
+          ..where((source) => source.blockId.equals(blockId))
+          ..orderBy([(source) => OrderingTerm(expression: source.createdAt)]))
+        .get();
+  }
+
+  Future<void> saveSchedulePlan({
+    required SchedulePlan plan,
+    required List<ScheduleBlocksCompanion> blocks,
+    required Map<String, List<ScheduleBlockSourcesCompanion>> sourcesByBlockId,
+    required DateTime updatedAt,
+  }) async {
+    await transaction(() async {
+      await (update(schedulePlans)..where(
+            (row) =>
+                row.planDate.equals(plan.planDate) &
+                row.id.equals(plan.id).not(),
+          ))
+          .write(
+            SchedulePlansCompanion(
+              status: Value(RecordStatus.archived.value),
+              updatedAt: Value(updatedAt),
+            ),
+          );
+
+      await into(schedulePlans).insertOnConflictUpdate(
+        SchedulePlansCompanion.insert(
+          id: plan.id,
+          planDate: plan.planDate,
+          title: plan.title,
+          overview: plan.overview,
+          suggestionsJson: Value(plan.suggestionsJson),
+          unscheduledTaskIdsJson: Value(plan.unscheduledTaskIdsJson),
+          status: plan.status,
+          generatedBy: plan.generatedBy,
+          modelName: Value(plan.modelName),
+          promptVersion: Value(plan.promptVersion),
+          confidence: Value(plan.confidence),
+          createdAt: plan.createdAt,
+          updatedAt: plan.updatedAt,
+          confirmedAt: Value(plan.confirmedAt),
+          userEditedAt: Value(plan.userEditedAt),
+          deletedAt: Value(plan.deletedAt),
+        ),
+      );
+
+      final existingBlocks = await getScheduleBlocksForPlan(plan.id);
+      final existingBlockIds = existingBlocks.map((block) => block.id).toList();
+      if (existingBlockIds.isNotEmpty) {
+        await (delete(
+          scheduleBlockSources,
+        )..where((source) => source.blockId.isIn(existingBlockIds))).go();
+      }
+      await (delete(
+        scheduleBlocks,
+      )..where((block) => block.planId.equals(plan.id))).go();
+
+      for (final block in blocks) {
+        await into(scheduleBlocks).insert(block);
+      }
+
+      for (final sources in sourcesByBlockId.values) {
+        for (final source in sources) {
+          await into(scheduleBlockSources).insert(source);
+        }
+      }
+    });
+  }
+
+  Future<void> updateScheduleBlock({
+    required String id,
+    required String title,
+    required String blockType,
+    required DateTime startTime,
+    required DateTime endTime,
+    String? note,
+    required String reason,
+    required DateTime updatedAt,
+  }) async {
+    final block = await (select(
+      scheduleBlocks,
+    )..where((row) => row.id.equals(id))).getSingle();
+
+    await transaction(() async {
+      await (update(scheduleBlocks)..where((row) => row.id.equals(id))).write(
+        ScheduleBlocksCompanion(
+          title: Value(title),
+          blockType: Value(blockType),
+          startTime: Value(startTime),
+          endTime: Value(endTime),
+          note: Value(note),
+          reason: Value(reason),
+          status: Value(RecordStatus.edited.value),
+          updatedAt: Value(updatedAt),
+        ),
+      );
+      await (update(
+        schedulePlans,
+      )..where((plan) => plan.id.equals(block.planId))).write(
+        SchedulePlansCompanion(
+          status: Value(RecordStatus.edited.value),
+          updatedAt: Value(updatedAt),
+          userEditedAt: Value(updatedAt),
+        ),
+      );
+    });
+  }
+
+  Future<void> markScheduleBlockDeleted({
+    required String id,
+    required DateTime updatedAt,
+  }) async {
+    final block = await (select(
+      scheduleBlocks,
+    )..where((row) => row.id.equals(id))).getSingle();
+
+    await transaction(() async {
+      await (update(scheduleBlocks)..where((row) => row.id.equals(id))).write(
+        ScheduleBlocksCompanion(
+          status: Value(RecordStatus.deleted.value),
+          updatedAt: Value(updatedAt),
+        ),
+      );
+      await (update(
+        schedulePlans,
+      )..where((plan) => plan.id.equals(block.planId))).write(
+        SchedulePlansCompanion(
+          status: Value(RecordStatus.edited.value),
+          updatedAt: Value(updatedAt),
+          userEditedAt: Value(updatedAt),
+        ),
+      );
+    });
+  }
+
+  Future<void> confirmSchedulePlan({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(schedulePlans)..where((plan) => plan.id.equals(id))).write(
+      SchedulePlansCompanion(
+        status: Value(RecordStatus.confirmed.value),
+        updatedAt: Value(updatedAt),
+        confirmedAt: Value(updatedAt),
+      ),
+    );
+  }
+
+  Future<void> markSchedulePlanDeleted({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(schedulePlans)..where((plan) => plan.id.equals(id))).write(
+      SchedulePlansCompanion(
         status: Value(RecordStatus.deleted.value),
         updatedAt: Value(updatedAt),
         deletedAt: Value(updatedAt),

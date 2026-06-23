@@ -135,6 +135,54 @@ create table if not exists public.summary_sources (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.schedule_plans (
+  id text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  plan_date timestamptz not null,
+  title text not null,
+  overview text not null,
+  suggestions jsonb not null default '[]'::jsonb,
+  unscheduled_task_ids jsonb not null default '[]'::jsonb,
+  status text not null,
+  generated_by text not null,
+  model_name text,
+  prompt_version text,
+  confidence numeric,
+  created_at timestamptz not null,
+  updated_at timestamptz not null,
+  confirmed_at timestamptz,
+  user_edited_at timestamptz,
+  deleted_at timestamptz
+);
+
+create table if not exists public.schedule_blocks (
+  id text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  plan_id text not null references public.schedule_plans(id) on delete cascade,
+  title text not null,
+  block_type text not null,
+  start_time timestamptz not null,
+  end_time timestamptz not null,
+  task_id text references public.tasks(id) on delete set null,
+  note text,
+  reason text not null,
+  sort_order integer not null,
+  status text not null,
+  confidence numeric,
+  created_at timestamptz not null,
+  updated_at timestamptz not null,
+  constraint schedule_blocks_time_order check (start_time < end_time)
+);
+
+create table if not exists public.schedule_block_sources (
+  id text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  block_id text not null references public.schedule_blocks(id) on delete cascade,
+  source_table text not null,
+  source_record_id text not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists raw_inputs_user_created_idx
   on public.raw_inputs(user_id, created_at desc);
 create index if not exists tasks_user_due_idx
@@ -145,6 +193,10 @@ create index if not exists states_user_valid_idx
   on public.short_term_states(user_id, valid_until);
 create index if not exists summaries_user_type_range_idx
   on public.summaries(user_id, summary_type, time_range_start, time_range_end);
+create index if not exists schedule_plans_user_date_idx
+  on public.schedule_plans(user_id, plan_date);
+create index if not exists schedule_blocks_plan_time_idx
+  on public.schedule_blocks(plan_id, start_time);
 
 alter table public.profiles enable row level security;
 alter table public.raw_inputs enable row level security;
@@ -156,6 +208,9 @@ alter table public.life_events enable row level security;
 alter table public.profile_items enable row level security;
 alter table public.summaries enable row level security;
 alter table public.summary_sources enable row level security;
+alter table public.schedule_plans enable row level security;
+alter table public.schedule_blocks enable row level security;
+alter table public.schedule_block_sources enable row level security;
 
 create policy "profiles owner access"
   on public.profiles
@@ -217,6 +272,24 @@ create policy "summary_sources owner access"
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
+create policy "schedule_plans owner access"
+  on public.schedule_plans
+  for all
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "schedule_blocks owner access"
+  on public.schedule_blocks
+  for all
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "schedule_block_sources owner access"
+  on public.schedule_block_sources
+  for all
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
 -- Data API privileges. RLS decides which rows a user may access, but the
 -- authenticated role still needs table privileges when automatic table exposure
 -- is disabled in Supabase project settings.
@@ -228,3 +301,8 @@ grant select, insert, update on public.tasks to authenticated;
 grant select, insert, update on public.short_term_states to authenticated;
 grant select, insert, update on public.life_events to authenticated;
 grant select, insert, update on public.profile_items to authenticated;
+grant select, insert, update on public.summaries to authenticated;
+grant select, insert, update on public.summary_sources to authenticated;
+grant select, insert, update on public.schedule_plans to authenticated;
+grant select, insert, update on public.schedule_blocks to authenticated;
+grant select, insert, update on public.schedule_block_sources to authenticated;

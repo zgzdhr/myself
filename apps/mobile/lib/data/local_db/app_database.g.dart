@@ -5634,6 +5634,2115 @@ class SummarySourcesCompanion extends UpdateCompanion<SummarySource> {
   }
 }
 
+class $SchedulePlansTable extends SchedulePlans
+    with TableInfo<$SchedulePlansTable, SchedulePlan> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SchedulePlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _planDateMeta = const VerificationMeta(
+    'planDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> planDate = GeneratedColumn<DateTime>(
+    'plan_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _overviewMeta = const VerificationMeta(
+    'overview',
+  );
+  @override
+  late final GeneratedColumn<String> overview = GeneratedColumn<String>(
+    'overview',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _suggestionsJsonMeta = const VerificationMeta(
+    'suggestionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> suggestionsJson = GeneratedColumn<String>(
+    'suggestions_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _unscheduledTaskIdsJsonMeta =
+      const VerificationMeta('unscheduledTaskIdsJson');
+  @override
+  late final GeneratedColumn<String> unscheduledTaskIdsJson =
+      GeneratedColumn<String>(
+        'unscheduled_task_ids_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _generatedByMeta = const VerificationMeta(
+    'generatedBy',
+  );
+  @override
+  late final GeneratedColumn<String> generatedBy = GeneratedColumn<String>(
+    'generated_by',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modelNameMeta = const VerificationMeta(
+    'modelName',
+  );
+  @override
+  late final GeneratedColumn<String> modelName = GeneratedColumn<String>(
+    'model_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _promptVersionMeta = const VerificationMeta(
+    'promptVersion',
+  );
+  @override
+  late final GeneratedColumn<String> promptVersion = GeneratedColumn<String>(
+    'prompt_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _confidenceMeta = const VerificationMeta(
+    'confidence',
+  );
+  @override
+  late final GeneratedColumn<double> confidence = GeneratedColumn<double>(
+    'confidence',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _confirmedAtMeta = const VerificationMeta(
+    'confirmedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> confirmedAt = GeneratedColumn<DateTime>(
+    'confirmed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _userEditedAtMeta = const VerificationMeta(
+    'userEditedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> userEditedAt = GeneratedColumn<DateTime>(
+    'user_edited_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    planDate,
+    title,
+    overview,
+    suggestionsJson,
+    unscheduledTaskIdsJson,
+    status,
+    generatedBy,
+    modelName,
+    promptVersion,
+    confidence,
+    createdAt,
+    updatedAt,
+    confirmedAt,
+    userEditedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'schedule_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SchedulePlan> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('plan_date')) {
+      context.handle(
+        _planDateMeta,
+        planDate.isAcceptableOrUnknown(data['plan_date']!, _planDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planDateMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('overview')) {
+      context.handle(
+        _overviewMeta,
+        overview.isAcceptableOrUnknown(data['overview']!, _overviewMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_overviewMeta);
+    }
+    if (data.containsKey('suggestions_json')) {
+      context.handle(
+        _suggestionsJsonMeta,
+        suggestionsJson.isAcceptableOrUnknown(
+          data['suggestions_json']!,
+          _suggestionsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('unscheduled_task_ids_json')) {
+      context.handle(
+        _unscheduledTaskIdsJsonMeta,
+        unscheduledTaskIdsJson.isAcceptableOrUnknown(
+          data['unscheduled_task_ids_json']!,
+          _unscheduledTaskIdsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('generated_by')) {
+      context.handle(
+        _generatedByMeta,
+        generatedBy.isAcceptableOrUnknown(
+          data['generated_by']!,
+          _generatedByMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_generatedByMeta);
+    }
+    if (data.containsKey('model_name')) {
+      context.handle(
+        _modelNameMeta,
+        modelName.isAcceptableOrUnknown(data['model_name']!, _modelNameMeta),
+      );
+    }
+    if (data.containsKey('prompt_version')) {
+      context.handle(
+        _promptVersionMeta,
+        promptVersion.isAcceptableOrUnknown(
+          data['prompt_version']!,
+          _promptVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('confidence')) {
+      context.handle(
+        _confidenceMeta,
+        confidence.isAcceptableOrUnknown(data['confidence']!, _confidenceMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('confirmed_at')) {
+      context.handle(
+        _confirmedAtMeta,
+        confirmedAt.isAcceptableOrUnknown(
+          data['confirmed_at']!,
+          _confirmedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('user_edited_at')) {
+      context.handle(
+        _userEditedAtMeta,
+        userEditedAt.isAcceptableOrUnknown(
+          data['user_edited_at']!,
+          _userEditedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SchedulePlan map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SchedulePlan(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      planDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}plan_date'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      overview: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}overview'],
+      )!,
+      suggestionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}suggestions_json'],
+      )!,
+      unscheduledTaskIdsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unscheduled_task_ids_json'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      generatedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}generated_by'],
+      )!,
+      modelName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_name'],
+      ),
+      promptVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prompt_version'],
+      ),
+      confidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}confidence'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      confirmedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}confirmed_at'],
+      ),
+      userEditedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}user_edited_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $SchedulePlansTable createAlias(String alias) {
+    return $SchedulePlansTable(attachedDatabase, alias);
+  }
+}
+
+class SchedulePlan extends DataClass implements Insertable<SchedulePlan> {
+  final String id;
+  final DateTime planDate;
+  final String title;
+  final String overview;
+  final String suggestionsJson;
+  final String unscheduledTaskIdsJson;
+  final String status;
+  final String generatedBy;
+  final String? modelName;
+  final String? promptVersion;
+  final double? confidence;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? confirmedAt;
+  final DateTime? userEditedAt;
+  final DateTime? deletedAt;
+  const SchedulePlan({
+    required this.id,
+    required this.planDate,
+    required this.title,
+    required this.overview,
+    required this.suggestionsJson,
+    required this.unscheduledTaskIdsJson,
+    required this.status,
+    required this.generatedBy,
+    this.modelName,
+    this.promptVersion,
+    this.confidence,
+    required this.createdAt,
+    required this.updatedAt,
+    this.confirmedAt,
+    this.userEditedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['plan_date'] = Variable<DateTime>(planDate);
+    map['title'] = Variable<String>(title);
+    map['overview'] = Variable<String>(overview);
+    map['suggestions_json'] = Variable<String>(suggestionsJson);
+    map['unscheduled_task_ids_json'] = Variable<String>(unscheduledTaskIdsJson);
+    map['status'] = Variable<String>(status);
+    map['generated_by'] = Variable<String>(generatedBy);
+    if (!nullToAbsent || modelName != null) {
+      map['model_name'] = Variable<String>(modelName);
+    }
+    if (!nullToAbsent || promptVersion != null) {
+      map['prompt_version'] = Variable<String>(promptVersion);
+    }
+    if (!nullToAbsent || confidence != null) {
+      map['confidence'] = Variable<double>(confidence);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || confirmedAt != null) {
+      map['confirmed_at'] = Variable<DateTime>(confirmedAt);
+    }
+    if (!nullToAbsent || userEditedAt != null) {
+      map['user_edited_at'] = Variable<DateTime>(userEditedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  SchedulePlansCompanion toCompanion(bool nullToAbsent) {
+    return SchedulePlansCompanion(
+      id: Value(id),
+      planDate: Value(planDate),
+      title: Value(title),
+      overview: Value(overview),
+      suggestionsJson: Value(suggestionsJson),
+      unscheduledTaskIdsJson: Value(unscheduledTaskIdsJson),
+      status: Value(status),
+      generatedBy: Value(generatedBy),
+      modelName: modelName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelName),
+      promptVersion: promptVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(promptVersion),
+      confidence: confidence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confidence),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      confirmedAt: confirmedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confirmedAt),
+      userEditedAt: userEditedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userEditedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory SchedulePlan.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SchedulePlan(
+      id: serializer.fromJson<String>(json['id']),
+      planDate: serializer.fromJson<DateTime>(json['planDate']),
+      title: serializer.fromJson<String>(json['title']),
+      overview: serializer.fromJson<String>(json['overview']),
+      suggestionsJson: serializer.fromJson<String>(json['suggestionsJson']),
+      unscheduledTaskIdsJson: serializer.fromJson<String>(
+        json['unscheduledTaskIdsJson'],
+      ),
+      status: serializer.fromJson<String>(json['status']),
+      generatedBy: serializer.fromJson<String>(json['generatedBy']),
+      modelName: serializer.fromJson<String?>(json['modelName']),
+      promptVersion: serializer.fromJson<String?>(json['promptVersion']),
+      confidence: serializer.fromJson<double?>(json['confidence']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      confirmedAt: serializer.fromJson<DateTime?>(json['confirmedAt']),
+      userEditedAt: serializer.fromJson<DateTime?>(json['userEditedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'planDate': serializer.toJson<DateTime>(planDate),
+      'title': serializer.toJson<String>(title),
+      'overview': serializer.toJson<String>(overview),
+      'suggestionsJson': serializer.toJson<String>(suggestionsJson),
+      'unscheduledTaskIdsJson': serializer.toJson<String>(
+        unscheduledTaskIdsJson,
+      ),
+      'status': serializer.toJson<String>(status),
+      'generatedBy': serializer.toJson<String>(generatedBy),
+      'modelName': serializer.toJson<String?>(modelName),
+      'promptVersion': serializer.toJson<String?>(promptVersion),
+      'confidence': serializer.toJson<double?>(confidence),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'confirmedAt': serializer.toJson<DateTime?>(confirmedAt),
+      'userEditedAt': serializer.toJson<DateTime?>(userEditedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  SchedulePlan copyWith({
+    String? id,
+    DateTime? planDate,
+    String? title,
+    String? overview,
+    String? suggestionsJson,
+    String? unscheduledTaskIdsJson,
+    String? status,
+    String? generatedBy,
+    Value<String?> modelName = const Value.absent(),
+    Value<String?> promptVersion = const Value.absent(),
+    Value<double?> confidence = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> confirmedAt = const Value.absent(),
+    Value<DateTime?> userEditedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => SchedulePlan(
+    id: id ?? this.id,
+    planDate: planDate ?? this.planDate,
+    title: title ?? this.title,
+    overview: overview ?? this.overview,
+    suggestionsJson: suggestionsJson ?? this.suggestionsJson,
+    unscheduledTaskIdsJson:
+        unscheduledTaskIdsJson ?? this.unscheduledTaskIdsJson,
+    status: status ?? this.status,
+    generatedBy: generatedBy ?? this.generatedBy,
+    modelName: modelName.present ? modelName.value : this.modelName,
+    promptVersion: promptVersion.present
+        ? promptVersion.value
+        : this.promptVersion,
+    confidence: confidence.present ? confidence.value : this.confidence,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    confirmedAt: confirmedAt.present ? confirmedAt.value : this.confirmedAt,
+    userEditedAt: userEditedAt.present ? userEditedAt.value : this.userEditedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  SchedulePlan copyWithCompanion(SchedulePlansCompanion data) {
+    return SchedulePlan(
+      id: data.id.present ? data.id.value : this.id,
+      planDate: data.planDate.present ? data.planDate.value : this.planDate,
+      title: data.title.present ? data.title.value : this.title,
+      overview: data.overview.present ? data.overview.value : this.overview,
+      suggestionsJson: data.suggestionsJson.present
+          ? data.suggestionsJson.value
+          : this.suggestionsJson,
+      unscheduledTaskIdsJson: data.unscheduledTaskIdsJson.present
+          ? data.unscheduledTaskIdsJson.value
+          : this.unscheduledTaskIdsJson,
+      status: data.status.present ? data.status.value : this.status,
+      generatedBy: data.generatedBy.present
+          ? data.generatedBy.value
+          : this.generatedBy,
+      modelName: data.modelName.present ? data.modelName.value : this.modelName,
+      promptVersion: data.promptVersion.present
+          ? data.promptVersion.value
+          : this.promptVersion,
+      confidence: data.confidence.present
+          ? data.confidence.value
+          : this.confidence,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      confirmedAt: data.confirmedAt.present
+          ? data.confirmedAt.value
+          : this.confirmedAt,
+      userEditedAt: data.userEditedAt.present
+          ? data.userEditedAt.value
+          : this.userEditedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchedulePlan(')
+          ..write('id: $id, ')
+          ..write('planDate: $planDate, ')
+          ..write('title: $title, ')
+          ..write('overview: $overview, ')
+          ..write('suggestionsJson: $suggestionsJson, ')
+          ..write('unscheduledTaskIdsJson: $unscheduledTaskIdsJson, ')
+          ..write('status: $status, ')
+          ..write('generatedBy: $generatedBy, ')
+          ..write('modelName: $modelName, ')
+          ..write('promptVersion: $promptVersion, ')
+          ..write('confidence: $confidence, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('confirmedAt: $confirmedAt, ')
+          ..write('userEditedAt: $userEditedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    planDate,
+    title,
+    overview,
+    suggestionsJson,
+    unscheduledTaskIdsJson,
+    status,
+    generatedBy,
+    modelName,
+    promptVersion,
+    confidence,
+    createdAt,
+    updatedAt,
+    confirmedAt,
+    userEditedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SchedulePlan &&
+          other.id == this.id &&
+          other.planDate == this.planDate &&
+          other.title == this.title &&
+          other.overview == this.overview &&
+          other.suggestionsJson == this.suggestionsJson &&
+          other.unscheduledTaskIdsJson == this.unscheduledTaskIdsJson &&
+          other.status == this.status &&
+          other.generatedBy == this.generatedBy &&
+          other.modelName == this.modelName &&
+          other.promptVersion == this.promptVersion &&
+          other.confidence == this.confidence &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.confirmedAt == this.confirmedAt &&
+          other.userEditedAt == this.userEditedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class SchedulePlansCompanion extends UpdateCompanion<SchedulePlan> {
+  final Value<String> id;
+  final Value<DateTime> planDate;
+  final Value<String> title;
+  final Value<String> overview;
+  final Value<String> suggestionsJson;
+  final Value<String> unscheduledTaskIdsJson;
+  final Value<String> status;
+  final Value<String> generatedBy;
+  final Value<String?> modelName;
+  final Value<String?> promptVersion;
+  final Value<double?> confidence;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> confirmedAt;
+  final Value<DateTime?> userEditedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const SchedulePlansCompanion({
+    this.id = const Value.absent(),
+    this.planDate = const Value.absent(),
+    this.title = const Value.absent(),
+    this.overview = const Value.absent(),
+    this.suggestionsJson = const Value.absent(),
+    this.unscheduledTaskIdsJson = const Value.absent(),
+    this.status = const Value.absent(),
+    this.generatedBy = const Value.absent(),
+    this.modelName = const Value.absent(),
+    this.promptVersion = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.confirmedAt = const Value.absent(),
+    this.userEditedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SchedulePlansCompanion.insert({
+    required String id,
+    required DateTime planDate,
+    required String title,
+    required String overview,
+    this.suggestionsJson = const Value.absent(),
+    this.unscheduledTaskIdsJson = const Value.absent(),
+    required String status,
+    required String generatedBy,
+    this.modelName = const Value.absent(),
+    this.promptVersion = const Value.absent(),
+    this.confidence = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.confirmedAt = const Value.absent(),
+    this.userEditedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       planDate = Value(planDate),
+       title = Value(title),
+       overview = Value(overview),
+       status = Value(status),
+       generatedBy = Value(generatedBy),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<SchedulePlan> custom({
+    Expression<String>? id,
+    Expression<DateTime>? planDate,
+    Expression<String>? title,
+    Expression<String>? overview,
+    Expression<String>? suggestionsJson,
+    Expression<String>? unscheduledTaskIdsJson,
+    Expression<String>? status,
+    Expression<String>? generatedBy,
+    Expression<String>? modelName,
+    Expression<String>? promptVersion,
+    Expression<double>? confidence,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? confirmedAt,
+    Expression<DateTime>? userEditedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (planDate != null) 'plan_date': planDate,
+      if (title != null) 'title': title,
+      if (overview != null) 'overview': overview,
+      if (suggestionsJson != null) 'suggestions_json': suggestionsJson,
+      if (unscheduledTaskIdsJson != null)
+        'unscheduled_task_ids_json': unscheduledTaskIdsJson,
+      if (status != null) 'status': status,
+      if (generatedBy != null) 'generated_by': generatedBy,
+      if (modelName != null) 'model_name': modelName,
+      if (promptVersion != null) 'prompt_version': promptVersion,
+      if (confidence != null) 'confidence': confidence,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (confirmedAt != null) 'confirmed_at': confirmedAt,
+      if (userEditedAt != null) 'user_edited_at': userEditedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SchedulePlansCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? planDate,
+    Value<String>? title,
+    Value<String>? overview,
+    Value<String>? suggestionsJson,
+    Value<String>? unscheduledTaskIdsJson,
+    Value<String>? status,
+    Value<String>? generatedBy,
+    Value<String?>? modelName,
+    Value<String?>? promptVersion,
+    Value<double?>? confidence,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? confirmedAt,
+    Value<DateTime?>? userEditedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return SchedulePlansCompanion(
+      id: id ?? this.id,
+      planDate: planDate ?? this.planDate,
+      title: title ?? this.title,
+      overview: overview ?? this.overview,
+      suggestionsJson: suggestionsJson ?? this.suggestionsJson,
+      unscheduledTaskIdsJson:
+          unscheduledTaskIdsJson ?? this.unscheduledTaskIdsJson,
+      status: status ?? this.status,
+      generatedBy: generatedBy ?? this.generatedBy,
+      modelName: modelName ?? this.modelName,
+      promptVersion: promptVersion ?? this.promptVersion,
+      confidence: confidence ?? this.confidence,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      confirmedAt: confirmedAt ?? this.confirmedAt,
+      userEditedAt: userEditedAt ?? this.userEditedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (planDate.present) {
+      map['plan_date'] = Variable<DateTime>(planDate.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (overview.present) {
+      map['overview'] = Variable<String>(overview.value);
+    }
+    if (suggestionsJson.present) {
+      map['suggestions_json'] = Variable<String>(suggestionsJson.value);
+    }
+    if (unscheduledTaskIdsJson.present) {
+      map['unscheduled_task_ids_json'] = Variable<String>(
+        unscheduledTaskIdsJson.value,
+      );
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (generatedBy.present) {
+      map['generated_by'] = Variable<String>(generatedBy.value);
+    }
+    if (modelName.present) {
+      map['model_name'] = Variable<String>(modelName.value);
+    }
+    if (promptVersion.present) {
+      map['prompt_version'] = Variable<String>(promptVersion.value);
+    }
+    if (confidence.present) {
+      map['confidence'] = Variable<double>(confidence.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (confirmedAt.present) {
+      map['confirmed_at'] = Variable<DateTime>(confirmedAt.value);
+    }
+    if (userEditedAt.present) {
+      map['user_edited_at'] = Variable<DateTime>(userEditedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchedulePlansCompanion(')
+          ..write('id: $id, ')
+          ..write('planDate: $planDate, ')
+          ..write('title: $title, ')
+          ..write('overview: $overview, ')
+          ..write('suggestionsJson: $suggestionsJson, ')
+          ..write('unscheduledTaskIdsJson: $unscheduledTaskIdsJson, ')
+          ..write('status: $status, ')
+          ..write('generatedBy: $generatedBy, ')
+          ..write('modelName: $modelName, ')
+          ..write('promptVersion: $promptVersion, ')
+          ..write('confidence: $confidence, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('confirmedAt: $confirmedAt, ')
+          ..write('userEditedAt: $userEditedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ScheduleBlocksTable extends ScheduleBlocks
+    with TableInfo<$ScheduleBlocksTable, ScheduleBlock> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScheduleBlocksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES schedule_plans (id)',
+    ),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _blockTypeMeta = const VerificationMeta(
+    'blockType',
+  );
+  @override
+  late final GeneratedColumn<String> blockType = GeneratedColumn<String>(
+    'block_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startTimeMeta = const VerificationMeta(
+    'startTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startTime = GeneratedColumn<DateTime>(
+    'start_time',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endTimeMeta = const VerificationMeta(
+    'endTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endTime = GeneratedColumn<DateTime>(
+    'end_time',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _confidenceMeta = const VerificationMeta(
+    'confidence',
+  );
+  @override
+  late final GeneratedColumn<double> confidence = GeneratedColumn<double>(
+    'confidence',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    planId,
+    title,
+    blockType,
+    startTime,
+    endTime,
+    taskId,
+    note,
+    reason,
+    sortOrder,
+    status,
+    confidence,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'schedule_blocks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScheduleBlock> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('block_type')) {
+      context.handle(
+        _blockTypeMeta,
+        blockType.isAcceptableOrUnknown(data['block_type']!, _blockTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_blockTypeMeta);
+    }
+    if (data.containsKey('start_time')) {
+      context.handle(
+        _startTimeMeta,
+        startTime.isAcceptableOrUnknown(data['start_time']!, _startTimeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startTimeMeta);
+    }
+    if (data.containsKey('end_time')) {
+      context.handle(
+        _endTimeMeta,
+        endTime.isAcceptableOrUnknown(data['end_time']!, _endTimeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endTimeMeta);
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('confidence')) {
+      context.handle(
+        _confidenceMeta,
+        confidence.isAcceptableOrUnknown(data['confidence']!, _confidenceMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ScheduleBlock map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScheduleBlock(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      blockType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}block_type'],
+      )!,
+      startTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}start_time'],
+      )!,
+      endTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}end_time'],
+      )!,
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      confidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}confidence'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ScheduleBlocksTable createAlias(String alias) {
+    return $ScheduleBlocksTable(attachedDatabase, alias);
+  }
+}
+
+class ScheduleBlock extends DataClass implements Insertable<ScheduleBlock> {
+  final String id;
+  final String planId;
+  final String title;
+  final String blockType;
+  final DateTime startTime;
+  final DateTime endTime;
+  final String? taskId;
+  final String? note;
+  final String reason;
+  final int sortOrder;
+  final String status;
+  final double? confidence;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ScheduleBlock({
+    required this.id,
+    required this.planId,
+    required this.title,
+    required this.blockType,
+    required this.startTime,
+    required this.endTime,
+    this.taskId,
+    this.note,
+    required this.reason,
+    required this.sortOrder,
+    required this.status,
+    this.confidence,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['plan_id'] = Variable<String>(planId);
+    map['title'] = Variable<String>(title);
+    map['block_type'] = Variable<String>(blockType);
+    map['start_time'] = Variable<DateTime>(startTime);
+    map['end_time'] = Variable<DateTime>(endTime);
+    if (!nullToAbsent || taskId != null) {
+      map['task_id'] = Variable<String>(taskId);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['reason'] = Variable<String>(reason);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || confidence != null) {
+      map['confidence'] = Variable<double>(confidence);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ScheduleBlocksCompanion toCompanion(bool nullToAbsent) {
+    return ScheduleBlocksCompanion(
+      id: Value(id),
+      planId: Value(planId),
+      title: Value(title),
+      blockType: Value(blockType),
+      startTime: Value(startTime),
+      endTime: Value(endTime),
+      taskId: taskId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taskId),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      reason: Value(reason),
+      sortOrder: Value(sortOrder),
+      status: Value(status),
+      confidence: confidence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confidence),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ScheduleBlock.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScheduleBlock(
+      id: serializer.fromJson<String>(json['id']),
+      planId: serializer.fromJson<String>(json['planId']),
+      title: serializer.fromJson<String>(json['title']),
+      blockType: serializer.fromJson<String>(json['blockType']),
+      startTime: serializer.fromJson<DateTime>(json['startTime']),
+      endTime: serializer.fromJson<DateTime>(json['endTime']),
+      taskId: serializer.fromJson<String?>(json['taskId']),
+      note: serializer.fromJson<String?>(json['note']),
+      reason: serializer.fromJson<String>(json['reason']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      status: serializer.fromJson<String>(json['status']),
+      confidence: serializer.fromJson<double?>(json['confidence']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'planId': serializer.toJson<String>(planId),
+      'title': serializer.toJson<String>(title),
+      'blockType': serializer.toJson<String>(blockType),
+      'startTime': serializer.toJson<DateTime>(startTime),
+      'endTime': serializer.toJson<DateTime>(endTime),
+      'taskId': serializer.toJson<String?>(taskId),
+      'note': serializer.toJson<String?>(note),
+      'reason': serializer.toJson<String>(reason),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'status': serializer.toJson<String>(status),
+      'confidence': serializer.toJson<double?>(confidence),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ScheduleBlock copyWith({
+    String? id,
+    String? planId,
+    String? title,
+    String? blockType,
+    DateTime? startTime,
+    DateTime? endTime,
+    Value<String?> taskId = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    String? reason,
+    int? sortOrder,
+    String? status,
+    Value<double?> confidence = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => ScheduleBlock(
+    id: id ?? this.id,
+    planId: planId ?? this.planId,
+    title: title ?? this.title,
+    blockType: blockType ?? this.blockType,
+    startTime: startTime ?? this.startTime,
+    endTime: endTime ?? this.endTime,
+    taskId: taskId.present ? taskId.value : this.taskId,
+    note: note.present ? note.value : this.note,
+    reason: reason ?? this.reason,
+    sortOrder: sortOrder ?? this.sortOrder,
+    status: status ?? this.status,
+    confidence: confidence.present ? confidence.value : this.confidence,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ScheduleBlock copyWithCompanion(ScheduleBlocksCompanion data) {
+    return ScheduleBlock(
+      id: data.id.present ? data.id.value : this.id,
+      planId: data.planId.present ? data.planId.value : this.planId,
+      title: data.title.present ? data.title.value : this.title,
+      blockType: data.blockType.present ? data.blockType.value : this.blockType,
+      startTime: data.startTime.present ? data.startTime.value : this.startTime,
+      endTime: data.endTime.present ? data.endTime.value : this.endTime,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      note: data.note.present ? data.note.value : this.note,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      status: data.status.present ? data.status.value : this.status,
+      confidence: data.confidence.present
+          ? data.confidence.value
+          : this.confidence,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScheduleBlock(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('title: $title, ')
+          ..write('blockType: $blockType, ')
+          ..write('startTime: $startTime, ')
+          ..write('endTime: $endTime, ')
+          ..write('taskId: $taskId, ')
+          ..write('note: $note, ')
+          ..write('reason: $reason, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('status: $status, ')
+          ..write('confidence: $confidence, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    planId,
+    title,
+    blockType,
+    startTime,
+    endTime,
+    taskId,
+    note,
+    reason,
+    sortOrder,
+    status,
+    confidence,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScheduleBlock &&
+          other.id == this.id &&
+          other.planId == this.planId &&
+          other.title == this.title &&
+          other.blockType == this.blockType &&
+          other.startTime == this.startTime &&
+          other.endTime == this.endTime &&
+          other.taskId == this.taskId &&
+          other.note == this.note &&
+          other.reason == this.reason &&
+          other.sortOrder == this.sortOrder &&
+          other.status == this.status &&
+          other.confidence == this.confidence &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ScheduleBlocksCompanion extends UpdateCompanion<ScheduleBlock> {
+  final Value<String> id;
+  final Value<String> planId;
+  final Value<String> title;
+  final Value<String> blockType;
+  final Value<DateTime> startTime;
+  final Value<DateTime> endTime;
+  final Value<String?> taskId;
+  final Value<String?> note;
+  final Value<String> reason;
+  final Value<int> sortOrder;
+  final Value<String> status;
+  final Value<double?> confidence;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ScheduleBlocksCompanion({
+    this.id = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.blockType = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.endTime = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.note = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.status = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ScheduleBlocksCompanion.insert({
+    required String id,
+    required String planId,
+    required String title,
+    required String blockType,
+    required DateTime startTime,
+    required DateTime endTime,
+    this.taskId = const Value.absent(),
+    this.note = const Value.absent(),
+    required String reason,
+    required int sortOrder,
+    required String status,
+    this.confidence = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       planId = Value(planId),
+       title = Value(title),
+       blockType = Value(blockType),
+       startTime = Value(startTime),
+       endTime = Value(endTime),
+       reason = Value(reason),
+       sortOrder = Value(sortOrder),
+       status = Value(status),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<ScheduleBlock> custom({
+    Expression<String>? id,
+    Expression<String>? planId,
+    Expression<String>? title,
+    Expression<String>? blockType,
+    Expression<DateTime>? startTime,
+    Expression<DateTime>? endTime,
+    Expression<String>? taskId,
+    Expression<String>? note,
+    Expression<String>? reason,
+    Expression<int>? sortOrder,
+    Expression<String>? status,
+    Expression<double>? confidence,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (planId != null) 'plan_id': planId,
+      if (title != null) 'title': title,
+      if (blockType != null) 'block_type': blockType,
+      if (startTime != null) 'start_time': startTime,
+      if (endTime != null) 'end_time': endTime,
+      if (taskId != null) 'task_id': taskId,
+      if (note != null) 'note': note,
+      if (reason != null) 'reason': reason,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (status != null) 'status': status,
+      if (confidence != null) 'confidence': confidence,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ScheduleBlocksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? planId,
+    Value<String>? title,
+    Value<String>? blockType,
+    Value<DateTime>? startTime,
+    Value<DateTime>? endTime,
+    Value<String?>? taskId,
+    Value<String?>? note,
+    Value<String>? reason,
+    Value<int>? sortOrder,
+    Value<String>? status,
+    Value<double?>? confidence,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ScheduleBlocksCompanion(
+      id: id ?? this.id,
+      planId: planId ?? this.planId,
+      title: title ?? this.title,
+      blockType: blockType ?? this.blockType,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      taskId: taskId ?? this.taskId,
+      note: note ?? this.note,
+      reason: reason ?? this.reason,
+      sortOrder: sortOrder ?? this.sortOrder,
+      status: status ?? this.status,
+      confidence: confidence ?? this.confidence,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (blockType.present) {
+      map['block_type'] = Variable<String>(blockType.value);
+    }
+    if (startTime.present) {
+      map['start_time'] = Variable<DateTime>(startTime.value);
+    }
+    if (endTime.present) {
+      map['end_time'] = Variable<DateTime>(endTime.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (confidence.present) {
+      map['confidence'] = Variable<double>(confidence.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScheduleBlocksCompanion(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('title: $title, ')
+          ..write('blockType: $blockType, ')
+          ..write('startTime: $startTime, ')
+          ..write('endTime: $endTime, ')
+          ..write('taskId: $taskId, ')
+          ..write('note: $note, ')
+          ..write('reason: $reason, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('status: $status, ')
+          ..write('confidence: $confidence, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ScheduleBlockSourcesTable extends ScheduleBlockSources
+    with TableInfo<$ScheduleBlockSourcesTable, ScheduleBlockSource> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScheduleBlockSourcesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _blockIdMeta = const VerificationMeta(
+    'blockId',
+  );
+  @override
+  late final GeneratedColumn<String> blockId = GeneratedColumn<String>(
+    'block_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES schedule_blocks (id)',
+    ),
+  );
+  static const VerificationMeta _sourceTableMeta = const VerificationMeta(
+    'sourceTable',
+  );
+  @override
+  late final GeneratedColumn<String> sourceTable = GeneratedColumn<String>(
+    'source_table',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceRecordIdMeta = const VerificationMeta(
+    'sourceRecordId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceRecordId = GeneratedColumn<String>(
+    'source_record_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    blockId,
+    sourceTable,
+    sourceRecordId,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'schedule_block_sources';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScheduleBlockSource> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('block_id')) {
+      context.handle(
+        _blockIdMeta,
+        blockId.isAcceptableOrUnknown(data['block_id']!, _blockIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_blockIdMeta);
+    }
+    if (data.containsKey('source_table')) {
+      context.handle(
+        _sourceTableMeta,
+        sourceTable.isAcceptableOrUnknown(
+          data['source_table']!,
+          _sourceTableMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceTableMeta);
+    }
+    if (data.containsKey('source_record_id')) {
+      context.handle(
+        _sourceRecordIdMeta,
+        sourceRecordId.isAcceptableOrUnknown(
+          data['source_record_id']!,
+          _sourceRecordIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceRecordIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ScheduleBlockSource map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScheduleBlockSource(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      blockId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}block_id'],
+      )!,
+      sourceTable: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_table'],
+      )!,
+      sourceRecordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_record_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ScheduleBlockSourcesTable createAlias(String alias) {
+    return $ScheduleBlockSourcesTable(attachedDatabase, alias);
+  }
+}
+
+class ScheduleBlockSource extends DataClass
+    implements Insertable<ScheduleBlockSource> {
+  final String id;
+  final String blockId;
+  final String sourceTable;
+  final String sourceRecordId;
+  final DateTime createdAt;
+  const ScheduleBlockSource({
+    required this.id,
+    required this.blockId,
+    required this.sourceTable,
+    required this.sourceRecordId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['block_id'] = Variable<String>(blockId);
+    map['source_table'] = Variable<String>(sourceTable);
+    map['source_record_id'] = Variable<String>(sourceRecordId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ScheduleBlockSourcesCompanion toCompanion(bool nullToAbsent) {
+    return ScheduleBlockSourcesCompanion(
+      id: Value(id),
+      blockId: Value(blockId),
+      sourceTable: Value(sourceTable),
+      sourceRecordId: Value(sourceRecordId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ScheduleBlockSource.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScheduleBlockSource(
+      id: serializer.fromJson<String>(json['id']),
+      blockId: serializer.fromJson<String>(json['blockId']),
+      sourceTable: serializer.fromJson<String>(json['sourceTable']),
+      sourceRecordId: serializer.fromJson<String>(json['sourceRecordId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'blockId': serializer.toJson<String>(blockId),
+      'sourceTable': serializer.toJson<String>(sourceTable),
+      'sourceRecordId': serializer.toJson<String>(sourceRecordId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ScheduleBlockSource copyWith({
+    String? id,
+    String? blockId,
+    String? sourceTable,
+    String? sourceRecordId,
+    DateTime? createdAt,
+  }) => ScheduleBlockSource(
+    id: id ?? this.id,
+    blockId: blockId ?? this.blockId,
+    sourceTable: sourceTable ?? this.sourceTable,
+    sourceRecordId: sourceRecordId ?? this.sourceRecordId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ScheduleBlockSource copyWithCompanion(ScheduleBlockSourcesCompanion data) {
+    return ScheduleBlockSource(
+      id: data.id.present ? data.id.value : this.id,
+      blockId: data.blockId.present ? data.blockId.value : this.blockId,
+      sourceTable: data.sourceTable.present
+          ? data.sourceTable.value
+          : this.sourceTable,
+      sourceRecordId: data.sourceRecordId.present
+          ? data.sourceRecordId.value
+          : this.sourceRecordId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScheduleBlockSource(')
+          ..write('id: $id, ')
+          ..write('blockId: $blockId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('sourceRecordId: $sourceRecordId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, blockId, sourceTable, sourceRecordId, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScheduleBlockSource &&
+          other.id == this.id &&
+          other.blockId == this.blockId &&
+          other.sourceTable == this.sourceTable &&
+          other.sourceRecordId == this.sourceRecordId &&
+          other.createdAt == this.createdAt);
+}
+
+class ScheduleBlockSourcesCompanion
+    extends UpdateCompanion<ScheduleBlockSource> {
+  final Value<String> id;
+  final Value<String> blockId;
+  final Value<String> sourceTable;
+  final Value<String> sourceRecordId;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const ScheduleBlockSourcesCompanion({
+    this.id = const Value.absent(),
+    this.blockId = const Value.absent(),
+    this.sourceTable = const Value.absent(),
+    this.sourceRecordId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ScheduleBlockSourcesCompanion.insert({
+    required String id,
+    required String blockId,
+    required String sourceTable,
+    required String sourceRecordId,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       blockId = Value(blockId),
+       sourceTable = Value(sourceTable),
+       sourceRecordId = Value(sourceRecordId),
+       createdAt = Value(createdAt);
+  static Insertable<ScheduleBlockSource> custom({
+    Expression<String>? id,
+    Expression<String>? blockId,
+    Expression<String>? sourceTable,
+    Expression<String>? sourceRecordId,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (blockId != null) 'block_id': blockId,
+      if (sourceTable != null) 'source_table': sourceTable,
+      if (sourceRecordId != null) 'source_record_id': sourceRecordId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ScheduleBlockSourcesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? blockId,
+    Value<String>? sourceTable,
+    Value<String>? sourceRecordId,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ScheduleBlockSourcesCompanion(
+      id: id ?? this.id,
+      blockId: blockId ?? this.blockId,
+      sourceTable: sourceTable ?? this.sourceTable,
+      sourceRecordId: sourceRecordId ?? this.sourceRecordId,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (blockId.present) {
+      map['block_id'] = Variable<String>(blockId.value);
+    }
+    if (sourceTable.present) {
+      map['source_table'] = Variable<String>(sourceTable.value);
+    }
+    if (sourceRecordId.present) {
+      map['source_record_id'] = Variable<String>(sourceRecordId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScheduleBlockSourcesCompanion(')
+          ..write('id: $id, ')
+          ..write('blockId: $blockId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('sourceRecordId: $sourceRecordId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5648,6 +7757,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProfileItemsTable profileItems = $ProfileItemsTable(this);
   late final $SummariesTable summaries = $SummariesTable(this);
   late final $SummarySourcesTable summarySources = $SummarySourcesTable(this);
+  late final $SchedulePlansTable schedulePlans = $SchedulePlansTable(this);
+  late final $ScheduleBlocksTable scheduleBlocks = $ScheduleBlocksTable(this);
+  late final $ScheduleBlockSourcesTable scheduleBlockSources =
+      $ScheduleBlockSourcesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5662,6 +7775,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     profileItems,
     summaries,
     summarySources,
+    schedulePlans,
+    scheduleBlocks,
+    scheduleBlockSources,
   ];
 }
 
@@ -10911,6 +13027,1488 @@ typedef $$SummarySourcesTableProcessedTableManager =
       SummarySource,
       PrefetchHooks Function({bool summaryId})
     >;
+typedef $$SchedulePlansTableCreateCompanionBuilder =
+    SchedulePlansCompanion Function({
+      required String id,
+      required DateTime planDate,
+      required String title,
+      required String overview,
+      Value<String> suggestionsJson,
+      Value<String> unscheduledTaskIdsJson,
+      required String status,
+      required String generatedBy,
+      Value<String?> modelName,
+      Value<String?> promptVersion,
+      Value<double?> confidence,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> confirmedAt,
+      Value<DateTime?> userEditedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$SchedulePlansTableUpdateCompanionBuilder =
+    SchedulePlansCompanion Function({
+      Value<String> id,
+      Value<DateTime> planDate,
+      Value<String> title,
+      Value<String> overview,
+      Value<String> suggestionsJson,
+      Value<String> unscheduledTaskIdsJson,
+      Value<String> status,
+      Value<String> generatedBy,
+      Value<String?> modelName,
+      Value<String?> promptVersion,
+      Value<double?> confidence,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> confirmedAt,
+      Value<DateTime?> userEditedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$SchedulePlansTableReferences
+    extends BaseReferences<_$AppDatabase, $SchedulePlansTable, SchedulePlan> {
+  $$SchedulePlansTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$ScheduleBlocksTable, List<ScheduleBlock>>
+  _scheduleBlocksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.scheduleBlocks,
+    aliasName: $_aliasNameGenerator(
+      db.schedulePlans.id,
+      db.scheduleBlocks.planId,
+    ),
+  );
+
+  $$ScheduleBlocksTableProcessedTableManager get scheduleBlocksRefs {
+    final manager = $$ScheduleBlocksTableTableManager(
+      $_db,
+      $_db.scheduleBlocks,
+    ).filter((f) => f.planId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_scheduleBlocksRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$SchedulePlansTableFilterComposer
+    extends Composer<_$AppDatabase, $SchedulePlansTable> {
+  $$SchedulePlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get planDate => $composableBuilder(
+    column: $table.planDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get overview => $composableBuilder(
+    column: $table.overview,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get suggestionsJson => $composableBuilder(
+    column: $table.suggestionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unscheduledTaskIdsJson => $composableBuilder(
+    column: $table.unscheduledTaskIdsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get generatedBy => $composableBuilder(
+    column: $table.generatedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelName => $composableBuilder(
+    column: $table.modelName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get confirmedAt => $composableBuilder(
+    column: $table.confirmedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get userEditedAt => $composableBuilder(
+    column: $table.userEditedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> scheduleBlocksRefs(
+    Expression<bool> Function($$ScheduleBlocksTableFilterComposer f) f,
+  ) {
+    final $$ScheduleBlocksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scheduleBlocks,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduleBlocksTableFilterComposer(
+            $db: $db,
+            $table: $db.scheduleBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SchedulePlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $SchedulePlansTable> {
+  $$SchedulePlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get planDate => $composableBuilder(
+    column: $table.planDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get overview => $composableBuilder(
+    column: $table.overview,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get suggestionsJson => $composableBuilder(
+    column: $table.suggestionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unscheduledTaskIdsJson => $composableBuilder(
+    column: $table.unscheduledTaskIdsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get generatedBy => $composableBuilder(
+    column: $table.generatedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelName => $composableBuilder(
+    column: $table.modelName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get confirmedAt => $composableBuilder(
+    column: $table.confirmedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get userEditedAt => $composableBuilder(
+    column: $table.userEditedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SchedulePlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SchedulePlansTable> {
+  $$SchedulePlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get planDate =>
+      $composableBuilder(column: $table.planDate, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get overview =>
+      $composableBuilder(column: $table.overview, builder: (column) => column);
+
+  GeneratedColumn<String> get suggestionsJson => $composableBuilder(
+    column: $table.suggestionsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get unscheduledTaskIdsJson => $composableBuilder(
+    column: $table.unscheduledTaskIdsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get generatedBy => $composableBuilder(
+    column: $table.generatedBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modelName =>
+      $composableBuilder(column: $table.modelName, builder: (column) => column);
+
+  GeneratedColumn<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get confirmedAt => $composableBuilder(
+    column: $table.confirmedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get userEditedAt => $composableBuilder(
+    column: $table.userEditedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> scheduleBlocksRefs<T extends Object>(
+    Expression<T> Function($$ScheduleBlocksTableAnnotationComposer a) f,
+  ) {
+    final $$ScheduleBlocksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scheduleBlocks,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduleBlocksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.scheduleBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SchedulePlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SchedulePlansTable,
+          SchedulePlan,
+          $$SchedulePlansTableFilterComposer,
+          $$SchedulePlansTableOrderingComposer,
+          $$SchedulePlansTableAnnotationComposer,
+          $$SchedulePlansTableCreateCompanionBuilder,
+          $$SchedulePlansTableUpdateCompanionBuilder,
+          (SchedulePlan, $$SchedulePlansTableReferences),
+          SchedulePlan,
+          PrefetchHooks Function({bool scheduleBlocksRefs})
+        > {
+  $$SchedulePlansTableTableManager(_$AppDatabase db, $SchedulePlansTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SchedulePlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SchedulePlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SchedulePlansTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> planDate = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> overview = const Value.absent(),
+                Value<String> suggestionsJson = const Value.absent(),
+                Value<String> unscheduledTaskIdsJson = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> generatedBy = const Value.absent(),
+                Value<String?> modelName = const Value.absent(),
+                Value<String?> promptVersion = const Value.absent(),
+                Value<double?> confidence = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> confirmedAt = const Value.absent(),
+                Value<DateTime?> userEditedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SchedulePlansCompanion(
+                id: id,
+                planDate: planDate,
+                title: title,
+                overview: overview,
+                suggestionsJson: suggestionsJson,
+                unscheduledTaskIdsJson: unscheduledTaskIdsJson,
+                status: status,
+                generatedBy: generatedBy,
+                modelName: modelName,
+                promptVersion: promptVersion,
+                confidence: confidence,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                confirmedAt: confirmedAt,
+                userEditedAt: userEditedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime planDate,
+                required String title,
+                required String overview,
+                Value<String> suggestionsJson = const Value.absent(),
+                Value<String> unscheduledTaskIdsJson = const Value.absent(),
+                required String status,
+                required String generatedBy,
+                Value<String?> modelName = const Value.absent(),
+                Value<String?> promptVersion = const Value.absent(),
+                Value<double?> confidence = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> confirmedAt = const Value.absent(),
+                Value<DateTime?> userEditedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SchedulePlansCompanion.insert(
+                id: id,
+                planDate: planDate,
+                title: title,
+                overview: overview,
+                suggestionsJson: suggestionsJson,
+                unscheduledTaskIdsJson: unscheduledTaskIdsJson,
+                status: status,
+                generatedBy: generatedBy,
+                modelName: modelName,
+                promptVersion: promptVersion,
+                confidence: confidence,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                confirmedAt: confirmedAt,
+                userEditedAt: userEditedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SchedulePlansTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({scheduleBlocksRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (scheduleBlocksRefs) db.scheduleBlocks,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (scheduleBlocksRefs)
+                    await $_getPrefetchedData<
+                      SchedulePlan,
+                      $SchedulePlansTable,
+                      ScheduleBlock
+                    >(
+                      currentTable: table,
+                      referencedTable: $$SchedulePlansTableReferences
+                          ._scheduleBlocksRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$SchedulePlansTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).scheduleBlocksRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.planId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SchedulePlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SchedulePlansTable,
+      SchedulePlan,
+      $$SchedulePlansTableFilterComposer,
+      $$SchedulePlansTableOrderingComposer,
+      $$SchedulePlansTableAnnotationComposer,
+      $$SchedulePlansTableCreateCompanionBuilder,
+      $$SchedulePlansTableUpdateCompanionBuilder,
+      (SchedulePlan, $$SchedulePlansTableReferences),
+      SchedulePlan,
+      PrefetchHooks Function({bool scheduleBlocksRefs})
+    >;
+typedef $$ScheduleBlocksTableCreateCompanionBuilder =
+    ScheduleBlocksCompanion Function({
+      required String id,
+      required String planId,
+      required String title,
+      required String blockType,
+      required DateTime startTime,
+      required DateTime endTime,
+      Value<String?> taskId,
+      Value<String?> note,
+      required String reason,
+      required int sortOrder,
+      required String status,
+      Value<double?> confidence,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ScheduleBlocksTableUpdateCompanionBuilder =
+    ScheduleBlocksCompanion Function({
+      Value<String> id,
+      Value<String> planId,
+      Value<String> title,
+      Value<String> blockType,
+      Value<DateTime> startTime,
+      Value<DateTime> endTime,
+      Value<String?> taskId,
+      Value<String?> note,
+      Value<String> reason,
+      Value<int> sortOrder,
+      Value<String> status,
+      Value<double?> confidence,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ScheduleBlocksTableReferences
+    extends BaseReferences<_$AppDatabase, $ScheduleBlocksTable, ScheduleBlock> {
+  $$ScheduleBlocksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SchedulePlansTable _planIdTable(_$AppDatabase db) =>
+      db.schedulePlans.createAlias(
+        $_aliasNameGenerator(db.scheduleBlocks.planId, db.schedulePlans.id),
+      );
+
+  $$SchedulePlansTableProcessedTableManager get planId {
+    final $_column = $_itemColumn<String>('plan_id')!;
+
+    final manager = $$SchedulePlansTableTableManager(
+      $_db,
+      $_db.schedulePlans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_planIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ScheduleBlockSourcesTable,
+    List<ScheduleBlockSource>
+  >
+  _scheduleBlockSourcesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scheduleBlockSources,
+        aliasName: $_aliasNameGenerator(
+          db.scheduleBlocks.id,
+          db.scheduleBlockSources.blockId,
+        ),
+      );
+
+  $$ScheduleBlockSourcesTableProcessedTableManager
+  get scheduleBlockSourcesRefs {
+    final manager = $$ScheduleBlockSourcesTableTableManager(
+      $_db,
+      $_db.scheduleBlockSources,
+    ).filter((f) => f.blockId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scheduleBlockSourcesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ScheduleBlocksTableFilterComposer
+    extends Composer<_$AppDatabase, $ScheduleBlocksTable> {
+  $$ScheduleBlocksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get blockType => $composableBuilder(
+    column: $table.blockType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SchedulePlansTableFilterComposer get planId {
+    final $$SchedulePlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.schedulePlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SchedulePlansTableFilterComposer(
+            $db: $db,
+            $table: $db.schedulePlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> scheduleBlockSourcesRefs(
+    Expression<bool> Function($$ScheduleBlockSourcesTableFilterComposer f) f,
+  ) {
+    final $$ScheduleBlockSourcesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scheduleBlockSources,
+      getReferencedColumn: (t) => t.blockId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduleBlockSourcesTableFilterComposer(
+            $db: $db,
+            $table: $db.scheduleBlockSources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ScheduleBlocksTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScheduleBlocksTable> {
+  $$ScheduleBlocksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get blockType => $composableBuilder(
+    column: $table.blockType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SchedulePlansTableOrderingComposer get planId {
+    final $$SchedulePlansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.schedulePlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SchedulePlansTableOrderingComposer(
+            $db: $db,
+            $table: $db.schedulePlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScheduleBlocksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScheduleBlocksTable> {
+  $$ScheduleBlocksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get blockType =>
+      $composableBuilder(column: $table.blockType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startTime =>
+      $composableBuilder(column: $table.startTime, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endTime =>
+      $composableBuilder(column: $table.endTime, builder: (column) => column);
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$SchedulePlansTableAnnotationComposer get planId {
+    final $$SchedulePlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.schedulePlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SchedulePlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.schedulePlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> scheduleBlockSourcesRefs<T extends Object>(
+    Expression<T> Function($$ScheduleBlockSourcesTableAnnotationComposer a) f,
+  ) {
+    final $$ScheduleBlockSourcesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scheduleBlockSources,
+          getReferencedColumn: (t) => t.blockId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScheduleBlockSourcesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.scheduleBlockSources,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ScheduleBlocksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScheduleBlocksTable,
+          ScheduleBlock,
+          $$ScheduleBlocksTableFilterComposer,
+          $$ScheduleBlocksTableOrderingComposer,
+          $$ScheduleBlocksTableAnnotationComposer,
+          $$ScheduleBlocksTableCreateCompanionBuilder,
+          $$ScheduleBlocksTableUpdateCompanionBuilder,
+          (ScheduleBlock, $$ScheduleBlocksTableReferences),
+          ScheduleBlock,
+          PrefetchHooks Function({bool planId, bool scheduleBlockSourcesRefs})
+        > {
+  $$ScheduleBlocksTableTableManager(
+    _$AppDatabase db,
+    $ScheduleBlocksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScheduleBlocksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScheduleBlocksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScheduleBlocksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> planId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> blockType = const Value.absent(),
+                Value<DateTime> startTime = const Value.absent(),
+                Value<DateTime> endTime = const Value.absent(),
+                Value<String?> taskId = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<double?> confidence = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScheduleBlocksCompanion(
+                id: id,
+                planId: planId,
+                title: title,
+                blockType: blockType,
+                startTime: startTime,
+                endTime: endTime,
+                taskId: taskId,
+                note: note,
+                reason: reason,
+                sortOrder: sortOrder,
+                status: status,
+                confidence: confidence,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String planId,
+                required String title,
+                required String blockType,
+                required DateTime startTime,
+                required DateTime endTime,
+                Value<String?> taskId = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                required String reason,
+                required int sortOrder,
+                required String status,
+                Value<double?> confidence = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ScheduleBlocksCompanion.insert(
+                id: id,
+                planId: planId,
+                title: title,
+                blockType: blockType,
+                startTime: startTime,
+                endTime: endTime,
+                taskId: taskId,
+                note: note,
+                reason: reason,
+                sortOrder: sortOrder,
+                status: status,
+                confidence: confidence,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScheduleBlocksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({planId = false, scheduleBlockSourcesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (scheduleBlockSourcesRefs) db.scheduleBlockSources,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (planId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.planId,
+                                    referencedTable:
+                                        $$ScheduleBlocksTableReferences
+                                            ._planIdTable(db),
+                                    referencedColumn:
+                                        $$ScheduleBlocksTableReferences
+                                            ._planIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (scheduleBlockSourcesRefs)
+                        await $_getPrefetchedData<
+                          ScheduleBlock,
+                          $ScheduleBlocksTable,
+                          ScheduleBlockSource
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ScheduleBlocksTableReferences
+                              ._scheduleBlockSourcesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ScheduleBlocksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scheduleBlockSourcesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.blockId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ScheduleBlocksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScheduleBlocksTable,
+      ScheduleBlock,
+      $$ScheduleBlocksTableFilterComposer,
+      $$ScheduleBlocksTableOrderingComposer,
+      $$ScheduleBlocksTableAnnotationComposer,
+      $$ScheduleBlocksTableCreateCompanionBuilder,
+      $$ScheduleBlocksTableUpdateCompanionBuilder,
+      (ScheduleBlock, $$ScheduleBlocksTableReferences),
+      ScheduleBlock,
+      PrefetchHooks Function({bool planId, bool scheduleBlockSourcesRefs})
+    >;
+typedef $$ScheduleBlockSourcesTableCreateCompanionBuilder =
+    ScheduleBlockSourcesCompanion Function({
+      required String id,
+      required String blockId,
+      required String sourceTable,
+      required String sourceRecordId,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$ScheduleBlockSourcesTableUpdateCompanionBuilder =
+    ScheduleBlockSourcesCompanion Function({
+      Value<String> id,
+      Value<String> blockId,
+      Value<String> sourceTable,
+      Value<String> sourceRecordId,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$ScheduleBlockSourcesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ScheduleBlockSourcesTable,
+          ScheduleBlockSource
+        > {
+  $$ScheduleBlockSourcesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ScheduleBlocksTable _blockIdTable(_$AppDatabase db) =>
+      db.scheduleBlocks.createAlias(
+        $_aliasNameGenerator(
+          db.scheduleBlockSources.blockId,
+          db.scheduleBlocks.id,
+        ),
+      );
+
+  $$ScheduleBlocksTableProcessedTableManager get blockId {
+    final $_column = $_itemColumn<String>('block_id')!;
+
+    final manager = $$ScheduleBlocksTableTableManager(
+      $_db,
+      $_db.scheduleBlocks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_blockIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ScheduleBlockSourcesTableFilterComposer
+    extends Composer<_$AppDatabase, $ScheduleBlockSourcesTable> {
+  $$ScheduleBlockSourcesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceRecordId => $composableBuilder(
+    column: $table.sourceRecordId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ScheduleBlocksTableFilterComposer get blockId {
+    final $$ScheduleBlocksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.scheduleBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduleBlocksTableFilterComposer(
+            $db: $db,
+            $table: $db.scheduleBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScheduleBlockSourcesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScheduleBlockSourcesTable> {
+  $$ScheduleBlockSourcesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceRecordId => $composableBuilder(
+    column: $table.sourceRecordId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ScheduleBlocksTableOrderingComposer get blockId {
+    final $$ScheduleBlocksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.scheduleBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduleBlocksTableOrderingComposer(
+            $db: $db,
+            $table: $db.scheduleBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScheduleBlockSourcesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScheduleBlockSourcesTable> {
+  $$ScheduleBlockSourcesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceRecordId => $composableBuilder(
+    column: $table.sourceRecordId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ScheduleBlocksTableAnnotationComposer get blockId {
+    final $$ScheduleBlocksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.scheduleBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduleBlocksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.scheduleBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScheduleBlockSourcesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScheduleBlockSourcesTable,
+          ScheduleBlockSource,
+          $$ScheduleBlockSourcesTableFilterComposer,
+          $$ScheduleBlockSourcesTableOrderingComposer,
+          $$ScheduleBlockSourcesTableAnnotationComposer,
+          $$ScheduleBlockSourcesTableCreateCompanionBuilder,
+          $$ScheduleBlockSourcesTableUpdateCompanionBuilder,
+          (ScheduleBlockSource, $$ScheduleBlockSourcesTableReferences),
+          ScheduleBlockSource,
+          PrefetchHooks Function({bool blockId})
+        > {
+  $$ScheduleBlockSourcesTableTableManager(
+    _$AppDatabase db,
+    $ScheduleBlockSourcesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScheduleBlockSourcesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScheduleBlockSourcesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ScheduleBlockSourcesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> blockId = const Value.absent(),
+                Value<String> sourceTable = const Value.absent(),
+                Value<String> sourceRecordId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScheduleBlockSourcesCompanion(
+                id: id,
+                blockId: blockId,
+                sourceTable: sourceTable,
+                sourceRecordId: sourceRecordId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String blockId,
+                required String sourceTable,
+                required String sourceRecordId,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ScheduleBlockSourcesCompanion.insert(
+                id: id,
+                blockId: blockId,
+                sourceTable: sourceTable,
+                sourceRecordId: sourceRecordId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScheduleBlockSourcesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({blockId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (blockId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.blockId,
+                                referencedTable:
+                                    $$ScheduleBlockSourcesTableReferences
+                                        ._blockIdTable(db),
+                                referencedColumn:
+                                    $$ScheduleBlockSourcesTableReferences
+                                        ._blockIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ScheduleBlockSourcesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScheduleBlockSourcesTable,
+      ScheduleBlockSource,
+      $$ScheduleBlockSourcesTableFilterComposer,
+      $$ScheduleBlockSourcesTableOrderingComposer,
+      $$ScheduleBlockSourcesTableAnnotationComposer,
+      $$ScheduleBlockSourcesTableCreateCompanionBuilder,
+      $$ScheduleBlockSourcesTableUpdateCompanionBuilder,
+      (ScheduleBlockSource, $$ScheduleBlockSourcesTableReferences),
+      ScheduleBlockSource,
+      PrefetchHooks Function({bool blockId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10933,4 +14531,10 @@ class $AppDatabaseManager {
       $$SummariesTableTableManager(_db, _db.summaries);
   $$SummarySourcesTableTableManager get summarySources =>
       $$SummarySourcesTableTableManager(_db, _db.summarySources);
+  $$SchedulePlansTableTableManager get schedulePlans =>
+      $$SchedulePlansTableTableManager(_db, _db.schedulePlans);
+  $$ScheduleBlocksTableTableManager get scheduleBlocks =>
+      $$ScheduleBlocksTableTableManager(_db, _db.scheduleBlocks);
+  $$ScheduleBlockSourcesTableTableManager get scheduleBlockSources =>
+      $$ScheduleBlockSourcesTableTableManager(_db, _db.scheduleBlockSources);
 }

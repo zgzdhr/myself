@@ -1,5 +1,75 @@
 # Current Verification
 
+## Latest Verification: Phase 5D AI Time Planning
+
+Date: 2026-06-23
+Scope: `/plan` API boundary, local schedule storage, class-schedule-style daily
+planning UI, Supabase schedule tables, and manual cloud sync fields
+
+### Summary
+
+- Result: Pass.
+- API added an independent `/plan` route, schema, prompt, and DeepSeek plan
+  service. `/parse` and `/review` remain separate.
+- Mobile added local `schedule_plans`, `schedule_blocks`, and
+  `schedule_block_sources` tables with Drift migration version 4.
+- The review tab now has two sub-tabs:
+  - `每日复盘`;
+  - `时间规划`.
+- Time planning generates editable AI draft blocks and requires user
+  confirmation before the plan becomes confirmed.
+- Users can edit a block's title, type, start/end time, note, and reason.
+- Users can delete individual blocks or delete the full plan.
+- Manual cloud sync now includes the three schedule tables.
+- Supabase project `myself` (`rzztfwzgivhwtqmbdztr`) now has
+  `schedule_plans`, `schedule_blocks`, and `schedule_block_sources` with RLS
+  enabled and authenticated table privileges.
+
+### Commands And Tools Run
+
+```bash
+cd apps/mobile
+flutter pub run build_runner build --delete-conflicting-outputs
+flutter analyze
+flutter test test/data/local_db/app_database_test.dart
+flutter test
+
+cd apps/api
+npm run typecheck
+node --test --import tsx test/planResultSchema.test.ts test/deepseekPlan.test.ts test/reviewResultSchema.test.ts test/deepseekReview.test.ts
+```
+
+```sql
+create table if not exists public.schedule_plans (...);
+create table if not exists public.schedule_blocks (...);
+create table if not exists public.schedule_block_sources (...);
+alter table public.schedule_plans enable row level security;
+alter table public.schedule_blocks enable row level security;
+alter table public.schedule_block_sources enable row level security;
+grant select, insert, update on public.schedule_plans to authenticated;
+grant select, insert, update on public.schedule_blocks to authenticated;
+grant select, insert, update on public.schedule_block_sources to authenticated;
+```
+
+### Notes
+
+- Phase 5D intentionally implements single-day timeboxing first. It does not
+  implement drag-and-drop scheduling, conflict detection, time tracking,
+  recurring plans, or external calendar import yet.
+- The AI plan is a user-confirmed draft flow. It does not complete, cancel,
+  postpone, or silently mutate tasks.
+
+### Results
+
+- Drift code generation: Pass.
+- Supabase table verification: Pass; all three schedule tables exist and have
+  RLS enabled.
+- `flutter analyze`: Pass, no issues found.
+- Schedule database test: Pass.
+- Full mobile test suite: Pass, 151 tests passed.
+- `npm run typecheck`: Pass.
+- Targeted plan/review API tests: Pass, 8 tests passed.
+
 ## Latest Verification: Phase 5C Review-Informed Home Guidance
 
 Date: 2026-06-22

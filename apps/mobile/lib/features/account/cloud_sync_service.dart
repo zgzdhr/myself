@@ -16,6 +16,9 @@ class CloudSyncResult {
     required this.profileItemCount,
     required this.summaryCount,
     required this.summarySourceCount,
+    required this.schedulePlanCount,
+    required this.scheduleBlockCount,
+    required this.scheduleBlockSourceCount,
   });
 
   final int rawInputCount;
@@ -27,6 +30,9 @@ class CloudSyncResult {
   final int profileItemCount;
   final int summaryCount;
   final int summarySourceCount;
+  final int schedulePlanCount;
+  final int scheduleBlockCount;
+  final int scheduleBlockSourceCount;
 
   int get totalCount =>
       rawInputCount +
@@ -37,7 +43,10 @@ class CloudSyncResult {
       lifeEventCount +
       profileItemCount +
       summaryCount +
-      summarySourceCount;
+      summarySourceCount +
+      schedulePlanCount +
+      scheduleBlockCount +
+      scheduleBlockSourceCount;
 }
 
 abstract class CloudSyncService {
@@ -79,6 +88,11 @@ class SupabaseCloudSyncService extends CloudSyncService {
     final profileItems = await database.select(database.profileItems).get();
     final summaries = await database.select(database.summaries).get();
     final summarySources = await database.select(database.summarySources).get();
+    final schedulePlans = await database.select(database.schedulePlans).get();
+    final scheduleBlocks = await database.select(database.scheduleBlocks).get();
+    final scheduleBlockSources = await database
+        .select(database.scheduleBlockSources)
+        .get();
 
     await _upsert('raw_inputs', [
       for (final row in rawInputs)
@@ -232,6 +246,65 @@ class SupabaseCloudSyncService extends CloudSyncService {
         },
     ]);
 
+    await _upsert('schedule_plans', [
+      for (final row in schedulePlans)
+        {
+          'id': row.id,
+          'user_id': userId,
+          'plan_date': _date(row.planDate),
+          'title': row.title,
+          'overview': row.overview,
+          'suggestions': _json(row.suggestionsJson, fallback: const []),
+          'unscheduled_task_ids': _json(
+            row.unscheduledTaskIdsJson,
+            fallback: const [],
+          ),
+          'status': row.status,
+          'generated_by': row.generatedBy,
+          'model_name': row.modelName,
+          'prompt_version': row.promptVersion,
+          'confidence': row.confidence,
+          'created_at': _date(row.createdAt),
+          'updated_at': _date(row.updatedAt),
+          'confirmed_at': _dateOrNull(row.confirmedAt),
+          'user_edited_at': _dateOrNull(row.userEditedAt),
+          'deleted_at': _dateOrNull(row.deletedAt),
+        },
+    ]);
+
+    await _upsert('schedule_blocks', [
+      for (final row in scheduleBlocks)
+        {
+          'id': row.id,
+          'user_id': userId,
+          'plan_id': row.planId,
+          'title': row.title,
+          'block_type': row.blockType,
+          'start_time': _date(row.startTime),
+          'end_time': _date(row.endTime),
+          'task_id': row.taskId,
+          'note': row.note,
+          'reason': row.reason,
+          'sort_order': row.sortOrder,
+          'status': row.status,
+          'confidence': row.confidence,
+          'created_at': _date(row.createdAt),
+          'updated_at': _date(row.updatedAt),
+        },
+    ]);
+
+    await _upsert('schedule_block_sources', [
+      for (final row in scheduleBlockSources)
+        {
+          'id': row.id,
+          'user_id': userId,
+          'block_id': row.blockId,
+          'source_table': row.sourceTable,
+          'source_record_id': row.sourceRecordId,
+          'created_at': _date(row.createdAt),
+        },
+    ]);
+
     return CloudSyncResult(
       rawInputCount: rawInputs.length,
       aiParseResultCount: aiParseResults.length,
@@ -242,6 +315,9 @@ class SupabaseCloudSyncService extends CloudSyncService {
       profileItemCount: profileItems.length,
       summaryCount: summaries.length,
       summarySourceCount: summarySources.length,
+      schedulePlanCount: schedulePlans.length,
+      scheduleBlockCount: scheduleBlocks.length,
+      scheduleBlockSourceCount: scheduleBlockSources.length,
     );
   }
 

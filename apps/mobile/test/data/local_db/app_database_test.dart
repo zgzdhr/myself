@@ -220,6 +220,102 @@ void main() {
 
     expect(await database.getSummaryForDay(dayStart), null);
   });
+
+  test('stores, confirms, edits, and soft deletes schedule plans', () async {
+    final now = DateTime.utc(2026, 6, 23, 8);
+    final dayStart = DateTime.utc(2026, 6, 23);
+
+    await database.saveSchedulePlan(
+      updatedAt: now,
+      plan: SchedulePlan(
+        id: 'plan-1',
+        planDate: dayStart,
+        title: '6月23日时间规划',
+        overview: '上午轻启动，下午处理关键任务。',
+        suggestionsJson: '["保留一点缓冲"]',
+        unscheduledTaskIdsJson: '["task-2"]',
+        status: RecordStatus.pending.value,
+        generatedBy: 'deepseek',
+        modelName: null,
+        promptVersion: 'plan-daily-v1',
+        confidence: 0.8,
+        createdAt: now,
+        updatedAt: now,
+        confirmedAt: null,
+        userEditedAt: null,
+        deletedAt: null,
+      ),
+      blocks: [
+        ScheduleBlocksCompanion.insert(
+          id: 'block-1',
+          planId: 'plan-1',
+          title: '联系王总',
+          blockType: 'task',
+          startTime: dayStart.add(const Duration(hours: 15)),
+          endTime: dayStart.add(const Duration(hours: 15, minutes: 30)),
+          taskId: const Value('task-1'),
+          note: const Value('先列沟通要点。'),
+          reason: '任务有明确对象，适合下午处理。',
+          sortOrder: 0,
+          status: RecordStatus.pending.value,
+          confidence: const Value(0.8),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      sourcesByBlockId: {
+        'block-1': [
+          ScheduleBlockSourcesCompanion.insert(
+            id: 'block-source-1',
+            blockId: 'block-1',
+            sourceTable: 'tasks',
+            sourceRecordId: 'task-1',
+            createdAt: now,
+          ),
+        ],
+      },
+    );
+
+    var plan = await database.getSchedulePlanForDay(dayStart);
+    expect(plan?.status, RecordStatus.pending.value);
+    expect(await database.getScheduleBlocksForPlan('plan-1'), hasLength(1));
+    expect(await database.getSourcesForScheduleBlock('block-1'), hasLength(1));
+
+    await database.confirmSchedulePlan(
+      id: 'plan-1',
+      updatedAt: now.add(const Duration(minutes: 5)),
+    );
+    plan = await database.getSchedulePlanForDay(dayStart);
+    expect(plan?.status, RecordStatus.confirmed.value);
+    expect(plan?.confirmedAt, isA<DateTime>());
+
+    await database.updateScheduleBlock(
+      id: 'block-1',
+      title: '联系王总前准备材料',
+      blockType: 'task',
+      startTime: dayStart.add(const Duration(hours: 14, minutes: 30)),
+      endTime: dayStart.add(const Duration(hours: 15)),
+      note: '先确认沟通材料。',
+      reason: '用户手动调整到更早时间。',
+      updatedAt: now.add(const Duration(minutes: 10)),
+    );
+    final block = (await database.getScheduleBlocksForPlan('plan-1')).single;
+    expect(block.title, contains('准备材料'));
+    plan = await database.getSchedulePlanForDay(dayStart);
+    expect(plan?.status, RecordStatus.edited.value);
+
+    await database.markScheduleBlockDeleted(
+      id: 'block-1',
+      updatedAt: now.add(const Duration(minutes: 15)),
+    );
+    expect(await database.getScheduleBlocksForPlan('plan-1'), isEmpty);
+
+    await database.markSchedulePlanDeleted(
+      id: 'plan-1',
+      updatedAt: now.add(const Duration(minutes: 20)),
+    );
+    expect(await database.getSchedulePlanForDay(dayStart), null);
+  });
 }
 
 Future<void> _insertRawInput(AppDatabase database, {required DateTime now}) {
