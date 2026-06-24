@@ -230,7 +230,10 @@ void main() {
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
     expect(find.text('未配置云端'), findsOneWidget);
-    expect(find.text('通知设置'), findsOneWidget);
+    expect(find.text('通知权限'), findsOneWidget);
+    expect(find.text('手动同步'), findsNothing);
+    expect(find.text('每日计划提醒'), findsNothing);
+    expect(find.text('每日复盘提醒'), findsNothing);
 
     await tester.scrollUntilVisible(
       find.text('复盘设置'),
@@ -241,6 +244,14 @@ void main() {
     await tester.tap(find.text('复盘设置'));
     await tester.pumpAndSettle();
     expect(find.text('复盘结果参与首页建议'), findsOneWidget);
+    expect(find.text('打开每日复盘'), findsOneWidget);
+
+    await tester.tap(find.text('打开每日复盘'));
+    await tester.pumpAndSettle();
+    expect(find.text('时间规划'), findsOneWidget);
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
       find.text('App 与帮助'),

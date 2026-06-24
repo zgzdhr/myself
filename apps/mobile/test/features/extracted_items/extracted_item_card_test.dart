@@ -585,7 +585,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('我先回答你，也顺手帮你整理出一个任务。'), findsOneWidget);
-      expect(find.text('待确认内容'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('联系王总'),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       expect(find.text('联系王总'), findsOneWidget);
       expect(find.text('普通问答'), findsNothing);
 

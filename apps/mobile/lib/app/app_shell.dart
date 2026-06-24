@@ -107,16 +107,15 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
             cloudSyncService: cloudSyncService,
             taskReminderScheduler: taskReminderScheduler,
             refreshVersion: dataRefreshVersion,
+            onOpenHome: () => _selectDestination(0),
+            onOpenTasks: () => _selectDestination(1),
+            onOpenReview: () => _selectDestination(2),
           ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onDestinationSelected: _selectDestination,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -141,5 +140,11 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
         ],
       ),
     );
+  }
+
+  void _selectDestination(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 }

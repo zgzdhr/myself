@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +10,6 @@ import '../account/cloud_auth_service.dart';
 import '../account/cloud_sync_service.dart';
 import '../memory/memory_screen.dart';
 import '../memory/privacy_screen.dart';
-import '../memory/profile_items_screen.dart';
 import '../reminders/task_reminder_scheduler.dart';
 import 'user_preference_providers.dart';
 
@@ -20,6 +21,9 @@ class ProfileSettingsScreen extends ConsumerStatefulWidget {
     required this.cloudAuthService,
     required this.cloudSyncService,
     required this.taskReminderScheduler,
+    required this.onOpenHome,
+    required this.onOpenTasks,
+    required this.onOpenReview,
     this.refreshVersion = 0,
     super.key,
   });
@@ -30,6 +34,9 @@ class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final CloudAuthService cloudAuthService;
   final CloudSyncService cloudSyncService;
   final TaskReminderScheduler taskReminderScheduler;
+  final VoidCallback onOpenHome;
+  final VoidCallback onOpenTasks;
+  final VoidCallback onOpenReview;
   final int refreshVersion;
 
   @override
@@ -45,9 +52,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
 
   late Future<_ProfileOverviewData> _dataFuture;
   var _taskReminderEnabled = false;
-  var _dailyPlanReminderEnabled = false;
-  var _dailyReviewReminderEnabled = false;
-  var _defaultReminderLeadMinutes = 0;
+  bool? _apiAvailable;
+  var _isCheckingApi = false;
   String? _lastSyncedCloudProfileUserId;
   String? _cloudProfileSyncError;
 
@@ -73,6 +79,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     final states = await widget.database.getActiveShortTermStates(now: now);
     final events = await widget.database.getActiveLifeEvents();
     final profiles = await widget.database.getActiveProfileItems();
+    final todaySummary = await widget.database.getSummaryForDay(now);
     final pendingTasks = await widget.database.countPendingExtractedItemsByType(
       ItemType.taskCreate.apiValue,
     );
@@ -85,6 +92,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
       lifeEventCount: events.length,
       profileCount: profiles.length,
       pendingCount: pendingTasks + pendingProfiles,
+      hasTodaySummary: todaySummary != null,
     );
   }
 
@@ -119,53 +127,33 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   _TodayOverviewCard(data: data),
                   const SizedBox(height: 14),
                   _QuickActions(
-                    onNotifications: () => _openDetail(
-                      title: '通知设置',
-                      description: '任务提醒已经接入系统通知。后续会在这里配置提前量、每日计划和复盘提醒。',
-                    ),
+                    onNotifications: _requestNotificationPermission,
                     onSync: () => _syncCloudProfileNow(authState),
                     onPrivacy: () => _openPrivacy(),
-                    onAi: () => _openDetail(
-                      title: 'AI 设置',
-                      description:
-                          '解析继续走结构化模型，复盘计划使用 DeepSeek v4-pro。第一版只展示用途，不开放复杂参数。',
-                    ),
+                    onMemory: _openMemory,
                   ),
                   const SizedBox(height: 20),
                   _SettingsSection(
                     title: '账号与同步',
                     children: [
                       _SettingsTile(
-                        icon: Icons.login_rounded,
-                        title: '登录 / 注册',
-                        subtitle: authState.isConfigured
-                            ? '使用邮箱验证码登录，先不做第三方登录。'
-                            : '需要先配置 Supabase URL 和 publishable key。',
-                        trailingText: authState.isConfigured ? '邮箱验证码' : '未配置',
-                        onTap: () => _openEmailOtpSignIn(),
-                      ),
-                      _SettingsTile(
                         icon: Icons.sync_rounded,
-                        title: '同步状态',
+                        title: '立即同步到云端',
                         subtitle: _syncSubtitle(authState),
                         trailingText: authState.syncLabel,
                         onTap: () => _syncCloudProfileNow(authState),
                       ),
                       _SettingsTile(
-                        icon: Icons.cloud_sync_rounded,
-                        title: '手动同步',
-                        subtitle: '第一版先完成账号和云端表合同，记录双向同步后续再接。',
-                        trailingText: authState.isSignedIn ? '待同步' : '需登录',
-                        onTap: () => _showComingSoon('手动同步'),
-                      ),
-                      _SettingsTile(
                         icon: Icons.phone_android_rounded,
                         title: '当前设备',
-                        subtitle: '这台手机上的本地缓存和系统通知配置。',
+                        subtitle: _taskReminderEnabled
+                            ? '本机通知权限已开启，本地数据可离线使用。'
+                            : '本机通知权限未开启或无法读取。',
                         trailingText: defaultTargetPlatform.name,
                         onTap: () => _openDetail(
                           title: '当前设备',
-                          description: '后续登录后，这里会显示设备同步状态和最近同步时间。',
+                          description:
+                              '当前设备使用本地 SQLite 保存运行数据，并由系统通知负责有具体时间的任务提醒。云端同步目前是手动单向同步：本机 → Supabase。',
                         ),
                       ),
                       _SettingsTile(
@@ -175,7 +163,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         onTap: () => _openDetail(
                           title: '数据存储位置说明',
                           description:
-                              '当前任务、状态、事件和画像仍保存在本地 SQLite。Phase 5A 已确定云端目标表和 RLS 边界，登录后数据会按 user_id 归属到云端表；第一版不做复杂离线冲突合并。',
+                              '任务、状态、事件、画像、复盘和时间规划先保存在本地 SQLite。登录后点击“立即同步到云端”，这些记录会按账号 user_id 单向写入 Supabase。当前不会从云端自动合并回本机。',
                         ),
                       ),
                       _SettingsTile(
@@ -185,9 +173,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                             ? '退出账号不会删除本地缓存或云端数据。'
                             : '当前没有已登录账号。',
                         trailingText: authState.isSignedIn ? null : '未登录',
-                        onTap: authState.isSignedIn
-                            ? _signOut
-                            : () => _showComingSoon('退出登录'),
+                        onTap: authState.isSignedIn ? () => _signOut() : null,
                       ),
                     ],
                   ),
@@ -195,73 +181,30 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   _SettingsSection(
                     title: '提醒与任务',
                     children: [
-                      SwitchListTile(
-                        secondary: const Icon(
-                          Icons.notifications_active_rounded,
-                        ),
-                        title: const Text('任务提醒'),
-                        subtitle: const Text('只在任务快开始时提醒，不提醒普通编辑或删除。'),
-                        value: _taskReminderEnabled,
-                        onChanged: _setTaskReminderEnabled,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              '默认提醒时间',
-                              style: TextStyle(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 8),
-                            SegmentedButton<int>(
-                              segments: const [
-                                ButtonSegment(value: 0, label: Text('准时')),
-                                ButtonSegment(value: 5, label: Text('5 分钟')),
-                                ButtonSegment(value: 10, label: Text('10 分钟')),
-                                ButtonSegment(value: 30, label: Text('30 分钟')),
-                              ],
-                              selected: {_defaultReminderLeadMinutes},
-                              onSelectionChanged: (selection) {
-                                setState(() {
-                                  _defaultReminderLeadMinutes = selection.first;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      SwitchListTile(
-                        secondary: const Icon(Icons.wb_sunny_outlined),
-                        title: const Text('每日计划提醒'),
-                        subtitle: const Text('未来可每天提醒你看一眼今日行动。'),
-                        value: _dailyPlanReminderEnabled,
-                        onChanged: (value) {
-                          setState(() => _dailyPlanReminderEnabled = value);
-                        },
-                      ),
-                      SwitchListTile(
-                        secondary: const Icon(Icons.edit_note_rounded),
-                        title: const Text('每日复盘提醒'),
-                        subtitle: const Text('未来可在晚上提醒你生成今日复盘。'),
-                        value: _dailyReviewReminderEnabled,
-                        onChanged: (value) {
-                          setState(() => _dailyReviewReminderEnabled = value);
-                        },
+                      _SettingsTile(
+                        icon: Icons.notifications_active_rounded,
+                        title: '通知权限',
+                        subtitle: _taskReminderEnabled
+                            ? '已允许通知；带未来具体时间的任务会按时提醒。'
+                            : '点击申请系统通知权限。',
+                        trailingText: _taskReminderEnabled ? '已开启' : '未开启',
+                        onTap: _requestNotificationPermission,
                       ),
                       _SettingsTile(
                         icon: Icons.task_alt_rounded,
-                        title: '已完成任务显示方式',
-                        subtitle: '当前保留可见，并用状态标签区分。',
-                        trailingText: '保留',
-                        onTap: () => _showComingSoon('已完成任务显示方式'),
+                        title: '查看和管理任务',
+                        subtitle: '编辑时间、完成、取消或删除任务。',
+                        onTap: widget.onOpenTasks,
                       ),
                       _SettingsTile(
-                        icon: Icons.cancel_outlined,
-                        title: '已取消任务显示方式',
-                        subtitle: '当前保留可见，但不参与首页建议。',
-                        trailingText: '保留',
-                        onTap: () => _showComingSoon('已取消任务显示方式'),
+                        icon: Icons.info_outline_rounded,
+                        title: '当前提醒规则',
+                        subtitle: '只提醒已确认、未完成、未取消且带未来时间的任务。',
+                        onTap: () => _openDetail(
+                          title: '当前提醒规则',
+                          description:
+                              '任务提醒由手机本地系统安排。创建或编辑带具体未来时间的任务时会安排提醒；完成、取消、删除任务或清除任务时间时，会取消对应提醒。当前没有提前 5/10/30 分钟和每日复盘提醒，所以页面不再展示无效开关。',
+                        ),
                       ),
                     ],
                   ),
@@ -271,51 +214,29 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                     children: [
                       _SettingsTile(
                         icon: Icons.today_rounded,
-                        title: '每日复盘入口',
-                        subtitle: '整理当天任务、状态和生活事件。',
-                        onTap: () => _showComingSoon('每日复盘'),
+                        title: '打开每日复盘',
+                        subtitle: '生成、编辑、重新生成或删除当天复盘。',
+                        trailingText: data?.hasTodaySummary == true
+                            ? '今日已生成'
+                            : '今日未生成',
+                        onTap: widget.onOpenReview,
                       ),
                       _SettingsTile(
                         icon: Icons.history_rounded,
-                        title: '历史复盘',
-                        subtitle: '后续可按日期查看每日复盘。',
-                        trailingText: '待接入',
-                        onTap: () => _showComingSoon('历史复盘'),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.schedule_rounded,
-                        title: '复盘提醒时间',
-                        subtitle: '默认适合放在晚上，后续可自定义。',
-                        trailingText: '待设置',
-                        onTap: () => _showComingSoon('复盘提醒时间'),
+                        title: '历史复盘与时间规划',
+                        subtitle: '按月份、周和日期查看复盘，也可切换到时间规划。',
+                        onTap: widget.onOpenReview,
                       ),
                       SwitchListTile(
                         secondary: const Icon(Icons.lightbulb_outline_rounded),
                         title: const Text('复盘结果参与首页建议'),
-                        subtitle: const Text('只作为轻上下文，不自动改任务或画像。'),
+                        subtitle: const Text('已接入首页建议；当前开关在 App 重启后恢复默认开启。'),
                         value: reviewAffectsHome,
                         onChanged: (value) {
                           ref
                               .read(reviewAffectsHomeProvider.notifier)
                               .setEnabled(value);
                         },
-                      ),
-                      _SettingsTile(
-                        icon: Icons.refresh_rounded,
-                        title: '重新生成今日复盘',
-                        subtitle: '未来会基于同一天的可见来源重新生成。',
-                        trailingText: '待接入',
-                        onTap: () => _showComingSoon('重新生成今日复盘'),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.delete_outline_rounded,
-                        title: '删除今日复盘',
-                        subtitle: '删除后不再参与首页建议。',
-                        trailingText: '需确认',
-                        onTap: () => _confirmSensitiveAction(
-                          title: '删除今日复盘？',
-                          content: '当前版本还没有正式复盘数据。接入后，这个操作会只删除今日复盘，不删除原始任务和事件。',
-                        ),
                       ),
                     ],
                   ),
@@ -324,34 +245,13 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                     title: 'AI 与记忆',
                     children: [
                       _SettingsTile(
-                        icon: Icons.tune_rounded,
-                        title: 'AI 解析设置',
-                        subtitle: '负责把自然语言整理成任务、状态、事件和画像候选。',
-                        trailingText: '结构化',
-                        onTap: () => _showComingSoon('AI 解析设置'),
-                      ),
-                      _SettingsTile(
                         icon: Icons.auto_awesome_rounded,
-                        title: '复盘模型设置',
-                        subtitle: '计划使用 DeepSeek v4-pro，语气更适合总结和建议。',
-                        trailingText: 'v4-pro',
-                        onTap: () => _showComingSoon('复盘模型设置'),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.schema_rounded,
-                        title: '解析模型设置',
-                        subtitle: '继续保持低温度和 JSON 校验，保证入库稳定。',
-                        trailingText: '0.35',
-                        onTap: () => _showComingSoon('解析模型设置'),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.thermostat_rounded,
-                        title: 'AI 温度说明与当前值',
-                        subtitle: '解析偏稳定，复盘可以更自然，但仍要有来源依据。',
+                        title: 'AI 工作方式',
+                        subtitle: '了解整理、复盘和时间规划分别使用哪些数据。',
                         onTap: () => _openDetail(
-                          title: 'AI 温度说明与当前值',
+                          title: 'AI 工作方式',
                           description:
-                              '温度可以理解为 AI 回答的发散程度。结构化解析要稳定，所以温度低；复盘更像总结和表达，可以适当高一些。',
+                              '“整理”把当前输入解析成任务、状态、事件或画像候选；“复盘”读取当天可见记录和你的补充文字；“时间规划”读取任务、状态、已确认画像和近期复盘。三个入口都经过独立 schema 校验，AI 不会静默修改任务或把单日复盘变成长期画像。',
                         ),
                       ),
                       _SettingsTile(
@@ -368,32 +268,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         ),
                       ),
                       _SettingsTile(
-                        icon: Icons.person_search_rounded,
-                        title: '长期画像管理',
-                        subtitle: '只有你确认过的长期画像才会影响建议。',
-                        trailingText: '${data?.profileCount ?? '-'} 条',
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (context) => ProfileItemsScreen(
-                              database: widget.database,
-                              nowProvider: widget.nowProvider,
-                            ),
-                          ),
-                        ),
-                      ),
-                      _SettingsTile(
                         icon: Icons.pending_actions_rounded,
                         title: '待确认内容',
-                        subtitle: 'AI 猜出来但还没确认的内容会在这里汇总。',
+                        subtitle: '回到首页查看并确认最近的解析结果。',
                         trailingText: '${data?.pendingCount ?? '-'} 条',
-                        onTap: () => _showComingSoon('待确认内容汇总'),
+                        onTap: widget.onOpenHome,
                       ),
                       _SettingsTile(
                         icon: Icons.visibility_outlined,
-                        title: '查看 AI 使用了哪些记忆',
-                        subtitle: '后续每条建议都应该能解释自己的来源。',
-                        trailingText: '待接入',
-                        onTap: () => _showComingSoon('建议来源说明'),
+                        title: '查看建议依据',
+                        subtitle: '首页 AI 建议可展开查看任务、状态、画像和近期复盘依据。',
+                        onTap: widget.onOpenHome,
                       ),
                     ],
                   ),
@@ -408,40 +293,13 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         onTap: _openPrivacy,
                       ),
                       _SettingsTile(
-                        icon: Icons.file_download_outlined,
-                        title: '导出数据',
-                        subtitle: '未来可导出任务、事件、复盘和画像。',
-                        trailingText: '待接入',
-                        onTap: () => _showComingSoon('导出数据'),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.cleaning_services_outlined,
-                        title: '删除本地缓存',
-                        subtitle: '不会删除云端账号数据，接入云端后可重新同步。',
-                        trailingText: '需确认',
-                        onTap: () => _confirmSensitiveAction(
-                          title: '删除本地缓存？',
-                          content: '这个操作后续会清理当前设备缓存。正式实现前不会真的删除任何数据。',
-                        ),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.delete_forever_outlined,
-                        title: '删除云端账号数据',
-                        subtitle: '高风险操作，正式接入后必须二次确认。',
-                        trailingText: '危险',
-                        onTap: () => _confirmSensitiveAction(
-                          title: '删除云端账号数据？',
-                          content: '这会影响账号下的任务、记忆和复盘数据。当前版本只是占位确认，不会执行删除。',
-                        ),
-                      ),
-                      _SettingsTile(
                         icon: Icons.cloud_upload_outlined,
                         title: 'API 上传说明',
                         subtitle: '说明哪些内容会被发给 DeepSeek 解析或复盘。',
                         onTap: () => _openDetail(
                           title: 'API 上传说明',
                           description:
-                              '解析时只上传当前输入和必要上下文。未来复盘会上传当天可见记录和你的补充文字，不上传被删除或未确认的长期画像。',
+                              '整理时上传当前输入和时间上下文；复盘时上传当天可见任务、状态、事件和你的补充文字；时间规划会上传相关任务、状态、已确认画像和近期复盘。被删除记录和未确认画像不会作为有效事实使用。',
                         ),
                       ),
                       _SettingsTile(
@@ -467,7 +325,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         onTap: () => _openDetail(
                           title: '关于 App',
                           description:
-                              '这个 App 帮你把自然语言整理成任务、状态、生活事件和可确认的长期画像，再逐步加入复盘和更稳定的建议。',
+                              '这个 App 帮你把自然语言整理成任务、状态、生活事件和可确认的长期画像，并提供每日复盘、时间规划和有来源依据的首页建议。',
                         ),
                       ),
                       _SettingsTile(
@@ -475,45 +333,34 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         title: '当前版本',
                         subtitle: _appVersion,
                         trailingText: kDebugMode ? 'Debug' : 'Release',
-                        onTap: () => _showComingSoon('版本详情'),
+                        onTap: () => _openDetail(
+                          title: '当前版本',
+                          description:
+                              '版本：$_appVersion\n构建类型：${kDebugMode ? 'Debug 调试包' : 'Release 正式包'}\n平台：${defaultTargetPlatform.name}',
+                        ),
                       ),
                       _SettingsTile(
                         icon: Icons.api_rounded,
                         title: 'API 连接状态',
                         subtitle: widget.parserBaseUri.toString(),
-                        trailingText: '解析代理',
-                        onTap: () => _openDetail(
-                          title: 'API 连接状态',
-                          description:
-                              '当前解析接口地址：${widget.parserBaseUri}。后续云端部署后，这里会显示线上 API 是否可用。',
-                        ),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.notifications_outlined,
-                        title: '通知权限状态',
-                        subtitle: '已接入系统通知，权限由 Android / iOS 系统管理。',
-                        trailingText: '系统',
-                        onTap: () => _showComingSoon('通知权限状态'),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.build_circle_outlined,
-                        title: '构建环境',
-                        subtitle: kDebugMode ? 'Debug 调试包' : 'Release 正式包',
-                        onTap: () => _showComingSoon('构建环境'),
+                        trailingText: _isCheckingApi
+                            ? '检查中'
+                            : _apiAvailable == null
+                            ? '点击检测'
+                            : _apiAvailable!
+                            ? '可连接'
+                            : '不可连接',
+                        onTap: _checkApiConnection,
                       ),
                       _SettingsTile(
                         icon: Icons.help_outline_rounded,
                         title: '使用帮助',
-                        subtitle: '后续补充真实使用指引。',
-                        trailingText: '待接入',
-                        onTap: () => _showComingSoon('使用帮助'),
-                      ),
-                      _SettingsTile(
-                        icon: Icons.feedback_outlined,
-                        title: '反馈问题',
-                        subtitle: '记录试用中遇到的识别、提醒和复盘问题。',
-                        trailingText: '待接入',
-                        onTap: () => _showComingSoon('反馈问题'),
+                        subtitle: '查看当前四个主要入口分别做什么。',
+                        onTap: () => _openDetail(
+                          title: '使用帮助',
+                          description:
+                              '首页：输入自然语言、确认整理结果、查看今日行动和建议依据。\n\n任务：编辑、完成、取消和删除任务。\n\n复盘：生成每日复盘，并创建可编辑的时间规划。\n\n我的：登录同步、通知权限、记忆控制和运行状态。',
+                        ),
                       ),
                     ],
                   ),
@@ -536,7 +383,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     if (_cloudProfileSyncError != null) {
       return '账号已连接，但 profile 写入失败：$_cloudProfileSyncError';
     }
-    return '账号已连接，已写入云端 profile。业务数据同步将分阶段接入。';
+    return '账号已连接。点击后会把本机任务、记忆、复盘和时间规划单向写入云端。';
   }
 
   void _syncCloudProfileIfNeeded(CloudAuthState authState) {
@@ -600,12 +447,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     }
   }
 
-  Future<void> _setTaskReminderEnabled(bool value) async {
-    if (!value) {
-      setState(() => _taskReminderEnabled = false);
-      return;
-    }
-
+  Future<void> _requestNotificationPermission() async {
     final granted = await widget.taskReminderScheduler.requestPermissions();
     if (!mounted) return;
 
@@ -616,6 +458,44 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _checkApiConnection() async {
+    if (_isCheckingApi) return;
+    setState(() => _isCheckingApi = true);
+    final client = HttpClient();
+    try {
+      final healthUri = widget.parserBaseUri.resolve('/health');
+      final request = await client
+          .getUrl(healthUri)
+          .timeout(const Duration(seconds: 8));
+      final response = await request.close().timeout(
+        const Duration(seconds: 8),
+      );
+      await response.drain<void>();
+      if (!mounted) return;
+      setState(() => _apiAvailable = response.statusCode == 200);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response.statusCode == 200
+                ? 'API 可以连接，整理、复盘和时间规划可使用。'
+                : 'API 返回 ${response.statusCode}，当前服务不可用。',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _apiAvailable = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('无法连接 API，请检查网络或服务地址。')));
+    } finally {
+      client.close(force: true);
+      if (mounted) {
+        setState(() => _isCheckingApi = false);
+      }
+    }
   }
 
   Future<void> _loadTaskReminderPermission() async {
@@ -684,6 +564,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     );
   }
 
+  void _openMemory() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => MemoryScreen(
+          database: widget.database,
+          nowProvider: widget.nowProvider,
+        ),
+      ),
+    );
+  }
+
   void _openDetail({required String title, required String description}) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -691,38 +582,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
             _SettingsDetailScreen(title: title, description: description),
       ),
     );
-  }
-
-  Future<void> _confirmSensitiveAction({
-    required String title,
-    required String content,
-  }) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('我知道了'),
-          ),
-        ],
-      ),
-    );
-
-    if (!mounted || confirmed != true) return;
-    _showComingSoon(title.replaceAll('？', ''));
-  }
-
-  void _showComingSoon(String featureName) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('$featureName 会在后续接入。')));
   }
 }
 
@@ -733,6 +592,7 @@ class _ProfileOverviewData {
     required this.lifeEventCount,
     required this.profileCount,
     required this.pendingCount,
+    required this.hasTodaySummary,
   });
 
   final int taskCount;
@@ -740,6 +600,7 @@ class _ProfileOverviewData {
   final int lifeEventCount;
   final int profileCount;
   final int pendingCount;
+  final bool hasTodaySummary;
 }
 
 class _AccountCard extends StatelessWidget {
@@ -759,7 +620,7 @@ class _AccountCard extends StatelessWidget {
         ? '配置 Supabase 后可使用云端账号'
         : authState.isSignedIn
         ? '云端账号已连接'
-        : '登录后可使用云端数据和多设备访问';
+        : '登录后可把本机数据手动备份到云端';
     final icon = authState.isSignedIn
         ? Icons.verified_user_rounded
         : Icons.person_rounded;
@@ -1007,7 +868,7 @@ class _TodayOverviewCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '今日数据概览',
+              '数据概览',
               style: TextStyle(
                 color: Color(0xFF1D1D1F),
                 fontSize: 17,
@@ -1024,7 +885,10 @@ class _TodayOverviewCard extends StatelessWidget {
                 _OverviewPill(label: '事件', value: data?.lifeEventCount),
                 _OverviewPill(label: '画像', value: data?.profileCount),
                 _OverviewPill(label: '待确认', value: data?.pendingCount),
-                const _OverviewPill(label: '今日复盘', textValue: '未生成'),
+                _OverviewPill(
+                  label: '今日复盘',
+                  textValue: data?.hasTodaySummary == true ? '已生成' : '未生成',
+                ),
               ],
             ),
           ],
@@ -1066,13 +930,13 @@ class _QuickActions extends StatelessWidget {
     required this.onNotifications,
     required this.onSync,
     required this.onPrivacy,
-    required this.onAi,
+    required this.onMemory,
   });
 
   final VoidCallback onNotifications;
   final VoidCallback onSync;
   final VoidCallback onPrivacy;
-  final VoidCallback onAi;
+  final VoidCallback onMemory;
 
   @override
   Widget build(BuildContext context) {
@@ -1086,7 +950,7 @@ class _QuickActions extends StatelessWidget {
       children: [
         _QuickActionButton(
           icon: Icons.notifications_active_rounded,
-          label: '通知设置',
+          label: '通知权限',
           onTap: onNotifications,
         ),
         _QuickActionButton(
@@ -1100,9 +964,9 @@ class _QuickActions extends StatelessWidget {
           onTap: onPrivacy,
         ),
         _QuickActionButton(
-          icon: Icons.auto_awesome_rounded,
-          label: 'AI 设置',
-          onTap: onAi,
+          icon: Icons.psychology_alt_outlined,
+          label: '记忆管理',
+          onTap: onMemory,
         ),
       ],
     );
@@ -1113,12 +977,12 @@ class _QuickActionButton extends StatelessWidget {
   const _QuickActionButton({
     required this.icon,
     required this.label,
-    required this.onTap,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1182,7 +1046,7 @@ class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String? trailingText;
 
   @override
@@ -1203,7 +1067,8 @@ class _SettingsTile extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF8A8278)),
+          if (onTap != null)
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8A8278)),
         ],
       ),
       onTap: onTap,
