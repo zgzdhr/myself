@@ -101,7 +101,9 @@ class _InputScreenState extends State<InputScreen> {
             _pendingBatches.isNotEmpty) ...[
           const SizedBox(height: 20),
           Text(
-            '待确认内容',
+            _currentAutoSavedItems.isNotEmpty && _pendingBatches.isEmpty
+                ? '已整理内容'
+                : '整理结果',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: const Color(0xFF1D1D1F),
               fontWeight: FontWeight.w800,
@@ -183,6 +185,7 @@ class _InputScreenState extends State<InputScreen> {
         ];
       });
       await _refreshPendingBatches();
+      _showAutoSavedFeedback(result.items);
       if (result.items.isNotEmpty) {
         widget.onRecordsChanged?.call();
       }
@@ -205,6 +208,23 @@ class _InputScreenState extends State<InputScreen> {
         });
       }
     }
+  }
+
+  void _showAutoSavedFeedback(List<ExtractedItem> items) {
+    final autoSavedTasks = [
+      for (final item in items)
+        if (item.status == RecordStatus.confirmed &&
+            item.type == ItemType.taskCreate)
+          item.title ?? item.content ?? item.sourceText,
+    ];
+    if (autoSavedTasks.isEmpty || !mounted) {
+      return;
+    }
+
+    final label = autoSavedTasks.take(2).join('、');
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('已纳入行动：$label')));
   }
 
   String _safeParserFailureDetail(ParserFailure error) {

@@ -156,15 +156,15 @@ class _HomeFollowUp extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _HomeSuggestionPanel(
-          suggestions: suggestions,
-          contextData: contextData,
-        ),
-        const SizedBox(height: 18),
         _HomeListSection(
           title: '今日行动',
           emptyText: '暂无今日任务',
           items: [for (final task in contextData.todayTasks) task.displayText],
+        ),
+        const SizedBox(height: 18),
+        _HomeSuggestionPanel(
+          suggestions: suggestions,
+          contextData: contextData,
         ),
         const SizedBox(height: 18),
         _MemoryEntryPanel(

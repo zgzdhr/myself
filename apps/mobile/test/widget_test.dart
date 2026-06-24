@@ -6,7 +6,10 @@ import 'package:drift/native.dart';
 import 'package:mobile/app/app_shell.dart';
 import 'package:mobile/data/local_db/app_database.dart' as db;
 import 'package:mobile/data/parser/mock_parser_client.dart';
+import 'package:mobile/data/parser/parser_client.dart';
+import 'package:mobile/domain/parse_result.dart';
 import 'package:mobile/features/home/home_screen.dart';
+import 'package:mobile/features/reminders/task_reminder_scheduler.dart';
 
 void main() {
   testWidgets('App shell shows warm private assistant home screen', (
@@ -25,6 +28,9 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           parserClientProvider.overrideWithValue(const MockParserClient()),
+          taskReminderSchedulerProvider.overrideWithValue(
+            const NoopTaskReminderScheduler(),
+          ),
         ],
         child: const AppShell(),
       ),
@@ -120,6 +126,9 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           parserClientProvider.overrideWithValue(const MockParserClient()),
+          taskReminderSchedulerProvider.overrideWithValue(
+            const NoopTaskReminderScheduler(),
+          ),
         ],
         child: const AppShell(),
       ),
@@ -141,6 +150,52 @@ void main() {
     expect(find.text('状态 0 条 · 长期画像 0 条'), findsOneWidget);
   });
 
+  testWidgets('organizing a timed task refreshes today actions immediately', (
+    WidgetTester tester,
+  ) async {
+    final database = db.AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+    final now = DateTime(2026, 6, 24, 10);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          appNowProvider.overrideWithValue(() => now),
+          parserClientProvider.overrideWithValue(
+            _MeetingParserClient(parsedAt: now),
+          ),
+          taskReminderSchedulerProvider.overrideWithValue(
+            const NoopTaskReminderScheduler(),
+          ),
+        ],
+        child: const AppShell(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, '今天下午4点要和朋友见面');
+    await tester.tap(find.text('整理'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('已纳入行动：和朋友见面'), findsOneWidget);
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
+    await tester.fling(
+      find.byType(ListView).first,
+      const Offset(0, -2400),
+      3000,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('今日行动 · 1'), findsOneWidget);
+    expect(find.textContaining('和朋友见面'), findsWidgets);
+  });
+
   testWidgets('bottom navigation opens review and profile settings pages', (
     WidgetTester tester,
   ) async {
@@ -157,6 +212,9 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           parserClientProvider.overrideWithValue(const MockParserClient()),
+          taskReminderSchedulerProvider.overrideWithValue(
+            const NoopTaskReminderScheduler(),
+          ),
         ],
         child: const AppShell(),
       ),
@@ -194,4 +252,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('API 连接状态'), findsOneWidget);
   });
+}
+
+class _MeetingParserClient implements ParserClient {
+  const _MeetingParserClient({required this.parsedAt});
+
+  final DateTime parsedAt;
+
+  @override
+  Future<ParseResult> parseInput(String text) async {
+    return ParseResult.fromAiJson(
+      parsedAt: parsedAt,
+      json: {
+        'user_reply': '已经整理成一个今天的任务。',
+        'input_summary': '今天下午4点和朋友见面。',
+        'intent_types': ['task_create'],
+        'items': [
+          {
+            'type': 'task_create',
+            'title': '和朋友见面',
+            'source_text': text,
+            'tags': ['social'],
+            'confidence': 0.95,
+            'need_user_confirm': false,
+            'due_time_text': '今天下午4点',
+            'due_time_iso': '2026-06-24T16:00:00+08:00',
+          },
+        ],
+      },
+    );
+  }
 }

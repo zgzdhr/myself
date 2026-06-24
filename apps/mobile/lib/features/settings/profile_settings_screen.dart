@@ -44,7 +44,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   );
 
   late Future<_ProfileOverviewData> _dataFuture;
-  var _taskReminderEnabled = true;
+  var _taskReminderEnabled = false;
   var _dailyPlanReminderEnabled = false;
   var _dailyReviewReminderEnabled = false;
   var _defaultReminderLeadMinutes = 0;
@@ -55,6 +55,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void initState() {
     super.initState();
     _dataFuture = _load();
+    _loadTaskReminderPermission();
   }
 
   @override
@@ -608,13 +609,19 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     final granted = await widget.taskReminderScheduler.requestPermissions();
     if (!mounted) return;
 
-    setState(() => _taskReminderEnabled = true);
+    setState(() => _taskReminderEnabled = granted != false);
     final message = granted == false
-        ? '系统没有授予通知权限，请到手机系统设置里允许通知。'
+        ? '三星系统没有授予通知权限。请打开“设置 → 应用 → 本 App → 通知”后手动允许。'
         : '任务提醒已开启。创建带具体时间的任务后，会按任务时间提醒。';
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _loadTaskReminderPermission() async {
+    final enabled = await widget.taskReminderScheduler.notificationsEnabled();
+    if (!mounted || enabled == null) return;
+    setState(() => _taskReminderEnabled = enabled);
   }
 
   String _friendlyCloudSyncError(Object error) {
@@ -1124,10 +1131,7 @@ class _QuickActionButton extends StatelessWidget {
 }
 
 class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
+  const _SettingsSection({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;

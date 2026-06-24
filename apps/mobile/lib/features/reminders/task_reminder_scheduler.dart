@@ -18,6 +18,8 @@ class TaskReminderRequest {
 }
 
 abstract interface class TaskReminderScheduler {
+  Future<bool?> notificationsEnabled();
+
   Future<bool?> requestPermissions();
 
   Future<void> schedule(TaskReminderRequest request);
@@ -27,6 +29,9 @@ abstract interface class TaskReminderScheduler {
 
 class NoopTaskReminderScheduler implements TaskReminderScheduler {
   const NoopTaskReminderScheduler();
+
+  @override
+  Future<bool?> notificationsEnabled() async => false;
 
   @override
   Future<bool?> requestPermissions() async => false;
@@ -76,9 +81,26 @@ class SystemTaskReminderScheduler implements TaskReminderScheduler {
   }
 
   @override
+  Future<bool?> notificationsEnabled() async {
+    await initialize();
+    if (kIsWeb) {
+      return null;
+    }
+    if (Platform.isAndroid) {
+      return _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.areNotificationsEnabled();
+    }
+    return null;
+  }
+
+  @override
   Future<bool?> requestPermissions() async {
     await initialize();
-    return _requestPermissionsIfNeeded(force: true);
+    final granted = await _requestPermissionsIfNeeded(force: true);
+    return granted ?? notificationsEnabled();
   }
 
   @override

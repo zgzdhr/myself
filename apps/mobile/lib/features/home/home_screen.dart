@@ -38,6 +38,11 @@ final appDataRefreshProvider = NotifierProvider<AppDataRefresh, int>(
   AppDataRefresh.new,
 );
 
+final homeTaskChangesProvider = StreamProvider((ref) {
+  final database = ref.watch(appDatabaseProvider);
+  return database.select(database.tasks).watch();
+});
+
 final parserClientProvider = Provider<ParserClient>((ref) {
   const parserMode = String.fromEnvironment(
     'PARSER_MODE',
@@ -150,6 +155,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final nowProvider = ref.watch(appNowProvider);
     final reviewAffectsHome = ref.watch(reviewAffectsHomeProvider);
     final dataRefreshVersion = ref.watch(appDataRefreshProvider);
+    ref.watch(homeTaskChangesProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EE),
