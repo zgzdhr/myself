@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_visuals.dart';
 import '../../domain/extracted_item.dart';
 import '../../domain/item_type.dart';
 import '../../domain/record_status.dart';
@@ -34,18 +35,40 @@ class ExtractedItemCard extends StatelessWidget {
         taskUpdateIntent?.resolution == TaskUpdateResolution.noMatch
         ? '关闭'
         : '拒绝';
+    final accent = _accentFor(item.type);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _TypeLabel(item.type),
-            const SizedBox(height: 6),
-            _SaveTarget(item.type),
-            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(_iconFor(item.type), color: accent),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _TypeLabel(item.type, accent: accent),
+                      const SizedBox(height: 4),
+                      _SaveTarget(item.type),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
             Text(
               title,
               style: Theme.of(
@@ -59,7 +82,10 @@ class ExtractedItemCard extends StatelessWidget {
               Text(item.content!),
             ],
             const SizedBox(height: 8),
-            Text('来源：${item.sourceText}'),
+            Text(
+              '来源：${item.sourceText}',
+              style: const TextStyle(color: AppColors.textMuted),
+            ),
             if (isTaskUpdate) ...[
               const SizedBox(height: 10),
               _TaskUpdateResolutionPanel(intent: taskUpdateIntent),
@@ -73,7 +99,10 @@ class ExtractedItemCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            Text('置信度 ${(item.confidence * 100).round()}%'),
+            Text(
+              '置信度 ${(item.confidence * 100).round()}%',
+              style: const TextStyle(color: AppColors.textMuted),
+            ),
             if (item.expiresAt != null) ...[
               const SizedBox(height: 8),
               Text('有效期至 ${_formatDate(item.expiresAt!)}'),
@@ -93,7 +122,9 @@ class ExtractedItemCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 if (isTaskUpdate &&
                     taskUpdateIntent.resolution != TaskUpdateResolution.noMatch)
@@ -107,13 +138,11 @@ class ExtractedItemCard extends StatelessWidget {
                         taskUpdateIntent.resolution !=
                             TaskUpdateResolution.noMatch) ||
                     (!isTaskUpdate && !isAutoSaved))
-                  const SizedBox(width: 8),
-                if (!isTaskUpdate)
-                  OutlinedButton(
-                    onPressed: onEdit,
-                    child: Text(isAutoSaved ? '修改' : '编辑'),
-                  ),
-                const SizedBox(width: 8),
+                  if (!isTaskUpdate)
+                    OutlinedButton(
+                      onPressed: onEdit,
+                      child: Text(isAutoSaved ? '修改' : '编辑'),
+                    ),
                 TextButton(
                   onPressed: onReject,
                   child: Text(
@@ -129,6 +158,23 @@ class ExtractedItemCard extends StatelessWidget {
       ),
     );
   }
+
+  Color _accentFor(ItemType type) => switch (type) {
+    ItemType.taskCreate || ItemType.taskUpdate => const Color(0xFFFF5C8A),
+    ItemType.shortTermState => AppColors.mint,
+    ItemType.lifeEvent => AppColors.orange,
+    ItemType.profileCandidate => AppColors.purple,
+    ItemType.generalAnswer => AppColors.primary,
+  };
+
+  IconData _iconFor(ItemType type) => switch (type) {
+    ItemType.taskCreate => Icons.assignment_turned_in_outlined,
+    ItemType.taskUpdate => Icons.update_rounded,
+    ItemType.shortTermState => Icons.favorite_border_rounded,
+    ItemType.lifeEvent => Icons.card_giftcard_rounded,
+    ItemType.profileCandidate => Icons.psychology_alt_outlined,
+    ItemType.generalAnswer => Icons.chat_bubble_outline_rounded,
+  };
 
   String _formatDate(DateTime dateTime) {
     final local = dateTime.toLocal();
@@ -228,9 +274,9 @@ class _SaveTarget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       _text,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: const Color(0xFF8A8278),
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: const Color(0xFF8A8278)),
     );
   }
 
@@ -247,25 +293,23 @@ class _SaveTarget extends StatelessWidget {
 }
 
 class _TypeLabel extends StatelessWidget {
-  const _TypeLabel(this.type);
+  const _TypeLabel(this.type, {required this.accent});
 
   final ItemType type;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
+        color: accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         child: Text(
           _label,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(color: accent, fontWeight: FontWeight.w700),
         ),
       ),
     );

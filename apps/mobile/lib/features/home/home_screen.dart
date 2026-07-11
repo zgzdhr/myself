@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/app_visuals.dart';
 import '../../data/local_db/app_database.dart';
 import '../../data/api/api_error_code.dart';
 import '../../data/parser/http_parser_client.dart';
@@ -168,7 +169,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.watch(homeTaskChangesProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F4EE),
+      backgroundColor: Colors.transparent,
       body: InputScreen(
         controller: ref.watch(extractedItemsControllerProvider),
         header: const _HomeHeader(),

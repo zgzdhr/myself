@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../app/app_visuals.dart';
 import '../../data/local_db/app_database.dart';
 import '../../data/plan/plan_client.dart';
 import '../../data/review/review_client.dart';
@@ -101,72 +102,105 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('复盘'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.fact_check_rounded), text: '每日复盘'),
-              Tab(icon: Icon(Icons.calendar_month_rounded), text: '时间规划'),
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 18, 20, 0),
+                child: AppPageHeader(
+                  title: '复盘',
+                  subtitle: '回顾总结，持续进步',
+                  icon: Icons.pie_chart_rounded,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5FB),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const TabBar(
+                    dividerColor: Colors.transparent,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicator: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(14)),
+                    ),
+                    labelColor: AppColors.primary,
+                    unselectedLabelColor: AppColors.textMuted,
+                    tabs: [
+                      Tab(text: '每日复盘'),
+                      Tab(text: '时间规划'),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    RefreshIndicator(
+                      onRefresh: _reload,
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                        children: [
+                          _MonthHeader(
+                            month: _visibleMonth,
+                            onPrevious: () => _changeMonth(-1),
+                            onNext: () => _changeMonth(1),
+                          ),
+                          const SizedBox(height: 12),
+                          FutureBuilder<_ReviewMonthData>(
+                            future: _monthFuture,
+                            builder: (context, snapshot) {
+                              final data = snapshot.data;
+                              if (data == null) {
+                                return const _LoadingCard(label: '正在整理复盘目录...');
+                              }
+                              return _MonthReviewFolders(
+                                data: data,
+                                selectedDay: _selectedDay,
+                                onSelectDay: _selectDay,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          FutureBuilder<_ReviewDayData>(
+                            future: _dayFuture,
+                            builder: (context, snapshot) {
+                              final data = snapshot.data;
+                              if (data == null) {
+                                return const _LoadingCard(label: '正在读取当天记录...');
+                              }
+                              return _DayReviewPanel(
+                                data: data,
+                                isGenerating: _isGenerating,
+                                onGenerate: () => _generateReview(data),
+                                onEdit: data.summary == null
+                                    ? null
+                                    : () => _editSummary(data.summary!),
+                                onDelete: data.summary == null
+                                    ? null
+                                    : () => _deleteSummary(data.summary!),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    SchedulePlanScreen(
+                      database: widget.database,
+                      nowProvider: widget.nowProvider,
+                      planClient: widget.planClient,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            RefreshIndicator(
-              onRefresh: _reload,
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  _MonthHeader(
-                    month: _visibleMonth,
-                    onPrevious: () => _changeMonth(-1),
-                    onNext: () => _changeMonth(1),
-                  ),
-                  const SizedBox(height: 12),
-                  FutureBuilder<_ReviewMonthData>(
-                    future: _monthFuture,
-                    builder: (context, snapshot) {
-                      final data = snapshot.data;
-                      if (data == null) {
-                        return const _LoadingCard(label: '正在整理复盘目录...');
-                      }
-                      return _MonthReviewFolders(
-                        data: data,
-                        selectedDay: _selectedDay,
-                        onSelectDay: _selectDay,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  FutureBuilder<_ReviewDayData>(
-                    future: _dayFuture,
-                    builder: (context, snapshot) {
-                      final data = snapshot.data;
-                      if (data == null) {
-                        return const _LoadingCard(label: '正在读取当天记录...');
-                      }
-                      return _DayReviewPanel(
-                        data: data,
-                        isGenerating: _isGenerating,
-                        onGenerate: () => _generateReview(data),
-                        onEdit: data.summary == null
-                            ? null
-                            : () => _editSummary(data.summary!),
-                        onDelete: data.summary == null
-                            ? null
-                            : () => _deleteSummary(data.summary!),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            SchedulePlanScreen(
-              database: widget.database,
-              nowProvider: widget.nowProvider,
-              planClient: widget.planClient,
-            ),
-          ],
         ),
       ),
     );
@@ -225,30 +259,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   Future<String?> _askUserNote() {
-    final controller = TextEditingController();
-    return showDialog<String>(
+    return showAppTextPromptSheet(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('补充今天的感受'),
-          content: TextField(
-            controller: controller,
-            minLines: 3,
-            maxLines: 6,
-            decoration: const InputDecoration(hintText: '例如：今天有点拖延，但下午状态好一些。'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(null),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('生成'),
-            ),
-          ],
-        );
-      },
+      title: '补充今天的感受',
+      subtitle: '记录真实感受，帮助 AI 生成更贴合你的复盘',
+      hintText: '此刻感觉如何？有哪些收获或不足？对接下来的计划有什么想法…',
+      confirmLabel: '生成复盘',
+      icon: Icons.edit_note_rounded,
     );
   }
 

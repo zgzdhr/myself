@@ -78,6 +78,22 @@ class _InputScreenState extends State<InputScreen> {
             });
           },
         ),
+        if (_currentAutoSavedItems.isEmpty &&
+            _pendingBatches.isEmpty &&
+            !_isLoading &&
+            _assistantReply == null &&
+            _errorMessage == null) ...[
+          const SizedBox(height: 12),
+          _InputQuickActions(
+            onSelect: (text) {
+              _textController.text = text;
+              _textController.selection = TextSelection.collapsed(
+                offset: text.length,
+              );
+              _inputFocusNode.requestFocus();
+            },
+          ),
+        ],
         if (_isLoading) ...[
           const SizedBox(height: 12),
           const LinearProgressIndicator(
@@ -151,7 +167,7 @@ class _InputScreenState extends State<InputScreen> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
         child: scrollable,
       ),
     );

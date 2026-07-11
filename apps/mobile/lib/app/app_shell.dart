@@ -9,6 +9,7 @@ import '../features/home/home_screen.dart';
 import '../features/review/review_screen.dart';
 import '../features/security/app_lock.dart';
 import '../features/settings/profile_settings_screen.dart';
+import 'app_visuals.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key});
@@ -20,39 +21,55 @@ class AppShell extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF7F4EE),
+        scaffoldBackgroundColor: Colors.transparent,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF53736A),
+          seedColor: AppColors.primary,
           brightness: Brightness.light,
-          surface: const Color(0xFFFFFCF7),
+          surface: AppColors.surface,
         ),
         textTheme: ThemeData.light().textTheme.apply(
           fontFamily: 'SF Pro Display',
-          bodyColor: const Color(0xFF262626),
-          displayColor: const Color(0xFF1D1D1F),
+          bodyColor: AppColors.text,
+          displayColor: AppColors.text,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF7F4EE),
-          foregroundColor: Color(0xFF1D1D1F),
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppColors.text,
           elevation: 0,
           centerTitle: false,
         ),
         cardTheme: CardThemeData(
-          color: const Color(0xFFFFFCF7),
+          color: AppColors.surface,
           elevation: 0,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Color(0xFFE7E0D6)),
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.border),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: Colors.white,
+        ),
+        navigationBarTheme: const NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: AppColors.primarySoft,
+          labelTextStyle: WidgetStatePropertyAll(
+            TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
         ),
       ),
       home: const AppLockGate(child: _MainNavigationScreen()),
@@ -82,75 +99,82 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
     final dataRefreshVersion = ref.watch(appDataRefreshProvider);
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          const HomeScreen(),
-          TasksScreen(
-            database: database,
-            nowProvider: nowProvider,
-            taskReminderScheduler: taskReminderScheduler,
-            refreshVersion: dataRefreshVersion,
-            onRecordsChanged: () {
-              ref.read(appDataRefreshProvider.notifier).bump();
-            },
-          ),
-          ReviewScreen(
-            database: database,
-            nowProvider: nowProvider,
-            reviewClient: HttpReviewClient(
-              baseUri: defaultParserBaseUri(),
-              accessTokenProvider: apiAccessToken,
-              requireAuthentication: true,
+      backgroundColor: AppColors.background,
+      extendBody: false,
+      body: AppBackdrop(
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            const HomeScreen(),
+            TasksScreen(
+              database: database,
+              nowProvider: nowProvider,
+              taskReminderScheduler: taskReminderScheduler,
+              refreshVersion: dataRefreshVersion,
+              onRecordsChanged: () {
+                ref.read(appDataRefreshProvider.notifier).bump();
+              },
             ),
-            planClient: HttpPlanClient(
-              baseUri: defaultParserBaseUri(),
-              accessTokenProvider: apiAccessToken,
-              requireAuthentication: true,
+            ReviewScreen(
+              database: database,
+              nowProvider: nowProvider,
+              reviewClient: HttpReviewClient(
+                baseUri: defaultParserBaseUri(),
+                accessTokenProvider: apiAccessToken,
+                requireAuthentication: true,
+              ),
+              planClient: HttpPlanClient(
+                baseUri: defaultParserBaseUri(),
+                accessTokenProvider: apiAccessToken,
+                requireAuthentication: true,
+              ),
             ),
-          ),
-          ProfileSettingsScreen(
-            database: database,
-            nowProvider: nowProvider,
-            parserBaseUri: defaultParserBaseUri(),
-            cloudAuthService: cloudAuthService,
-            cloudSyncService: cloudSyncService,
-            taskReminderScheduler: taskReminderScheduler,
-            refreshVersion: dataRefreshVersion,
-            onOpenHome: () => _selectDestination(0),
-            onOpenTasks: () => _selectDestination(1),
-            onOpenReview: () => _selectDestination(2),
-            onRecordsChanged: () {
-              ref.read(appDataRefreshProvider.notifier).bump();
-            },
-          ),
-        ],
+            ProfileSettingsScreen(
+              database: database,
+              nowProvider: nowProvider,
+              parserBaseUri: defaultParserBaseUri(),
+              cloudAuthService: cloudAuthService,
+              cloudSyncService: cloudSyncService,
+              taskReminderScheduler: taskReminderScheduler,
+              refreshVersion: dataRefreshVersion,
+              onOpenHome: () => _selectDestination(0),
+              onOpenTasks: () => _selectDestination(1),
+              onOpenReview: () => _selectDestination(2),
+              onRecordsChanged: () {
+                ref.read(appDataRefreshProvider.notifier).bump();
+              },
+            ),
+          ],
+        ),
       ),
-      bottomNavigationBar: NavigationBar(
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Container(
+        width: 60,
+        height: 60,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF4694FF), Color(0xFF1768ED)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x552F7DF6),
+              blurRadius: 18,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: IconButton(
+          tooltip: '快速记录',
+          onPressed: () => _selectDestination(0),
+          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 34),
+        ),
+      ),
+      bottomNavigationBar: _AppBottomNavigation(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: _selectDestination,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: '首页',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.checklist_rounded),
-            selectedIcon: Icon(Icons.task_alt_rounded),
-            label: '任务',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.edit_note_rounded),
-            selectedIcon: Icon(Icons.fact_check_rounded),
-            label: '复盘',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: '我的',
-          ),
-        ],
+        onSelected: _selectDestination,
       ),
     );
   }
@@ -159,5 +183,108 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+}
+
+class _AppBottomNavigation extends StatelessWidget {
+  const _AppBottomNavigation({
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomAppBar(
+      height: 78,
+      padding: EdgeInsets.zero,
+      color: Colors.white.withValues(alpha: 0.96),
+      elevation: 12,
+      shadowColor: const Color(0x223B82F6),
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
+      child: Row(
+        children: [
+          Expanded(
+            child: _NavItem(
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home_rounded,
+              label: '首页',
+              selected: selectedIndex == 0,
+              onTap: () => onSelected(0),
+            ),
+          ),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.checklist_rounded,
+              selectedIcon: Icons.task_alt_rounded,
+              label: '任务',
+              selected: selectedIndex == 1,
+              onTap: () => onSelected(1),
+            ),
+          ),
+          const SizedBox(width: 72),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.pie_chart_outline_rounded,
+              selectedIcon: Icons.pie_chart_rounded,
+              label: '复盘',
+              selected: selectedIndex == 2,
+              onTap: () => onSelected(2),
+            ),
+          ),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.person_outline_rounded,
+              selectedIcon: Icons.person_rounded,
+              label: '我的',
+              selected: selectedIndex == 3,
+              onTap: () => onSelected(3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? AppColors.primary : AppColors.textMuted;
+    return InkResponse(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(selected ? selectedIcon : icon, color: color, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

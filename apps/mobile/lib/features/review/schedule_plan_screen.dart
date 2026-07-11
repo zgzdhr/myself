@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../app/app_visuals.dart';
 import '../../data/local_db/app_database.dart';
 import '../../data/plan/plan_client.dart';
 import '../../domain/plan_result.dart';
@@ -150,33 +151,13 @@ class _SchedulePlanScreenState extends State<SchedulePlanScreen> {
   }
 
   Future<String?> _askUserNote() {
-    final controller = TextEditingController();
-    return showDialog<String>(
+    return showAppTextPromptSheet(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('补充今天的安排偏好'),
-          content: TextField(
-            controller: controller,
-            minLines: 3,
-            maxLines: 6,
-            decoration: const InputDecoration(
-              hintText: '例如：上午先轻一点，下午安排重点任务，晚上留半小时复盘。',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(null),
-              child: const Text('取消'),
-            ),
-            FilledButton.icon(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              icon: const Icon(Icons.auto_awesome_rounded),
-              label: const Text('生成草稿'),
-            ),
-          ],
-        );
-      },
+      title: '补充安排偏好',
+      subtitle: '告诉 AI 今天的节奏和必须保留的时间',
+      hintText: '例如：上午先轻一点，下午安排重点任务，晚上留半小时复盘。',
+      confirmLabel: '生成规划草稿',
+      icon: Icons.calendar_month_rounded,
     );
   }
 

@@ -7,7 +7,16 @@ class _HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [_HomeGreeting(), _DebugDateSwitcher()],
+      children: [
+        AppPageHeader(
+          title: 'Myself',
+          subtitle: '你的记忆与行动助手',
+          icon: Icons.face_rounded,
+        ),
+        SizedBox(height: 26),
+        _HomeGreeting(),
+        _DebugDateSwitcher(),
+      ],
     );
   }
 }
@@ -38,20 +47,25 @@ class _HomeGreeting extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 10),
-        Text(
-          '早上好',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            color: const Color(0xFF1D1D1F),
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0,
-          ),
+        Row(
+          children: [
+            Text(
+              '早上好',
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                color: AppColors.text,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text('✨', style: TextStyle(fontSize: 24)),
+          ],
         ),
         const SizedBox(height: 6),
         const Text(
-          '把今天的想法放在这里，我会帮你整理成行动和记忆。',
+          '记录 · 整理 · 行动 · 成长',
           style: TextStyle(
-            color: Color(0xFF746E66),
+            color: AppColors.textMuted,
             fontSize: 16,
             height: 1.35,
             fontWeight: FontWeight.w500,
@@ -77,62 +91,67 @@ class _DebugDateSwitcher extends ConsumerWidget {
     final label =
         '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: _SurfacePanel(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '测试日期',
-              style: TextStyle(
-                color: Color(0xFF1D1D1F),
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.fromLTRB(8, 4, 6, 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.70),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Icon(
+              Icons.bug_report_outlined,
+              size: 16,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 5),
+          const Text(
+            '测试日期',
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: '前一天',
+            onPressed: () {
+              ref.read(debugNowOverrideProvider.notifier).setPreviousDay(local);
+            },
+            icon: const Icon(Icons.chevron_left_rounded, size: 19),
+          ),
+          Expanded(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                IconButton(
-                  tooltip: '前一天',
-                  onPressed: () {
-                    ref
-                        .read(debugNowOverrideProvider.notifier)
-                        .setPreviousDay(local);
-                  },
-                  icon: const Icon(Icons.chevron_left_rounded),
-                ),
-                Expanded(
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFF3A3835),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: '后一天',
-                  onPressed: () {
-                    ref
-                        .read(debugNowOverrideProvider.notifier)
-                        .setNextDay(local);
-                  },
-                  icon: const Icon(Icons.chevron_right_rounded),
-                ),
-                TextButton(
-                  onPressed: () {
-                    ref.read(debugNowOverrideProvider.notifier).clear();
-                  },
-                  child: const Text('真实日期'),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: '后一天',
+            onPressed: () {
+              ref.read(debugNowOverrideProvider.notifier).setNextDay(local);
+            },
+            icon: const Icon(Icons.chevron_right_rounded, size: 19),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(debugNowOverrideProvider.notifier).clear();
+            },
+            child: const Text('真实日期', style: TextStyle(fontSize: 12)),
+          ),
+        ],
       ),
     );
   }
@@ -239,22 +258,20 @@ class _SedentarySessionPanelState extends State<_SedentarySessionPanel> {
                 height: 42,
                 decoration: BoxDecoration(
                   color: isActive
-                      ? const Color(0xFFFFF3D6)
-                      : const Color(0xFFEAF0EC),
-                  borderRadius: BorderRadius.circular(8),
+                      ? const Color(0xFFFFF4DB)
+                      : AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isActive
                         ? const Color(0xFFE6C56E)
-                        : const Color(0xFFD5DFD8),
+                        : const Color(0xFFD8E7FF),
                   ),
                 ),
                 child: Icon(
                   isActive
                       ? Icons.timer_outlined
                       : Icons.self_improvement_rounded,
-                  color: isActive
-                      ? const Color(0xFF9B6A00)
-                      : const Color(0xFF53736A),
+                  color: isActive ? const Color(0xFF9B6A00) : AppColors.primary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -265,7 +282,7 @@ class _SedentarySessionPanelState extends State<_SedentarySessionPanel> {
                     Text(
                       isActive ? '久坐中' : '开始久坐',
                       style: const TextStyle(
-                        color: Color(0xFF1D1D1F),
+                        color: AppColors.text,
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                       ),
@@ -276,7 +293,7 @@ class _SedentarySessionPanelState extends State<_SedentarySessionPanel> {
                           ? '将在 ${_timeLabel(session.reminderAt)} 提醒你站起来活动'
                           : '手动开始，默认 60 分钟后提醒活动',
                       style: const TextStyle(
-                        color: Color(0xFF8A8278),
+                        color: AppColors.textMuted,
                         fontSize: 14,
                         height: 1.35,
                         fontWeight: FontWeight.w500,
@@ -368,12 +385,12 @@ class _HomeSuggestionPanel extends StatelessWidget {
             leading: const Icon(
               Icons.auto_awesome_rounded,
               size: 19,
-              color: Color(0xFF53736A),
+              color: AppColors.primary,
             ),
             title: const Text(
               'AI 建议',
               style: TextStyle(
-                color: Color(0xFF53736A),
+                color: AppColors.primary,
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
               ),
@@ -701,14 +718,14 @@ class _SurfacePanel extends StatelessWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF7),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE7E0D6)),
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x14000000),
-            offset: Offset(0, 12),
-            blurRadius: 24,
+            color: Color(0x142F7DF6),
+            offset: Offset(0, 10),
+            blurRadius: 22,
           ),
           BoxShadow(
             color: Color(0x66FFFFFF),

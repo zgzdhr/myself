@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/app_visuals.dart';
 import '../../data/api/api_error_code.dart';
 import '../../data/local_db/app_database.dart';
 import '../../domain/item_type.dart';
@@ -105,7 +106,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     final reviewAffectsHome = ref.watch(reviewAffectsHomeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      backgroundColor: Colors.transparent,
       body: StreamBuilder<CloudAuthState>(
         stream: widget.cloudAuthService.watchAuthState(),
         initialData: widget.cloudAuthService.currentState,
@@ -119,8 +120,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
               final data = snapshot.data;
 
               return ListView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
                 children: [
+                  const SafeArea(
+                    bottom: false,
+                    child: AppPageHeader(
+                      title: '我的',
+                      subtitle: '管理你的账号、记忆与偏好',
+                      icon: Icons.person_rounded,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   _AccountCard(
                     authState: authState,
                     onLogin: () => _openEmailOtpSignIn(),
@@ -754,11 +764,11 @@ class _AccountCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF0EC),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFD5DFD8)),
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFD8E7FF)),
                   ),
-                  child: Icon(icon, color: const Color(0xFF53736A)),
+                  child: Icon(icon, color: AppColors.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -768,7 +778,7 @@ class _AccountCard extends StatelessWidget {
                       Text(
                         authState.displayName,
                         style: const TextStyle(
-                          color: Color(0xFF1D1D1F),
+                          color: AppColors.text,
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                         ),
@@ -777,7 +787,7 @@ class _AccountCard extends StatelessWidget {
                       Text(
                         subtitle,
                         style: const TextStyle(
-                          color: Color(0xFF746E66),
+                          color: AppColors.textMuted,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -985,9 +995,9 @@ class _TodayOverviewCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '数据概览',
+              '今日概览',
               style: TextStyle(
-                color: Color(0xFF1D1D1F),
+                color: AppColors.text,
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
               ),
@@ -1027,13 +1037,13 @@ class _OverviewPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1EAE0),
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         '$label ${textValue ?? value ?? '-'}',
         style: const TextStyle(
-          color: Color(0xFF3A3835),
+          color: AppColors.primary,
           fontSize: 13,
           fontWeight: FontWeight.w700,
         ),
@@ -1057,33 +1067,38 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 2.5,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
+    return Row(
       children: [
-        _QuickActionButton(
-          icon: Icons.notifications_active_rounded,
-          label: '通知权限',
-          onTap: onNotifications,
+        Expanded(
+          child: _QuickActionButton(
+            icon: Icons.notifications_active_rounded,
+            label: '通知权限',
+            onTap: onNotifications,
+          ),
         ),
-        _QuickActionButton(
-          icon: Icons.cloud_sync_rounded,
-          label: '数据与同步',
-          onTap: onSync,
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickActionButton(
+            icon: Icons.cloud_sync_rounded,
+            label: '数据与同步',
+            onTap: onSync,
+          ),
         ),
-        _QuickActionButton(
-          icon: Icons.privacy_tip_outlined,
-          label: '隐私与记忆',
-          onTap: onPrivacy,
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickActionButton(
+            icon: Icons.privacy_tip_outlined,
+            label: '隐私与记忆',
+            onTap: onPrivacy,
+          ),
         ),
-        _QuickActionButton(
-          icon: Icons.psychology_alt_outlined,
-          label: '记忆管理',
-          onTap: onMemory,
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickActionButton(
+            icon: Icons.psychology_alt_outlined,
+            label: '记忆管理',
+            onTap: onMemory,
+          ),
         ),
       ],
     );
@@ -1103,10 +1118,32 @@ class _QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(label, overflow: TextOverflow.ellipsis),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        height: 88,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 24, color: AppColors.primary),
+            const SizedBox(height: 7),
+            Text(
+              label,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1125,13 +1162,13 @@ class _SettingsSection extends StatelessWidget {
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           childrenPadding: const EdgeInsets.only(bottom: 8),
-          iconColor: const Color(0xFF53736A),
-          collapsedIconColor: const Color(0xFF8A8278),
-          leading: const Icon(Icons.folder_rounded, color: Color(0xFF53736A)),
+          iconColor: AppColors.primary,
+          collapsedIconColor: AppColors.textMuted,
+          leading: const Icon(Icons.folder_rounded, color: AppColors.primary),
           title: Text(
             title,
             style: const TextStyle(
-              color: Color(0xFF1D1D1F),
+              color: AppColors.text,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -1139,7 +1176,7 @@ class _SettingsSection extends StatelessWidget {
           subtitle: Text(
             '${children.length} 项设置',
             style: const TextStyle(
-              color: Color(0xFF746E66),
+              color: AppColors.textMuted,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1169,7 +1206,15 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF53736A)),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.primarySoft,
+          borderRadius: BorderRadius.circular(11),
+        ),
+        child: Icon(icon, color: AppColors.primary, size: 20),
+      ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
       subtitle: Text(subtitle),
       trailing: Row(
@@ -1179,13 +1224,13 @@ class _SettingsTile extends StatelessWidget {
             Text(
               trailingText!,
               style: const TextStyle(
-                color: Color(0xFF8A8278),
+                color: AppColors.textMuted,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
             ),
           if (onTap != null)
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8A8278)),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
         ],
       ),
       onTap: onTap,

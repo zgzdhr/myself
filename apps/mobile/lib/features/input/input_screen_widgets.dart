@@ -117,17 +117,17 @@ class _TactileInputPanel extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         curve: Curves.easeOutCubic,
         transform: Matrix4.translationValues(0, isPressed ? 1.5 : 0, 0),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF7),
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.white.withValues(alpha: 0.96),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isActive ? const Color(0xFF53736A) : const Color(0xFFE7E0D6),
+            color: isActive ? const Color(0xFF2F7DF6) : const Color(0xFFE7EDF7),
             width: isActive ? 1.4 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Color(isPressed ? 0x0A000000 : 0x18000000),
+              color: Color(isPressed ? 0x0A2F7DF6 : 0x182F7DF6),
               offset: Offset(0, isPressed ? 5 : 16),
               blurRadius: isPressed ? 14 : 28,
             ),
@@ -147,13 +147,13 @@ class _TactileInputPanel extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF0EC),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFD5DFD8)),
+                    color: const Color(0xFFEAF3FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFD8E7FF)),
                   ),
                   child: const Icon(
                     Icons.mic_none_rounded,
-                    color: Color(0xFF53736A),
+                    color: Color(0xFF2F7DF6),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -164,17 +164,17 @@ class _TactileInputPanel extends StatelessWidget {
                       Text(
                         '今天想记点什么？',
                         style: TextStyle(
-                          color: Color(0xFF1D1D1F),
-                          fontSize: 22,
+                          color: Color(0xFF172033),
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                           height: 1.15,
                         ),
                       ),
                       SizedBox(height: 3),
                       Text(
-                        '先把想法放进来',
+                        '任务、状态、经历或一个问题',
                         style: TextStyle(
-                          color: Color(0xFF8A8278),
+                          color: Color(0xFF78859D),
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
@@ -188,7 +188,7 @@ class _TactileInputPanel extends StatelessWidget {
             TextField(
               controller: controller,
               focusNode: focusNode,
-              minLines: 4,
+              minLines: 3,
               maxLines: 8,
               style: const TextStyle(
                 color: Color(0xFF262626),
@@ -198,7 +198,7 @@ class _TactileInputPanel extends StatelessWidget {
               ),
               decoration: const InputDecoration(
                 contentPadding: EdgeInsets.zero,
-                hintText: '例如：明天上午联系王总，我今天有点累。',
+                hintText: '例如：明天下午联系王总，我今天有点累。',
                 hintStyle: TextStyle(
                   color: Color(0xFFAAA298),
                   fontSize: 17,
@@ -221,7 +221,7 @@ class _TactileInputPanel extends StatelessWidget {
                   ),
                   label: Text(isLoading ? '整理中...' : '整理'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF1F2A27),
+                    backgroundColor: const Color(0xFF2F7DF6),
                     foregroundColor: const Color(0xFFFFFCF7),
                     disabledBackgroundColor: const Color(0xFFB9B1A7),
                     padding: const EdgeInsets.symmetric(
@@ -229,7 +229,7 @@ class _TactileInputPanel extends StatelessWidget {
                       vertical: 12,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
@@ -238,6 +238,71 @@ class _TactileInputPanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _InputQuickActions extends StatelessWidget {
+  const _InputQuickActions({required this.onSelect});
+
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    const actions = [
+      (Icons.event_note_rounded, Color(0xFF2F7DF6), '记一件事', '记一下：'),
+      (Icons.task_alt_rounded, Color(0xFF22C59D), '记任务', '我要做：'),
+      (
+        Icons.sentiment_satisfied_alt_rounded,
+        Color(0xFFFF9F43),
+        '记状态',
+        '我现在感觉：',
+      ),
+      (Icons.help_outline_rounded, Color(0xFF8B6FF7), '提问', '我想问：'),
+    ];
+
+    return Row(
+      children: [
+        for (var index = 0; index < actions.length; index++) ...[
+          if (index > 0) const SizedBox(width: 8),
+          Expanded(
+            child: InkWell(
+              onTap: () => onSelect(actions[index].$4),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE7EDF7)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x102F7DF6),
+                      blurRadius: 12,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Icon(actions[index].$1, color: actions[index].$2, size: 20),
+                    const SizedBox(height: 5),
+                    Text(
+                      actions[index].$3,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: Color(0xFF33405A),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
