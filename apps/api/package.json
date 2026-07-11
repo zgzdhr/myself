@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "tsx src/server.ts",
     "smoke:parse": "tsx scripts/smokeParseSamples.ts",
+    "verify:deployed-api": "tsx scripts/verifyDeployedApi.ts",
+    "verify:supabase-security": "tsx scripts/verifySupabaseSecurity.ts",
     "test": "node --test --import tsx test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

@@ -6,6 +6,7 @@ import {
   type ReviewRequest,
   type ReviewResult,
 } from "../schemas/reviewResultSchema.js";
+import { validateReviewResultForRequest } from "../services/aiResultGuard.js";
 import { ReviewServiceError } from "../services/deepseekReview.js";
 
 export type GenerateReview = (request: ReviewRequest) => Promise<unknown>;
@@ -55,6 +56,20 @@ export function createReviewRouter(
           error: {
             code: "invalid_review_result",
             issues: reviewResult.error.issues,
+          },
+        });
+        return;
+      }
+
+      const resultGuard = validateReviewResultForRequest(
+        requestResult.data,
+        reviewResult.data,
+      );
+      if (!resultGuard.ok) {
+        response.status(502).json({
+          error: {
+            code: "invalid_review_result",
+            issues: resultGuard.issues,
           },
         });
         return;

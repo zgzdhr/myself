@@ -440,36 +440,25 @@ class ExtractedItemsController {
     }
 
     final now = nowProvider();
-    TaskReminderRequest? reminderToSchedule;
-    String? reminderToCancelTaskId;
     await database.transaction(() async {
       switch (intent.action) {
         case TaskUpdateAction.complete:
           await database.markTaskCompleted(id: resolvedTask.id, updatedAt: now);
-          reminderToCancelTaskId = resolvedTask.id;
         case TaskUpdateAction.cancel:
           await database.markTaskCancelled(id: resolvedTask.id, updatedAt: now);
-          reminderToCancelTaskId = resolvedTask.id;
         case TaskUpdateAction.delay:
           await database.updateTaskById(
             id: resolvedTask.id,
-            dueTimeText: intent.dueTimeText,
-            dueTime: intent.dueTime,
+            dueTimeText: Value(intent.dueTimeText),
+            dueTime: Value(intent.dueTime),
             updatedAt: now,
           );
-          if (intent.dueTime == null) {
-            reminderToCancelTaskId = resolvedTask.id;
-          } else {
-            reminderToSchedule = TaskReminderRequest(
-              taskId: resolvedTask.id,
-              title: resolvedTask.title,
-              dueTime: intent.dueTime!,
-            );
-          }
         case TaskUpdateAction.edit:
+          final updatedTitle =
+              item.content ?? item.title ?? resolvedTask.title;
           await database.updateTaskById(
             id: resolvedTask.id,
-            title: item.content ?? item.title ?? resolvedTask.title,
+            title: Value(updatedTitle),
             updatedAt: now,
           );
       }
@@ -481,22 +470,22 @@ class ExtractedItemsController {
       );
     });
 
-    final scheduleRequest = reminderToSchedule;
-    final cancelTaskId = reminderToCancelTaskId;
-    if (scheduleRequest != null) {
+    final updatedTask = await database.getTaskById(resolvedTask.id);
+    if (updatedTask == null) {
       await taskReminderCoordinator.sync(
-        taskId: scheduleRequest.taskId,
-        title: scheduleRequest.title,
-        dueTime: scheduleRequest.dueTime,
-        isActive: true,
-        now: now,
-      );
-    } else if (cancelTaskId != null) {
-      await taskReminderCoordinator.sync(
-        taskId: cancelTaskId,
+        taskId: resolvedTask.id,
         title: resolvedTask.title,
         dueTime: null,
         isActive: false,
+        now: now,
+      );
+    } else {
+      await taskReminderCoordinator.sync(
+        taskId: updatedTask.id,
+        title: updatedTask.title,
+        dueTime: updatedTask.dueTime,
+        isActive:
+            TaskStatus.fromValue(updatedTask.taskStatus) == TaskStatus.active,
         now: now,
       );
     }
@@ -745,15 +734,16 @@ class ExtractedItemsController {
           confidence: item.confidence,
           needUserConfirm: item.needUserConfirm,
           status:
-              _shouldAutoSaveValues(
-                type: item.type,
-                title: item.title,
-                content: item.content,
-                sourceText: item.sourceText,
-                now: now,
-              )
-              ? RecordStatus.confirmed
-              : RecordStatus.pending,
+              item.needUserConfirm ||
+                  !_shouldAutoSaveValues(
+                    type: item.type,
+                    title: item.title,
+                    content: item.content,
+                    sourceText: item.sourceText,
+                    now: now,
+                  )
+              ? RecordStatus.pending
+              : RecordStatus.confirmed,
           createdAt: now,
           updatedAt: now,
           expiresAt: item.expiresAt,
@@ -863,6 +853,10 @@ class ExtractedItemsController {
   }
 
   bool _shouldAutoSave({required ExtractedItem item, required DateTime now}) {
+    if (item.needUserConfirm) {
+      return false;
+    }
+
     return _shouldAutoSaveValues(
       type: item.type,
       title: item.title,

@@ -1,10 +1,63 @@
 # Current Verification
 
+## Latest Verification: Private-trial security remediation and native builds
+
+Date: 2026-07-11
+Scope: task patch safety, AI endpoint authentication and quota, local-only
+calendar privacy boundary, secure session/app lock source, cloud restore and
+account deletion, dependency upgrades, CI configuration, and Android/iOS
+native builds.
+
+### Result
+
+- Drift/build-runner generation: Pass; 129 generated outputs were written
+  after upgrading compatible Flutter dependencies.
+- `flutter analyze`: Pass, no issues found.
+- Full Flutter suite: Pass, 171 tests.
+- API `npm run typecheck`: Pass.
+- Full API suite: Pass, 90 tests, including authentication, privacy logging,
+  body-size/JSON errors, durable quota, semantic result guards, and rate limits.
+- `npm audit --omit=dev --audit-level=moderate`: Pass, zero vulnerabilities.
+- Android debug mock build: Pass.
+  - Artifact: `apps/mobile/build/app/outputs/flutter-apk/app-debug.apk`
+  - Size: 225,819,249 bytes
+  - SHA-256: `3919347d75e33afe1a7bb816e295278f2de19afac04b4f5f5342a3f68cf8b5ee`
+- iOS debug device build with `--no-codesign`: Pass.
+  - Artifact: `apps/mobile/build/ios/iphoneos/Runner.app`
+  - Xcode reported three stale-resource cleanup warnings but zero build errors.
+- Android signing report: debug uses the debug keystore; release has no signing
+  configuration and therefore cannot silently fall back to debug signing.
+- CI and Dependabot YAML syntax: Pass locally. Hosted CI execution remains
+  pending until the workflow is committed and pushed.
+- `git diff --check`: Pass.
+
+The following are deliberately **not** marked verified yet:
+
+- Applying `20260711_private_trial_security.sql` to the real Supabase project.
+- Two-account RLS, owner-reference, quota, cloud deletion, and account-deletion
+  verification with disposable non-sensitive accounts.
+- Vercel Supabase environment variables, new deployment, and real endpoint
+  authentication/rate-limit/quota verification.
+- Secure persistent session restoration, biometric app lock, backup exclusion,
+  and calendar-localization behavior on physical Android/iOS devices. No phone
+  was connected during this verification; `flutter devices` found only macOS
+  and Chrome.
+- Permanent application name/id, Android release key, Apple signing identity,
+  store records, and hosted CI run.
+
+See `security-architecture-audit-2026-07-10.md` and
+`private-trial-security-runbook-2026-07-10.md` before deploying or expanding
+the trial.
+
 ## Latest Verification: Public API Proxy And Android APK
 
 Date: 2026-06-23
 Scope: Vercel production deployment for `apps/api`, public AI proxy smoke, and
 Android release APK build for phone-data testing
+
+> Historical evidence only. This deployment predates the current mandatory
+> Supabase authentication and daily-quota contract. Do not point a new build
+> at this public endpoint or treat it as approved for private trial use.
 
 ### Summary
 

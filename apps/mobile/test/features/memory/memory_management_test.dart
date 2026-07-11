@@ -15,7 +15,7 @@ import 'package:mobile/features/memory/tasks_screen.dart';
 
 void main() {
   late AppDatabase database;
-  final now = DateTime.utc(2026, 5, 31, 10);
+  final now = DateTime(2026, 6, 1, 10);
 
   setUp(() async {
     database = AppDatabase(
@@ -106,20 +106,31 @@ void main() {
       await tester.tap(find.text('管理').first);
       await tester.pumpAndSettle();
 
-      expect(find.text('任务'), findsOneWidget);
+      expect(find.text('任务日历'), findsOneWidget);
     });
   });
 
   group('TasksScreen', () {
-    testWidgets('shows active tasks with source text', (tester) async {
+    testWidgets('shows active tasks for the selected calendar day', (tester) async {
+      final scheduledTasks = await database.getTasksForRange(
+        start: DateTime(2026, 6, 1),
+        end: DateTime(2026, 6, 2),
+      );
+      expect(scheduledTasks.map((task) => task.title), ['联系王总']);
+      expect(scheduledTasks.single.dueTime, DateTime(2026, 6, 1, 10));
+
       await tester.pumpWidget(
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('联系王总'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
 
       expect(find.text('联系王总'), findsOneWidget);
       expect(find.text('6月1日 10:00｜原文：明天'), findsOneWidget);
-      expect(find.textContaining('明天联系王总'), findsOneWidget);
     });
 
     testWidgets('shows completed and cancelled task status labels', (
@@ -141,6 +152,11 @@ void main() {
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('联系王总'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
 
       expect(find.text('联系王总'), findsOneWidget);
       expect(find.text('已完成'), findsOneWidget);
@@ -155,6 +171,13 @@ void main() {
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('删除'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('删除'));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('删除'));
       await tester.pumpAndSettle();
@@ -165,6 +188,8 @@ void main() {
       var task = await database.select(database.tasks).getSingle();
       expect(task.status, RecordStatus.confirmed.value);
 
+      await tester.ensureVisible(find.text('删除'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('删除'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('确认删除'));
@@ -184,12 +209,20 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('编辑'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('编辑'));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('编辑'));
       await tester.pumpAndSettle();
 
       expect(find.text('选择日期'), findsOneWidget);
-      expect(find.text('选择时间'), findsOneWidget);
+      expect(find.text('开始时间'), findsOneWidget);
+      expect(find.text('结束时间'), findsOneWidget);
       expect(find.text('清除时间'), findsOneWidget);
 
       final titleField = find.byType(TextField).first;
@@ -199,14 +232,22 @@ void main() {
 
       final task = await database.select(database.tasks).getSingle();
       expect(task.title, '联系李总');
-      expect(task.dueTimeText, '明天');
-      expect(task.dueTime, isNot(isNull));
+      expect(task.dueTimeText, contains('6月1日'));
+      expect(task.startTime, DateTime(2026, 6, 1, 10));
+      expect(task.endTime, DateTime(2026, 6, 1, 11));
     });
 
     testWidgets('edit task can clear due time', (tester) async {
       await tester.pumpWidget(
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('编辑'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('编辑'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('编辑'));
@@ -218,6 +259,8 @@ void main() {
       final task = await database.select(database.tasks).getSingle();
       expect(task.dueTimeText, isNull);
       expect(task.dueTime, isNull);
+      expect(task.startTime, isNull);
+      expect(task.endTime, isNull);
     });
 
     testWidgets('empty state shows no tasks message', (tester) async {
@@ -227,8 +270,13 @@ void main() {
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('这一天暂无任务或时间块。'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
 
-      expect(find.text('暂无任务'), findsOneWidget);
+      expect(find.text('这一天暂无任务或时间块。'), findsOneWidget);
     });
   });
 

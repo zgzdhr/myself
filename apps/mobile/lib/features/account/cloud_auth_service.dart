@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../data/api/api_access_token_provider.dart';
+
 class CloudAuthState {
   const CloudAuthState({
     required this.isConfigured,
@@ -50,6 +52,8 @@ abstract class CloudAuthService {
 
   Future<void> ensureCloudProfile();
 
+  Future<void> deleteAccount();
+
   Future<void> signOut();
 }
 
@@ -76,6 +80,11 @@ class DisabledCloudAuthService extends CloudAuthService {
 
   @override
   Future<void> ensureCloudProfile() {
+    throw const CloudAuthNotConfiguredException();
+  }
+
+  @override
+  Future<void> deleteAccount() {
     throw const CloudAuthNotConfiguredException();
   }
 
@@ -132,6 +141,16 @@ class SupabaseCloudAuthService extends CloudAuthService {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    if (_client.auth.currentUser == null) {
+      throw const CloudAuthNotSignedInException();
+    }
+
+    await _client.rpc<void>('delete_my_account');
+    await _client.auth.signOut(scope: SignOutScope.local);
+  }
+
+  @override
   Future<void> signOut() {
     return _client.auth.signOut();
   }
@@ -148,6 +167,17 @@ class SupabaseCloudAuthService extends CloudAuthService {
       userId: user.id,
       email: user.email,
     );
+  }
+}
+
+class SupabaseApiAccessTokenProvider implements ApiAccessTokenProvider {
+  const SupabaseApiAccessTokenProvider(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<String?> getAccessToken() async {
+    return _client.auth.currentSession?.accessToken;
   }
 }
 

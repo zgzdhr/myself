@@ -7,6 +7,7 @@ import '../features/account/cloud_backend.dart';
 import '../features/memory/tasks_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/review/review_screen.dart';
+import '../features/security/app_lock.dart';
 import '../features/settings/profile_settings_screen.dart';
 
 class AppShell extends StatelessWidget {
@@ -54,7 +55,7 @@ class AppShell extends StatelessWidget {
           fillColor: Colors.transparent,
         ),
       ),
-      home: const _MainNavigationScreen(),
+      home: const AppLockGate(child: _MainNavigationScreen()),
     );
   }
 }
@@ -77,6 +78,7 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
     final taskReminderScheduler = ref.watch(taskReminderSchedulerProvider);
     final cloudAuthService = ref.watch(cloudAuthServiceProvider);
     final cloudSyncService = ref.watch(cloudSyncServiceProvider);
+    final apiAccessToken = ref.watch(apiAccessTokenProvider);
     final dataRefreshVersion = ref.watch(appDataRefreshProvider);
 
     return Scaffold(
@@ -96,8 +98,16 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
           ReviewScreen(
             database: database,
             nowProvider: nowProvider,
-            reviewClient: HttpReviewClient(baseUri: defaultParserBaseUri()),
-            planClient: HttpPlanClient(baseUri: defaultParserBaseUri()),
+            reviewClient: HttpReviewClient(
+              baseUri: defaultParserBaseUri(),
+              accessTokenProvider: apiAccessToken,
+              requireAuthentication: true,
+            ),
+            planClient: HttpPlanClient(
+              baseUri: defaultParserBaseUri(),
+              accessTokenProvider: apiAccessToken,
+              requireAuthentication: true,
+            ),
           ),
           ProfileSettingsScreen(
             database: database,
@@ -110,6 +120,9 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
             onOpenHome: () => _selectDestination(0),
             onOpenTasks: () => _selectDestination(1),
             onOpenReview: () => _selectDestination(2),
+            onRecordsChanged: () {
+              ref.read(appDataRefreshProvider.notifier).bump();
+            },
           ),
         ],
       ),

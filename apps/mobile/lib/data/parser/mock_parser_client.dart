@@ -29,7 +29,7 @@ class MockParserClient implements ParserClient {
             'source_text': '明天上午联系王总',
             'tags': ['work', 'customer'],
             'confidence': 0.9,
-            'need_user_confirm': true,
+            'need_user_confirm': false,
             'due_time_text': '明天上午',
           },
           {

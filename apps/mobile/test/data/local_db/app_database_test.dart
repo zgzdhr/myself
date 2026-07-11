@@ -157,6 +157,48 @@ void main() {
     },
   );
 
+  test('partial task update preserves unrelated task fields', () async {
+    final now = DateTime(2026, 5, 31, 12);
+    final originalStartTime = DateTime(2026, 6, 1, 9);
+    final originalEndTime = DateTime(2026, 6, 1, 10);
+    final originalDueTime = DateTime(2026, 6, 1, 9);
+    final delayedDueTime = DateTime(2026, 6, 2, 14);
+
+    await _insertRawInput(database, now: now);
+    await _insertParseResult(database, now: now);
+    await _insertExtractedTask(database, now: now);
+    await database.confirmExtractedItemAsTask(
+      taskId: 'task-1',
+      extractedItemId: 'item-task',
+      now: now,
+    );
+    await database.updateTaskById(
+      id: 'task-1',
+      description: const Value('需要保留的任务说明'),
+      startTime: Value(originalStartTime),
+      endTime: Value(originalEndTime),
+      dueTimeText: const Value('明天上午'),
+      dueTime: Value(originalDueTime),
+      updatedAt: now,
+    );
+
+    await database.updateTaskById(
+      id: 'task-1',
+      dueTimeText: const Value('后天下午'),
+      dueTime: Value(delayedDueTime),
+      updatedAt: now.add(const Duration(minutes: 1)),
+    );
+
+    final task = await (database.select(
+      database.tasks,
+    )..where((row) => row.id.equals('task-1'))).getSingle();
+    expect(task.description, '需要保留的任务说明');
+    expect(task.startTime, originalStartTime);
+    expect(task.endTime, originalEndTime);
+    expect(task.dueTimeText, '后天下午');
+    expect(task.dueTime, delayedDueTime);
+  });
+
   test('stores, edits, and soft deletes daily summaries', () async {
     final now = DateTime.utc(2026, 6, 22, 20);
     final dayStart = DateTime.utc(2026, 6, 22);
@@ -315,6 +357,105 @@ void main() {
       updatedAt: now.add(const Duration(minutes: 20)),
     );
     expect(await database.getSchedulePlanForDay(dayStart), null);
+  });
+
+  test('daily recurring rule generates unique task instances', () async {
+    final now = DateTime(2026, 7, 6, 8);
+
+    final rule = await database.createDailyRecurringTaskRule(
+      title: '早上 7 点慢跑',
+      description: '每日重复任务',
+      startDate: now,
+      endDate: now.add(const Duration(days: 2)),
+      hour: 7,
+      minute: 0,
+      now: now,
+    );
+
+    var tasks = await database.getTasksForRange(
+      start: DateTime(2026, 7, 6),
+      end: DateTime(2026, 7, 10),
+    );
+    expect(
+      tasks.where((task) => task.recurrenceRuleId == rule.id),
+      hasLength(3),
+    );
+
+    await database.generateDailyRecurringTaskInstances(
+      ruleId: rule.id,
+      fromDay: now,
+      days: 4,
+      now: now.add(const Duration(minutes: 1)),
+    );
+
+    tasks = await database.getTasksForRange(
+      start: DateTime(2026, 7, 6),
+      end: DateTime(2026, 7, 10),
+    );
+    expect(
+      tasks.where((task) => task.recurrenceRuleId == rule.id),
+      hasLength(3),
+    );
+  });
+
+  test('deleted recurring task instance is not regenerated', () async {
+    final now = DateTime.utc(2026, 7, 6, 8);
+
+    final rule = await database.createDailyRecurringTaskRule(
+      title: '每日复习单词',
+      startDate: now,
+      hour: 21,
+      minute: 30,
+      now: now,
+    );
+    final tasks = await database.getTasksForRange(
+      start: DateTime.utc(2026, 7, 6),
+      end: DateTime.utc(2026, 7, 7),
+    );
+    final firstInstance = tasks.singleWhere(
+      (task) => task.recurrenceRuleId == rule.id,
+    );
+
+    await database.markTaskDeleted(
+      id: firstInstance.id,
+      updatedAt: now.add(const Duration(minutes: 2)),
+    );
+    await database.generateDailyRecurringTaskInstances(
+      ruleId: rule.id,
+      fromDay: now,
+      days: 1,
+      now: now.add(const Duration(minutes: 3)),
+    );
+
+    final visibleTasks = await database.getTasksForRange(
+      start: DateTime.utc(2026, 7, 6),
+      end: DateTime.utc(2026, 7, 7),
+    );
+    expect(
+      visibleTasks.where((task) => task.recurrenceRuleId == rule.id),
+      isEmpty,
+    );
+  });
+
+  test('starts and ends sedentary session', () async {
+    final now = DateTime(2026, 7, 6, 9);
+
+    final session = await database.startSedentarySession(startedAt: now);
+
+    expect(session.reminderAt, now.add(const Duration(hours: 1)));
+    expect((await database.getActiveSedentarySession())?.id, session.id);
+
+    await database.endSedentarySession(
+      id: session.id,
+      endedAt: now.add(const Duration(minutes: 35)),
+    );
+
+    expect(await database.getActiveSedentarySession(), null);
+    final sessions = await database.getSedentarySessionsForRange(
+      start: DateTime(2026, 7, 6),
+      end: DateTime(2026, 7, 7),
+    );
+    expect(sessions.single.endedAt, now.add(const Duration(minutes: 35)));
   });
 }
 

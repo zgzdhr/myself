@@ -144,18 +144,29 @@ class _HomeFollowUp extends StatelessWidget {
     required this.contextData,
     required this.database,
     required this.nowProvider,
+    required this.taskReminderScheduler,
+    required this.onRecordsChanged,
   });
 
   final List<HomeSuggestion> suggestions;
   final HomeSuggestionContext contextData;
   final AppDatabase database;
   final DateTime Function() nowProvider;
+  final TaskReminderScheduler taskReminderScheduler;
+  final VoidCallback onRecordsChanged;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _SedentarySessionPanel(
+          database: database,
+          nowProvider: nowProvider,
+          taskReminderScheduler: taskReminderScheduler,
+          onRecordsChanged: onRecordsChanged,
+        ),
+        const SizedBox(height: 18),
         _HomeListSection(
           title: '今日行动',
           emptyText: '暂无今日任务',
@@ -175,6 +186,159 @@ class _HomeFollowUp extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _SedentarySessionPanel extends StatefulWidget {
+  const _SedentarySessionPanel({
+    required this.database,
+    required this.nowProvider,
+    required this.taskReminderScheduler,
+    required this.onRecordsChanged,
+  });
+
+  final AppDatabase database;
+  final DateTime Function() nowProvider;
+  final TaskReminderScheduler taskReminderScheduler;
+  final VoidCallback onRecordsChanged;
+
+  @override
+  State<_SedentarySessionPanel> createState() => _SedentarySessionPanelState();
+}
+
+class _SedentarySessionPanelState extends State<_SedentarySessionPanel> {
+  late Future<SedentarySession?> _activeFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeFuture = widget.database.getActiveSedentarySession();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SedentarySessionPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.database != widget.database) {
+      _activeFuture = widget.database.getActiveSedentarySession();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<SedentarySession?>(
+      future: _activeFuture,
+      builder: (context, snapshot) {
+        final session = snapshot.data;
+        final isActive = session != null;
+        return _SurfacePanel(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? const Color(0xFFFFF3D6)
+                      : const Color(0xFFEAF0EC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isActive
+                        ? const Color(0xFFE6C56E)
+                        : const Color(0xFFD5DFD8),
+                  ),
+                ),
+                child: Icon(
+                  isActive
+                      ? Icons.timer_outlined
+                      : Icons.self_improvement_rounded,
+                  color: isActive
+                      ? const Color(0xFF9B6A00)
+                      : const Color(0xFF53736A),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isActive ? '久坐中' : '开始久坐',
+                      style: const TextStyle(
+                        color: Color(0xFF1D1D1F),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isActive
+                          ? '将在 ${_timeLabel(session.reminderAt)} 提醒你站起来活动'
+                          : '手动开始，默认 60 分钟后提醒活动',
+                      style: const TextStyle(
+                        color: Color(0xFF8A8278),
+                        fontSize: 14,
+                        height: 1.35,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: isActive ? () => _end(session) : _start,
+                icon: Icon(
+                  isActive
+                      ? Icons.stop_circle_outlined
+                      : Icons.play_arrow_rounded,
+                ),
+                label: Text(isActive ? '结束' : '开始'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _start() async {
+    final now = widget.nowProvider();
+    final session = await widget.database.startSedentarySession(startedAt: now);
+    await SedentaryReminderCoordinator(
+      scheduler: widget.taskReminderScheduler,
+    ).schedule(sessionId: session.id, reminderAt: session.reminderAt, now: now);
+    _refresh();
+    widget.onRecordsChanged();
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('已开始久坐，约 1 小时后提醒活动。')));
+  }
+
+  Future<void> _end(SedentarySession session) async {
+    final now = widget.nowProvider();
+    await widget.database.endSedentarySession(id: session.id, endedAt: now);
+    await SedentaryReminderCoordinator(
+      scheduler: widget.taskReminderScheduler,
+    ).cancel(session.id);
+    _refresh();
+    widget.onRecordsChanged();
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('已结束久坐提醒。')));
+  }
+
+  void _refresh() {
+    setState(() {
+      _activeFuture = widget.database.getActiveSedentarySession();
+    });
+  }
+
+  String _timeLabel(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}';
   }
 }
 

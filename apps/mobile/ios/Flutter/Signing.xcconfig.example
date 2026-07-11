@@ -1,0 +1,5 @@
+// Copy to ios/Flutter/Signing.xcconfig and fill this locally. The real file is
+// ignored by Git. Apple certificates and provisioning profiles stay in
+// Xcode/Keychain, never in this repository.
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+CODE_SIGN_STYLE = Automatic

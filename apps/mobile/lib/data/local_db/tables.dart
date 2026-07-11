@@ -50,14 +50,40 @@ class Tasks extends Table {
       text().references(ExtractedItems, #id)();
   TextColumn get title => text()();
   TextColumn get description => text().nullable()();
+  DateTimeColumn get startTime => dateTime().named('start_time').nullable()();
+  DateTimeColumn get endTime => dateTime().named('end_time').nullable()();
   TextColumn get dueTimeText => text().nullable()();
   DateTimeColumn get dueTime => dateTime().nullable()();
   TextColumn get priority => text().withDefault(const Constant('medium'))();
   TextColumn get status => text()();
   TextColumn get taskStatus =>
       text().named('task_status').withDefault(const Constant('active'))();
+  TextColumn get recurrenceRuleId =>
+      text().named('recurrence_rule_id').nullable()();
+  DateTimeColumn get recurrenceDate =>
+      dateTime().named('recurrence_date').nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class RecurringTaskRules extends Table {
+  TextColumn get id => text()();
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get frequency => text().withDefault(const Constant('daily'))();
+  DateTimeColumn get startDate => dateTime().named('start_date')();
+  DateTimeColumn get endDate => dateTime().named('end_date').nullable()();
+  IntColumn get hour => integer()();
+  IntColumn get minute => integer()();
+  TextColumn get status => text()();
+  TextColumn get skippedDatesJson =>
+      text().named('skipped_dates_json').withDefault(const Constant('[]'))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get disabledAt => dateTime().named('disabled_at').nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -208,6 +234,19 @@ class ScheduleBlockSources extends Table {
   TextColumn get sourceTable => text().named('source_table')();
   TextColumn get sourceRecordId => text().named('source_record_id')();
   DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class SedentarySessions extends Table {
+  TextColumn get id => text()();
+  DateTimeColumn get startedAt => dateTime().named('started_at')();
+  DateTimeColumn get reminderAt => dateTime().named('reminder_at')();
+  DateTimeColumn get endedAt => dateTime().named('ended_at').nullable()();
+  TextColumn get status => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -4,10 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/api/api_error_code.dart';
 import '../../data/local_db/app_database.dart';
 import '../../domain/item_type.dart';
 import '../account/cloud_auth_service.dart';
+import '../account/cloud_restore_service.dart';
 import '../account/cloud_sync_service.dart';
+import '../memory/delete_confirmation.dart';
 import '../memory/memory_screen.dart';
 import '../memory/privacy_screen.dart';
 import '../reminders/task_reminder_scheduler.dart';
@@ -24,6 +27,7 @@ class ProfileSettingsScreen extends ConsumerStatefulWidget {
     required this.onOpenHome,
     required this.onOpenTasks,
     required this.onOpenReview,
+    required this.onRecordsChanged,
     this.refreshVersion = 0,
     super.key,
   });
@@ -37,6 +41,7 @@ class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback onOpenHome;
   final VoidCallback onOpenTasks;
   final VoidCallback onOpenReview;
+  final VoidCallback onRecordsChanged;
   final int refreshVersion;
 
   @override
@@ -54,7 +59,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   var _taskReminderEnabled = false;
   bool? _apiAvailable;
   var _isCheckingApi = false;
-  String? _lastSyncedCloudProfileUserId;
   String? _cloudProfileSyncError;
 
   @override
@@ -108,7 +112,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
         builder: (context, authSnapshot) {
           final authState =
               authSnapshot.data ?? widget.cloudAuthService.currentState;
-          _syncCloudProfileIfNeeded(authState);
 
           return FutureBuilder<_ProfileOverviewData>(
             future: _dataFuture,
@@ -143,6 +146,13 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         trailingText: authState.syncLabel,
                         onTap: () => _syncCloudProfileNow(authState),
                       ),
+                      if (authState.isSignedIn)
+                        _SettingsTile(
+                          icon: Icons.cloud_download_outlined,
+                          title: '从云端恢复到本机',
+                          subtitle: '先预览数量，再按 ID 合并；本机较新的记录和本地日历不会被覆盖。',
+                          onTap: () => _previewAndRestoreCloudCopy(),
+                        ),
                       _SettingsTile(
                         icon: Icons.phone_android_rounded,
                         title: '当前设备',
@@ -153,7 +163,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         onTap: () => _openDetail(
                           title: '当前设备',
                           description:
-                              '当前设备使用本地 SQLite 保存运行数据，并由系统通知负责有具体时间的任务提醒。云端同步目前是手动单向同步：本机 → Supabase。',
+                              '当前设备使用本地 SQLite 保存运行数据，并由系统通知负责有具体时间的任务提醒。Android 已关闭系统备份；数据库暂未加密，请继续使用设备锁屏保护。云端同步目前是手动单向同步：本机 → Supabase。',
                         ),
                       ),
                       _SettingsTile(
@@ -163,9 +173,23 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         onTap: () => _openDetail(
                           title: '数据存储位置说明',
                           description:
-                              '任务、状态、事件、画像、复盘和时间规划先保存在本地 SQLite。登录后点击“立即同步到云端”，这些记录会按账号 user_id 单向写入 Supabase。当前不会从云端自动合并回本机。',
+                              '任务、状态、事件、画像和复盘先保存在本地 SQLite。登录后点击“立即同步到云端”，这些记录会按账号 user_id 单向写入 Supabase。日历排期、每日重复和久坐会话明确只保存在本机；当前不会从云端自动合并回本机。',
                         ),
                       ),
+                      if (authState.isSignedIn)
+                        _SettingsTile(
+                          icon: Icons.delete_forever_outlined,
+                          title: '删除云端副本',
+                          subtitle: '只删除此账号在 Supabase 的副本，本机数据不会改变。',
+                          onTap: () => _confirmAndDeleteCloudCopy(),
+                        ),
+                      if (authState.isSignedIn)
+                        _SettingsTile(
+                          icon: Icons.person_remove_outlined,
+                          title: '永久注销云端账号',
+                          subtitle: '删除 Supabase 登录账号及其全部云端数据；本机数据保留。',
+                          onTap: () => _confirmAndDeleteAccount(),
+                        ),
                       _SettingsTile(
                         icon: Icons.logout_rounded,
                         title: '退出登录',
@@ -381,33 +405,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
       return 'Supabase 已配置，登录后可使用账号数据。';
     }
     if (_cloudProfileSyncError != null) {
-      return '账号已连接，但 profile 写入失败：$_cloudProfileSyncError';
+      return '账号已连接，但云端同步失败：$_cloudProfileSyncError';
     }
-    return '账号已连接。点击后会把本机任务、记忆、复盘和时间规划单向写入云端。';
-  }
-
-  void _syncCloudProfileIfNeeded(CloudAuthState authState) {
-    final userId = authState.userId;
-    if (!authState.isConfigured || !authState.isSignedIn || userId == null) {
-      _lastSyncedCloudProfileUserId = null;
-      return;
-    }
-
-    if (_lastSyncedCloudProfileUserId == userId) {
-      return;
-    }
-
-    _lastSyncedCloudProfileUserId = userId;
-    Future<void>(() async {
-      try {
-        await widget.cloudAuthService.ensureCloudProfile();
-        if (!mounted || _cloudProfileSyncError == null) return;
-        setState(() => _cloudProfileSyncError = null);
-      } catch (error) {
-        if (!mounted) return;
-        setState(() => _cloudProfileSyncError = error.toString());
-      }
-    });
+    return '账号已连接。点击后会把本机任务、记忆和复盘单向写入云端；日历排期仍只留在本机。';
   }
 
   Future<void> _syncCloudProfileNow(CloudAuthState authState) async {
@@ -419,7 +419,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     if (!authState.isSignedIn) {
       _openDetail(
         title: '数据与同步',
-        description: '请先登录账号。登录后可以先写入云端 profile，用来验证账号、RLS 和 Supabase 表权限。',
+        description: '请先登录账号。登录本身不会上传本机记录；登录后可自行选择“立即同步到云端”。',
       );
       return;
     }
@@ -429,7 +429,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
       final result = await widget.cloudSyncService.syncFromLocal(
         widget.database,
       );
-      _lastSyncedCloudProfileUserId = authState.userId;
       if (!mounted) return;
       setState(() {
         _cloudProfileSyncError = null;
@@ -462,6 +461,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
 
   Future<void> _checkApiConnection() async {
     if (_isCheckingApi) return;
+    if (isUnconfiguredApiUri(widget.parserBaseUri)) {
+      setState(() => _apiAvailable = false);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('此测试包尚未配置安全的 AI 服务地址。')));
+      }
+      return;
+    }
     setState(() => _isCheckingApi = true);
     final client = HttpClient();
     try {
@@ -558,6 +566,115 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     ).showSnackBar(const SnackBar(content: Text('已退出登录。')));
   }
 
+  Future<void> _confirmAndDeleteCloudCopy() async {
+    final confirmed = await confirmDeleteMemoryRecord(
+      context: context,
+      title: '删除云端副本？',
+      content:
+          '这会永久删除当前账号在 Supabase 中已同步的任务、记忆、复盘和旧版日历数据。本机 SQLite 数据不会删除；之后如果再次点击同步，本机数据会重新写入云端。',
+    );
+    if (!confirmed || !mounted) return;
+
+    try {
+      await widget.cloudSyncService.deleteCloudCopy();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('云端副本已删除；本机数据未受影响。')));
+    } catch (error) {
+      if (!mounted) return;
+      final message = _friendlyCloudSyncError(error);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('删除云端副本失败：$message')));
+    }
+  }
+
+  Future<void> _previewAndRestoreCloudCopy() async {
+    try {
+      final preview = await widget.cloudSyncService.previewCloudRestore();
+      if (!mounted) return;
+      if (preview.totalCount == 0) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('当前账号没有可恢复的云端记录。')));
+        return;
+      }
+
+      final confirmed = await _confirmCloudRestore(preview);
+      if (!confirmed || !mounted) return;
+
+      final result = await widget.cloudSyncService.restoreFromCloud(
+        widget.database,
+      );
+      if (!mounted) return;
+      setState(() => _dataFuture = _load());
+      widget.onRecordsChanged();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '云端恢复完成：写入 ${result.restoredCount} 条，保留本机已有/较新记录 ${result.preservedLocalCount} 条。',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final message = _friendlyCloudSyncError(error);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('云端恢复失败：$message')));
+    }
+  }
+
+  Future<bool> _confirmCloudRestore(CloudRestorePreview preview) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('从云端恢复到本机？'),
+        content: Text(
+          '云端共有 ${preview.totalCount} 条记录：任务 ${preview.taskCount} 条、状态 ${preview.shortTermStateCount} 条、事件 ${preview.lifeEventCount} 条、画像 ${preview.profileItemCount} 条、复盘 ${preview.summaryCount} 条。\n\n'
+          '恢复按稳定 ID 合并，云端较新时才更新；本机较新的记录会保留。日历排期、重复任务和久坐数据始终只留在本机，不会被云端覆盖。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('开始恢复'),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  Future<void> _confirmAndDeleteAccount() async {
+    final confirmed = await confirmDeleteMemoryRecord(
+      context: context,
+      title: '永久注销云端账号？',
+      content:
+          '这会删除当前 Supabase 登录账号、全部云端副本和所有云端会话，无法撤销。本机 SQLite 数据不会删除，你仍可离线查看；以后如需 AI，可重新注册账号。',
+    );
+    if (!confirmed || !mounted) return;
+
+    try {
+      await widget.cloudAuthService.deleteAccount();
+      if (!mounted) return;
+      setState(() => _cloudProfileSyncError = null);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('云端账号与云端数据已永久删除；本机数据未受影响。')));
+    } catch (error) {
+      if (!mounted) return;
+      final message = _friendlyCloudSyncError(error);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('注销云端账号失败：$message')));
+    }
+  }
+
   void _openPrivacy() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (context) => const PrivacyScreen()),
@@ -619,7 +736,7 @@ class _AccountCard extends StatelessWidget {
     final subtitle = !authState.isConfigured
         ? '配置 Supabase 后可使用云端账号'
         : authState.isSignedIn
-        ? '云端账号已连接'
+        ? '云端账号已连接（会话受系统安全存储保护）'
         : '登录后可把本机数据手动备份到云端';
     final icon = authState.isSignedIn
         ? Icons.verified_user_rounded

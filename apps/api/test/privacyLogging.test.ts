@@ -3,12 +3,29 @@ import { after, before, test } from "node:test";
 import type { Server } from "node:http";
 
 import { createApiApp, type PrivacyLogEntry } from "../src/server.js";
+import type { CallerAuthenticator } from "../src/services/callerAuthentication.js";
+import type { DailyRequestQuota } from "../src/services/dailyRequestQuota.js";
 import { ParserServiceError } from "../src/services/deepseekParser.js";
 
 const sensitiveText = "明天联系王总，我今天很累，我不喜欢太频繁的提醒。";
 
-let server: Server;
-let baseUrl: string;
+const testAuthenticator: CallerAuthenticator = {
+  async authenticate(token) {
+    if (token !== "privacy-test-token") {
+      throw new Error("unexpected test token");
+    }
+    return { userId: "privacy-test-user" };
+  },
+};
+
+const allowAllDailyQuota: DailyRequestQuota = {
+  async consume() {
+    return { allowed: true, remaining: 29 };
+  },
+};
+
+let server: Server | undefined;
+let baseUrl = "";
 
 before(async () => {
   const logs: PrivacyLogEntry[] = [];
@@ -25,11 +42,16 @@ before(async () => {
         logs.push(entry);
       },
     },
+    authenticator: testAuthenticator,
+    dailyRequestQuota: allowAllDailyQuota,
   });
 
-  server = app.listen(0);
-  await new Promise<void>((resolve) => server.once("listening", resolve));
-  const address = server.address();
+  const listeningServer = app.listen(0);
+  server = listeningServer;
+  await new Promise<void>((resolve) =>
+    listeningServer.once("listening", resolve),
+  );
+  const address = listeningServer.address();
 
   if (address == null || typeof address === "string") {
     throw new Error("Expected server to listen on a TCP port.");
@@ -40,8 +62,12 @@ before(async () => {
 });
 
 after(async () => {
+  if (server == null) return;
+  const listeningServer = server;
+  listeningServer.closeIdleConnections();
+  listeningServer.closeAllConnections();
   await new Promise<void>((resolve, reject) => {
-    server.close((error) => (error ? reject(error) : resolve()));
+    listeningServer.close((error) => (error ? reject(error) : resolve()));
   });
 });
 
@@ -51,6 +77,7 @@ test("logs parser errors with request id and error type but without raw user tex
     headers: {
       "Content-Type": "application/json",
       "x-request-id": "privacy-test-request",
+      Authorization: "Bearer privacy-test-token",
     },
     body: JSON.stringify({
       text: sensitiveText,

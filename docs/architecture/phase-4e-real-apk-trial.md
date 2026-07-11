@@ -40,6 +40,8 @@ cd apps/api
 DEEPSEEK_API_KEY=replace_with_real_key
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-v4-flash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
 API_PORT=8787
 ```
 
@@ -76,7 +78,9 @@ whether the phone is on the same LAN.
 cd apps/mobile
 flutter build apk --debug \
   --dart-define=PARSER_MODE=http \
-  --dart-define=PARSER_BASE_URL=http://<mac-lan-ip>:8787
+  --dart-define=PARSER_BASE_URL=http://<mac-lan-ip>:8787 \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
 ```
 
 APK output:
@@ -121,6 +125,7 @@ After installing the APK and starting the API proxy, test:
 Expected checks:
 
 - The first input creates a task and short-term state.
+- Before using any AI action, open “我的” and complete email OTP login.
 - The cancellation inputs generate `task_update` cards and require confirmation.
 - Confirmed completed/cancelled tasks remain visible in the task memory page
   with status labels.

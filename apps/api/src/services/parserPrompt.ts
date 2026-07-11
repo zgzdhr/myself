@@ -55,6 +55,13 @@ Rules:
 - profile_candidate is only for explicit stable preferences, habits, background, or work style.
 - A profile_candidate is a proposal only; it must not become active memory unless the user confirms it.
 - profile_candidate.need_user_confirm must be true.
+- Treat need_user_confirm as a binding safety flag: when it is true, the app
+  will keep the item pending and must not automatically write it into formal
+  records. For task_create and life_event, use true by default; use false only
+  for a clear, low-risk item that is safe to auto-save and remains visible,
+  editable, and undoable to the user.
+- task_update must always set need_user_confirm to true because it can change
+  an existing task.
 - Do not turn one-time emotions or one-off events into long-term profile.
 - Do not treat one-time emotions as profile_candidate.
 - life_event can be evidence for future reflection, reviews, or later profile_candidate proposals, but it must not automatically become profile_candidate or active profile memory.

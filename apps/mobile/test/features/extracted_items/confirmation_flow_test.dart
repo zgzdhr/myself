@@ -909,6 +909,7 @@ void main() {
   // ── B5/B6: edit / reject / parser error regression ──
 
   test('edits a matched task title after confirmation', () async {
+    final reminderScheduler = _RecordingTaskReminderScheduler();
     await _insertConfirmedTask(
       database,
       id: 'task-existing-edit',
@@ -917,6 +918,7 @@ void main() {
     );
     final taskUpdateController = _buildTaskUpdateController(
       database,
+      taskReminderScheduler: reminderScheduler,
       parsedItem: ParsedExtractedItem(
         localId: 'parsed:0',
         type: ItemType.taskUpdate,
@@ -944,6 +946,11 @@ void main() {
     expect(updateResult.state, TaskUpdateExecutionState.applied);
     expect(updatedTask.title, '改成联系张总');
     expect(updatedTask.status, RecordStatus.confirmed.value);
+    expect(reminderScheduler.scheduled.single.title, '改成联系张总');
+    expect(
+      reminderScheduler.scheduled.single.dueTime.toUtc(),
+      DateTime.utc(2026, 5, 31, 9),
+    );
   });
 
   test(
@@ -1058,20 +1065,20 @@ void main() {
 
   // ── C3: auto-save boundary regression ──
 
-  test('taskCreate without time keyword stays pending', () async {
+  test('taskCreate that requires confirmation stays pending even with a time', () async {
     final controller = ExtractedItemsController(
       database: database,
       parserClient: _StaticParserClient(
         ParseResult(
           userReply: '我帮你整理出了一个任务。',
-          inputSummary: '用户提到整理合同。',
+          inputSummary: '用户提到明天下午整理合同。',
           intentTypes: const [ItemType.taskCreate],
           items: [
             ParsedExtractedItem(
               localId: 'parsed:0',
               type: ItemType.taskCreate,
               title: '整理客户合同',
-              sourceText: '找时间整理客户合同',
+              sourceText: '明天下午整理客户合同',
               tags: const ['work'],
               confidence: 0.82,
               needUserConfirm: true,
@@ -1086,7 +1093,7 @@ void main() {
       nowProvider: () => DateTime.utc(2026, 5, 31),
     );
 
-    final result = await controller.submitInput('找时间整理客户合同');
+    final result = await controller.submitInput('明天下午整理客户合同');
 
     expect(result.items.single.status, RecordStatus.pending);
     expect(await database.getActiveTasks(), isEmpty);
@@ -1108,7 +1115,7 @@ void main() {
               sourceText: '今天做番茄炒蛋糖放多了，下次少放',
               tags: const ['cooking'],
               confidence: 0.78,
-              needUserConfirm: true,
+              needUserConfirm: false,
               parsedAt: DateTime.utc(2026, 5, 31),
             ),
           ],
@@ -1142,7 +1149,7 @@ void main() {
               sourceText: '记一下，会议室B栋空调有问题，下次订会避开',
               tags: const ['work', 'facility'],
               confidence: 0.85,
-              needUserConfirm: true,
+              needUserConfirm: false,
               parsedAt: DateTime.utc(2026, 5, 31),
             ),
           ],
@@ -1229,7 +1236,7 @@ ExtractedItemsController _buildTaskCreateController(
             sourceText: sourceText,
             tags: const ['任务'],
             confidence: 0.92,
-            needUserConfirm: true,
+            needUserConfirm: false,
             parsedAt: now,
           ),
         ],

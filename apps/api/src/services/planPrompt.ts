@@ -65,6 +65,7 @@ export function buildPlanUserPrompt(request: PlanRequest): string {
     "Planning rules:",
     "- Only create a draft. Do not claim that any task was changed.",
     "- Keep all blocks within the planning window and on the plan date.",
+    "- A task block must include the id of an active task from this request. Never assign work to a completed or cancelled task.",
     "- Use active tasks first. Completed or cancelled tasks are context only and should not receive work blocks.",
     "- If there are too many tasks, schedule the most time-sensitive or high-priority ones and put the rest in unscheduled_task_ids.",
     "- Add short buffer or break blocks when the day would otherwise be too dense.",

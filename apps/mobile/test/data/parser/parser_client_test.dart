@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/api/api_error_code.dart';
+import 'package:mobile/data/api/api_access_token_provider.dart';
 import 'package:mobile/data/parser/http_parser_client.dart';
 import 'package:mobile/data/parser/mock_parser_client.dart';
 import 'package:mobile/data/parser/parser_client.dart';
@@ -55,7 +57,7 @@ void main() {
       },
     );
 
-    test('release builds fall back to the public API when no URL is provided', () {
+    test('release builds never fall back to a historic public API', () {
       expect(
         defaultParserBaseUri(
           parserBaseUrl: '',
@@ -63,7 +65,7 @@ void main() {
           isAndroid: true,
           isRelease: true,
         ),
-        Uri.parse(productionParserBaseUrl),
+        Uri.parse('https://$unconfiguredApiHost'),
       );
     });
 
@@ -161,6 +163,112 @@ void main() {
     });
 
     test(
+      'requires a signed-in session when AI authentication is enabled',
+      () async {
+        var requestAttempted = false;
+        final client = HttpParserClient(
+          baseUri: Uri.parse('http://localhost:8787'),
+          requireAuthentication: true,
+          postJson: (uri, headers, body) async {
+            requestAttempted = true;
+            return const ParserHttpResponse(statusCode: 200, body: '{}');
+          },
+        );
+
+        await expectLater(
+          client.parseInput('明天联系王总'),
+          throwsA(
+            isA<ParserFailure>().having(
+              (error) => error.code,
+              'code',
+              'sign_in_required',
+            ),
+          ),
+        );
+        expect(requestAttempted, isFalse);
+      },
+    );
+
+    test(
+      'does not send user input when the release API is not configured',
+      () async {
+        var requestAttempted = false;
+        final client = HttpParserClient(
+          baseUri: Uri.parse(productionParserBaseUrl),
+          postJson: (uri, headers, body) async {
+            requestAttempted = true;
+            return const ParserHttpResponse(statusCode: 200, body: '{}');
+          },
+        );
+
+        await expectLater(
+          client.parseInput('不应该被发送的敏感内容'),
+          throwsA(
+            isA<ParserFailure>().having(
+              (error) => error.code,
+              'code',
+              'api_not_configured',
+            ),
+          ),
+        );
+        expect(requestAttempted, isFalse);
+      },
+    );
+
+    test('sends the signed-in user access token to the API proxy', () async {
+      Map<String, String>? requestHeaders;
+      final client = HttpParserClient(
+        baseUri: Uri.parse('http://localhost:8787'),
+        accessTokenProvider: const _FixedAccessTokenProvider('session-token'),
+        requireAuthentication: true,
+        postJson: (uri, headers, body) async {
+          requestHeaders = headers;
+          return ParserHttpResponse(
+            statusCode: 200,
+            body: jsonEncode({
+              'user_reply': '已整理。',
+              'input_summary': '明天联系王总。',
+              'intent_types': [],
+              'items': [],
+            }),
+          );
+        },
+      );
+
+      await client.parseInput('明天联系王总');
+
+      expect(requestHeaders?['Authorization'], 'Bearer session-token');
+    });
+
+    test(
+      'explains the daily quota separately from a short burst limit',
+      () async {
+        final client = HttpParserClient(
+          baseUri: Uri.parse('http://localhost:8787'),
+          postJson: (uri, headers, body) async => ParserHttpResponse(
+            statusCode: 429,
+            body: jsonEncode({
+              'error': {'code': 'daily_quota_exhausted'},
+            }),
+          ),
+        );
+
+        await expectLater(
+          client.parseInput('明天联系王总'),
+          throwsA(
+            isA<ParserFailure>()
+                .having((error) => error.code, 'code', 'daily_quota_exhausted')
+                .having(
+                  (error) => error.userMessage,
+                  'userMessage',
+                  '今天的 AI 使用次数已达上限，请明天再继续整理。',
+                ),
+          ),
+        );
+      },
+    );
+
+    test(
       'returns a user-friendly failure when the network request fails',
       () async {
         final client = HttpParserClient(
@@ -190,4 +298,13 @@ void main() {
       },
     );
   });
+}
+
+class _FixedAccessTokenProvider implements ApiAccessTokenProvider {
+  const _FixedAccessTokenProvider(this.accessToken);
+
+  final String? accessToken;
+
+  @override
+  Future<String?> getAccessToken() async => accessToken;
 }

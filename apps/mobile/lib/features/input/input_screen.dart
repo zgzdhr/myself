@@ -229,6 +229,10 @@ class _InputScreenState extends State<InputScreen> {
 
   String _safeParserFailureDetail(ParserFailure error) {
     return switch (error.code) {
+      'sign_in_required' ||
+      'api_not_configured' ||
+      'daily_quota_exhausted' ||
+      'rate_limited' => error.userMessage,
       'network_error' => '暂时无法连接解析服务，请检查网络或后端地址。',
       'network_timeout' => '解析服务响应超时，请稍后再试。',
       'parser_service_error' => '解析服务暂时不可用，请稍后再试。',

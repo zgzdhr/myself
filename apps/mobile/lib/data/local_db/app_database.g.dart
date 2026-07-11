@@ -1677,6 +1677,28 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _startTimeMeta = const VerificationMeta(
+    'startTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startTime = GeneratedColumn<DateTime>(
+    'start_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endTimeMeta = const VerificationMeta(
+    'endTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endTime = GeneratedColumn<DateTime>(
+    'end_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dueTimeTextMeta = const VerificationMeta(
     'dueTimeText',
   );
@@ -1732,6 +1754,29 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     requiredDuringInsert: false,
     defaultValue: const Constant('active'),
   );
+  static const VerificationMeta _recurrenceRuleIdMeta = const VerificationMeta(
+    'recurrenceRuleId',
+  );
+  @override
+  late final GeneratedColumn<String> recurrenceRuleId = GeneratedColumn<String>(
+    'recurrence_rule_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _recurrenceDateMeta = const VerificationMeta(
+    'recurrenceDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> recurrenceDate =
+      GeneratedColumn<DateTime>(
+        'recurrence_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1761,11 +1806,15 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     sourceExtractedItemId,
     title,
     description,
+    startTime,
+    endTime,
     dueTimeText,
     dueTime,
     priority,
     status,
     taskStatus,
+    recurrenceRuleId,
+    recurrenceDate,
     createdAt,
     updatedAt,
   ];
@@ -1825,6 +1874,18 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         ),
       );
     }
+    if (data.containsKey('start_time')) {
+      context.handle(
+        _startTimeMeta,
+        startTime.isAcceptableOrUnknown(data['start_time']!, _startTimeMeta),
+      );
+    }
+    if (data.containsKey('end_time')) {
+      context.handle(
+        _endTimeMeta,
+        endTime.isAcceptableOrUnknown(data['end_time']!, _endTimeMeta),
+      );
+    }
     if (data.containsKey('due_time_text')) {
       context.handle(
         _dueTimeTextMeta,
@@ -1858,6 +1919,24 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       context.handle(
         _taskStatusMeta,
         taskStatus.isAcceptableOrUnknown(data['task_status']!, _taskStatusMeta),
+      );
+    }
+    if (data.containsKey('recurrence_rule_id')) {
+      context.handle(
+        _recurrenceRuleIdMeta,
+        recurrenceRuleId.isAcceptableOrUnknown(
+          data['recurrence_rule_id']!,
+          _recurrenceRuleIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('recurrence_date')) {
+      context.handle(
+        _recurrenceDateMeta,
+        recurrenceDate.isAcceptableOrUnknown(
+          data['recurrence_date']!,
+          _recurrenceDateMeta,
+        ),
       );
     }
     if (data.containsKey('created_at')) {
@@ -1905,6 +1984,14 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
+      startTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}start_time'],
+      ),
+      endTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}end_time'],
+      ),
       dueTimeText: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}due_time_text'],
@@ -1925,6 +2012,14 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         DriftSqlType.string,
         data['${effectivePrefix}task_status'],
       )!,
+      recurrenceRuleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recurrence_rule_id'],
+      ),
+      recurrenceDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}recurrence_date'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1948,11 +2043,15 @@ class Task extends DataClass implements Insertable<Task> {
   final String sourceExtractedItemId;
   final String title;
   final String? description;
+  final DateTime? startTime;
+  final DateTime? endTime;
   final String? dueTimeText;
   final DateTime? dueTime;
   final String priority;
   final String status;
   final String taskStatus;
+  final String? recurrenceRuleId;
+  final DateTime? recurrenceDate;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Task({
@@ -1961,11 +2060,15 @@ class Task extends DataClass implements Insertable<Task> {
     required this.sourceExtractedItemId,
     required this.title,
     this.description,
+    this.startTime,
+    this.endTime,
     this.dueTimeText,
     this.dueTime,
     required this.priority,
     required this.status,
     required this.taskStatus,
+    this.recurrenceRuleId,
+    this.recurrenceDate,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1979,6 +2082,12 @@ class Task extends DataClass implements Insertable<Task> {
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
     }
+    if (!nullToAbsent || startTime != null) {
+      map['start_time'] = Variable<DateTime>(startTime);
+    }
+    if (!nullToAbsent || endTime != null) {
+      map['end_time'] = Variable<DateTime>(endTime);
+    }
     if (!nullToAbsent || dueTimeText != null) {
       map['due_time_text'] = Variable<String>(dueTimeText);
     }
@@ -1988,6 +2097,12 @@ class Task extends DataClass implements Insertable<Task> {
     map['priority'] = Variable<String>(priority);
     map['status'] = Variable<String>(status);
     map['task_status'] = Variable<String>(taskStatus);
+    if (!nullToAbsent || recurrenceRuleId != null) {
+      map['recurrence_rule_id'] = Variable<String>(recurrenceRuleId);
+    }
+    if (!nullToAbsent || recurrenceDate != null) {
+      map['recurrence_date'] = Variable<DateTime>(recurrenceDate);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -2002,6 +2117,12 @@ class Task extends DataClass implements Insertable<Task> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      startTime: startTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startTime),
+      endTime: endTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endTime),
       dueTimeText: dueTimeText == null && nullToAbsent
           ? const Value.absent()
           : Value(dueTimeText),
@@ -2011,6 +2132,12 @@ class Task extends DataClass implements Insertable<Task> {
       priority: Value(priority),
       status: Value(status),
       taskStatus: Value(taskStatus),
+      recurrenceRuleId: recurrenceRuleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recurrenceRuleId),
+      recurrenceDate: recurrenceDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recurrenceDate),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2029,11 +2156,15 @@ class Task extends DataClass implements Insertable<Task> {
       ),
       title: serializer.fromJson<String>(json['title']),
       description: serializer.fromJson<String?>(json['description']),
+      startTime: serializer.fromJson<DateTime?>(json['startTime']),
+      endTime: serializer.fromJson<DateTime?>(json['endTime']),
       dueTimeText: serializer.fromJson<String?>(json['dueTimeText']),
       dueTime: serializer.fromJson<DateTime?>(json['dueTime']),
       priority: serializer.fromJson<String>(json['priority']),
       status: serializer.fromJson<String>(json['status']),
       taskStatus: serializer.fromJson<String>(json['taskStatus']),
+      recurrenceRuleId: serializer.fromJson<String?>(json['recurrenceRuleId']),
+      recurrenceDate: serializer.fromJson<DateTime?>(json['recurrenceDate']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2047,11 +2178,15 @@ class Task extends DataClass implements Insertable<Task> {
       'sourceExtractedItemId': serializer.toJson<String>(sourceExtractedItemId),
       'title': serializer.toJson<String>(title),
       'description': serializer.toJson<String?>(description),
+      'startTime': serializer.toJson<DateTime?>(startTime),
+      'endTime': serializer.toJson<DateTime?>(endTime),
       'dueTimeText': serializer.toJson<String?>(dueTimeText),
       'dueTime': serializer.toJson<DateTime?>(dueTime),
       'priority': serializer.toJson<String>(priority),
       'status': serializer.toJson<String>(status),
       'taskStatus': serializer.toJson<String>(taskStatus),
+      'recurrenceRuleId': serializer.toJson<String?>(recurrenceRuleId),
+      'recurrenceDate': serializer.toJson<DateTime?>(recurrenceDate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2063,11 +2198,15 @@ class Task extends DataClass implements Insertable<Task> {
     String? sourceExtractedItemId,
     String? title,
     Value<String?> description = const Value.absent(),
+    Value<DateTime?> startTime = const Value.absent(),
+    Value<DateTime?> endTime = const Value.absent(),
     Value<String?> dueTimeText = const Value.absent(),
     Value<DateTime?> dueTime = const Value.absent(),
     String? priority,
     String? status,
     String? taskStatus,
+    Value<String?> recurrenceRuleId = const Value.absent(),
+    Value<DateTime?> recurrenceDate = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Task(
@@ -2076,11 +2215,19 @@ class Task extends DataClass implements Insertable<Task> {
     sourceExtractedItemId: sourceExtractedItemId ?? this.sourceExtractedItemId,
     title: title ?? this.title,
     description: description.present ? description.value : this.description,
+    startTime: startTime.present ? startTime.value : this.startTime,
+    endTime: endTime.present ? endTime.value : this.endTime,
     dueTimeText: dueTimeText.present ? dueTimeText.value : this.dueTimeText,
     dueTime: dueTime.present ? dueTime.value : this.dueTime,
     priority: priority ?? this.priority,
     status: status ?? this.status,
     taskStatus: taskStatus ?? this.taskStatus,
+    recurrenceRuleId: recurrenceRuleId.present
+        ? recurrenceRuleId.value
+        : this.recurrenceRuleId,
+    recurrenceDate: recurrenceDate.present
+        ? recurrenceDate.value
+        : this.recurrenceDate,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -2097,6 +2244,8 @@ class Task extends DataClass implements Insertable<Task> {
       description: data.description.present
           ? data.description.value
           : this.description,
+      startTime: data.startTime.present ? data.startTime.value : this.startTime,
+      endTime: data.endTime.present ? data.endTime.value : this.endTime,
       dueTimeText: data.dueTimeText.present
           ? data.dueTimeText.value
           : this.dueTimeText,
@@ -2106,6 +2255,12 @@ class Task extends DataClass implements Insertable<Task> {
       taskStatus: data.taskStatus.present
           ? data.taskStatus.value
           : this.taskStatus,
+      recurrenceRuleId: data.recurrenceRuleId.present
+          ? data.recurrenceRuleId.value
+          : this.recurrenceRuleId,
+      recurrenceDate: data.recurrenceDate.present
+          ? data.recurrenceDate.value
+          : this.recurrenceDate,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2119,11 +2274,15 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('sourceExtractedItemId: $sourceExtractedItemId, ')
           ..write('title: $title, ')
           ..write('description: $description, ')
+          ..write('startTime: $startTime, ')
+          ..write('endTime: $endTime, ')
           ..write('dueTimeText: $dueTimeText, ')
           ..write('dueTime: $dueTime, ')
           ..write('priority: $priority, ')
           ..write('status: $status, ')
           ..write('taskStatus: $taskStatus, ')
+          ..write('recurrenceRuleId: $recurrenceRuleId, ')
+          ..write('recurrenceDate: $recurrenceDate, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2137,11 +2296,15 @@ class Task extends DataClass implements Insertable<Task> {
     sourceExtractedItemId,
     title,
     description,
+    startTime,
+    endTime,
     dueTimeText,
     dueTime,
     priority,
     status,
     taskStatus,
+    recurrenceRuleId,
+    recurrenceDate,
     createdAt,
     updatedAt,
   );
@@ -2154,11 +2317,15 @@ class Task extends DataClass implements Insertable<Task> {
           other.sourceExtractedItemId == this.sourceExtractedItemId &&
           other.title == this.title &&
           other.description == this.description &&
+          other.startTime == this.startTime &&
+          other.endTime == this.endTime &&
           other.dueTimeText == this.dueTimeText &&
           other.dueTime == this.dueTime &&
           other.priority == this.priority &&
           other.status == this.status &&
           other.taskStatus == this.taskStatus &&
+          other.recurrenceRuleId == this.recurrenceRuleId &&
+          other.recurrenceDate == this.recurrenceDate &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -2169,11 +2336,15 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<String> sourceExtractedItemId;
   final Value<String> title;
   final Value<String?> description;
+  final Value<DateTime?> startTime;
+  final Value<DateTime?> endTime;
   final Value<String?> dueTimeText;
   final Value<DateTime?> dueTime;
   final Value<String> priority;
   final Value<String> status;
   final Value<String> taskStatus;
+  final Value<String?> recurrenceRuleId;
+  final Value<DateTime?> recurrenceDate;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -2183,11 +2354,15 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.sourceExtractedItemId = const Value.absent(),
     this.title = const Value.absent(),
     this.description = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.endTime = const Value.absent(),
     this.dueTimeText = const Value.absent(),
     this.dueTime = const Value.absent(),
     this.priority = const Value.absent(),
     this.status = const Value.absent(),
     this.taskStatus = const Value.absent(),
+    this.recurrenceRuleId = const Value.absent(),
+    this.recurrenceDate = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2198,11 +2373,15 @@ class TasksCompanion extends UpdateCompanion<Task> {
     required String sourceExtractedItemId,
     required String title,
     this.description = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.endTime = const Value.absent(),
     this.dueTimeText = const Value.absent(),
     this.dueTime = const Value.absent(),
     this.priority = const Value.absent(),
     required String status,
     this.taskStatus = const Value.absent(),
+    this.recurrenceRuleId = const Value.absent(),
+    this.recurrenceDate = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -2219,11 +2398,15 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<String>? sourceExtractedItemId,
     Expression<String>? title,
     Expression<String>? description,
+    Expression<DateTime>? startTime,
+    Expression<DateTime>? endTime,
     Expression<String>? dueTimeText,
     Expression<DateTime>? dueTime,
     Expression<String>? priority,
     Expression<String>? status,
     Expression<String>? taskStatus,
+    Expression<String>? recurrenceRuleId,
+    Expression<DateTime>? recurrenceDate,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -2235,11 +2418,15 @@ class TasksCompanion extends UpdateCompanion<Task> {
         'source_extracted_item_id': sourceExtractedItemId,
       if (title != null) 'title': title,
       if (description != null) 'description': description,
+      if (startTime != null) 'start_time': startTime,
+      if (endTime != null) 'end_time': endTime,
       if (dueTimeText != null) 'due_time_text': dueTimeText,
       if (dueTime != null) 'due_time': dueTime,
       if (priority != null) 'priority': priority,
       if (status != null) 'status': status,
       if (taskStatus != null) 'task_status': taskStatus,
+      if (recurrenceRuleId != null) 'recurrence_rule_id': recurrenceRuleId,
+      if (recurrenceDate != null) 'recurrence_date': recurrenceDate,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2252,11 +2439,15 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Value<String>? sourceExtractedItemId,
     Value<String>? title,
     Value<String?>? description,
+    Value<DateTime?>? startTime,
+    Value<DateTime?>? endTime,
     Value<String?>? dueTimeText,
     Value<DateTime?>? dueTime,
     Value<String>? priority,
     Value<String>? status,
     Value<String>? taskStatus,
+    Value<String?>? recurrenceRuleId,
+    Value<DateTime?>? recurrenceDate,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -2268,11 +2459,15 @@ class TasksCompanion extends UpdateCompanion<Task> {
           sourceExtractedItemId ?? this.sourceExtractedItemId,
       title: title ?? this.title,
       description: description ?? this.description,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
       dueTimeText: dueTimeText ?? this.dueTimeText,
       dueTime: dueTime ?? this.dueTime,
       priority: priority ?? this.priority,
       status: status ?? this.status,
       taskStatus: taskStatus ?? this.taskStatus,
+      recurrenceRuleId: recurrenceRuleId ?? this.recurrenceRuleId,
+      recurrenceDate: recurrenceDate ?? this.recurrenceDate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -2299,6 +2494,12 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
+    if (startTime.present) {
+      map['start_time'] = Variable<DateTime>(startTime.value);
+    }
+    if (endTime.present) {
+      map['end_time'] = Variable<DateTime>(endTime.value);
+    }
     if (dueTimeText.present) {
       map['due_time_text'] = Variable<String>(dueTimeText.value);
     }
@@ -2313,6 +2514,12 @@ class TasksCompanion extends UpdateCompanion<Task> {
     }
     if (taskStatus.present) {
       map['task_status'] = Variable<String>(taskStatus.value);
+    }
+    if (recurrenceRuleId.present) {
+      map['recurrence_rule_id'] = Variable<String>(recurrenceRuleId.value);
+    }
+    if (recurrenceDate.present) {
+      map['recurrence_date'] = Variable<DateTime>(recurrenceDate.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -2334,11 +2541,15 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('sourceExtractedItemId: $sourceExtractedItemId, ')
           ..write('title: $title, ')
           ..write('description: $description, ')
+          ..write('startTime: $startTime, ')
+          ..write('endTime: $endTime, ')
           ..write('dueTimeText: $dueTimeText, ')
           ..write('dueTime: $dueTime, ')
           ..write('priority: $priority, ')
           ..write('status: $status, ')
           ..write('taskStatus: $taskStatus, ')
+          ..write('recurrenceRuleId: $recurrenceRuleId, ')
+          ..write('recurrenceDate: $recurrenceDate, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -7743,6 +7954,1228 @@ class ScheduleBlockSourcesCompanion
   }
 }
 
+class $RecurringTaskRulesTable extends RecurringTaskRules
+    with TableInfo<$RecurringTaskRulesTable, RecurringTaskRule> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecurringTaskRulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _frequencyMeta = const VerificationMeta(
+    'frequency',
+  );
+  @override
+  late final GeneratedColumn<String> frequency = GeneratedColumn<String>(
+    'frequency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('daily'),
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startDate = GeneratedColumn<DateTime>(
+    'start_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endDate = GeneratedColumn<DateTime>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hourMeta = const VerificationMeta('hour');
+  @override
+  late final GeneratedColumn<int> hour = GeneratedColumn<int>(
+    'hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minuteMeta = const VerificationMeta('minute');
+  @override
+  late final GeneratedColumn<int> minute = GeneratedColumn<int>(
+    'minute',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _skippedDatesJsonMeta = const VerificationMeta(
+    'skippedDatesJson',
+  );
+  @override
+  late final GeneratedColumn<String> skippedDatesJson = GeneratedColumn<String>(
+    'skipped_dates_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _disabledAtMeta = const VerificationMeta(
+    'disabledAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> disabledAt = GeneratedColumn<DateTime>(
+    'disabled_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    description,
+    frequency,
+    startDate,
+    endDate,
+    hour,
+    minute,
+    status,
+    skippedDatesJson,
+    createdAt,
+    updatedAt,
+    disabledAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recurring_task_rules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecurringTaskRule> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('frequency')) {
+      context.handle(
+        _frequencyMeta,
+        frequency.isAcceptableOrUnknown(data['frequency']!, _frequencyMeta),
+      );
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startDateMeta);
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    }
+    if (data.containsKey('hour')) {
+      context.handle(
+        _hourMeta,
+        hour.isAcceptableOrUnknown(data['hour']!, _hourMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hourMeta);
+    }
+    if (data.containsKey('minute')) {
+      context.handle(
+        _minuteMeta,
+        minute.isAcceptableOrUnknown(data['minute']!, _minuteMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_minuteMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('skipped_dates_json')) {
+      context.handle(
+        _skippedDatesJsonMeta,
+        skippedDatesJson.isAcceptableOrUnknown(
+          data['skipped_dates_json']!,
+          _skippedDatesJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('disabled_at')) {
+      context.handle(
+        _disabledAtMeta,
+        disabledAt.isAcceptableOrUnknown(data['disabled_at']!, _disabledAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecurringTaskRule map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecurringTaskRule(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      frequency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}frequency'],
+      )!,
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}start_date'],
+      )!,
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}end_date'],
+      ),
+      hour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hour'],
+      )!,
+      minute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}minute'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      skippedDatesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}skipped_dates_json'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      disabledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}disabled_at'],
+      ),
+    );
+  }
+
+  @override
+  $RecurringTaskRulesTable createAlias(String alias) {
+    return $RecurringTaskRulesTable(attachedDatabase, alias);
+  }
+}
+
+class RecurringTaskRule extends DataClass
+    implements Insertable<RecurringTaskRule> {
+  final String id;
+  final String title;
+  final String? description;
+  final String frequency;
+  final DateTime startDate;
+  final DateTime? endDate;
+  final int hour;
+  final int minute;
+  final String status;
+  final String skippedDatesJson;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? disabledAt;
+  const RecurringTaskRule({
+    required this.id,
+    required this.title,
+    this.description,
+    required this.frequency,
+    required this.startDate,
+    this.endDate,
+    required this.hour,
+    required this.minute,
+    required this.status,
+    required this.skippedDatesJson,
+    required this.createdAt,
+    required this.updatedAt,
+    this.disabledAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['frequency'] = Variable<String>(frequency);
+    map['start_date'] = Variable<DateTime>(startDate);
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<DateTime>(endDate);
+    }
+    map['hour'] = Variable<int>(hour);
+    map['minute'] = Variable<int>(minute);
+    map['status'] = Variable<String>(status);
+    map['skipped_dates_json'] = Variable<String>(skippedDatesJson);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || disabledAt != null) {
+      map['disabled_at'] = Variable<DateTime>(disabledAt);
+    }
+    return map;
+  }
+
+  RecurringTaskRulesCompanion toCompanion(bool nullToAbsent) {
+    return RecurringTaskRulesCompanion(
+      id: Value(id),
+      title: Value(title),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      frequency: Value(frequency),
+      startDate: Value(startDate),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      hour: Value(hour),
+      minute: Value(minute),
+      status: Value(status),
+      skippedDatesJson: Value(skippedDatesJson),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      disabledAt: disabledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(disabledAt),
+    );
+  }
+
+  factory RecurringTaskRule.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecurringTaskRule(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      description: serializer.fromJson<String?>(json['description']),
+      frequency: serializer.fromJson<String>(json['frequency']),
+      startDate: serializer.fromJson<DateTime>(json['startDate']),
+      endDate: serializer.fromJson<DateTime?>(json['endDate']),
+      hour: serializer.fromJson<int>(json['hour']),
+      minute: serializer.fromJson<int>(json['minute']),
+      status: serializer.fromJson<String>(json['status']),
+      skippedDatesJson: serializer.fromJson<String>(json['skippedDatesJson']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      disabledAt: serializer.fromJson<DateTime?>(json['disabledAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'description': serializer.toJson<String?>(description),
+      'frequency': serializer.toJson<String>(frequency),
+      'startDate': serializer.toJson<DateTime>(startDate),
+      'endDate': serializer.toJson<DateTime?>(endDate),
+      'hour': serializer.toJson<int>(hour),
+      'minute': serializer.toJson<int>(minute),
+      'status': serializer.toJson<String>(status),
+      'skippedDatesJson': serializer.toJson<String>(skippedDatesJson),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'disabledAt': serializer.toJson<DateTime?>(disabledAt),
+    };
+  }
+
+  RecurringTaskRule copyWith({
+    String? id,
+    String? title,
+    Value<String?> description = const Value.absent(),
+    String? frequency,
+    DateTime? startDate,
+    Value<DateTime?> endDate = const Value.absent(),
+    int? hour,
+    int? minute,
+    String? status,
+    String? skippedDatesJson,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> disabledAt = const Value.absent(),
+  }) => RecurringTaskRule(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    description: description.present ? description.value : this.description,
+    frequency: frequency ?? this.frequency,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate.present ? endDate.value : this.endDate,
+    hour: hour ?? this.hour,
+    minute: minute ?? this.minute,
+    status: status ?? this.status,
+    skippedDatesJson: skippedDatesJson ?? this.skippedDatesJson,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    disabledAt: disabledAt.present ? disabledAt.value : this.disabledAt,
+  );
+  RecurringTaskRule copyWithCompanion(RecurringTaskRulesCompanion data) {
+    return RecurringTaskRule(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      frequency: data.frequency.present ? data.frequency.value : this.frequency,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      hour: data.hour.present ? data.hour.value : this.hour,
+      minute: data.minute.present ? data.minute.value : this.minute,
+      status: data.status.present ? data.status.value : this.status,
+      skippedDatesJson: data.skippedDatesJson.present
+          ? data.skippedDatesJson.value
+          : this.skippedDatesJson,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      disabledAt: data.disabledAt.present
+          ? data.disabledAt.value
+          : this.disabledAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringTaskRule(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('frequency: $frequency, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('hour: $hour, ')
+          ..write('minute: $minute, ')
+          ..write('status: $status, ')
+          ..write('skippedDatesJson: $skippedDatesJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('disabledAt: $disabledAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    title,
+    description,
+    frequency,
+    startDate,
+    endDate,
+    hour,
+    minute,
+    status,
+    skippedDatesJson,
+    createdAt,
+    updatedAt,
+    disabledAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecurringTaskRule &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.description == this.description &&
+          other.frequency == this.frequency &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.hour == this.hour &&
+          other.minute == this.minute &&
+          other.status == this.status &&
+          other.skippedDatesJson == this.skippedDatesJson &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.disabledAt == this.disabledAt);
+}
+
+class RecurringTaskRulesCompanion extends UpdateCompanion<RecurringTaskRule> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String?> description;
+  final Value<String> frequency;
+  final Value<DateTime> startDate;
+  final Value<DateTime?> endDate;
+  final Value<int> hour;
+  final Value<int> minute;
+  final Value<String> status;
+  final Value<String> skippedDatesJson;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> disabledAt;
+  final Value<int> rowid;
+  const RecurringTaskRulesCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.description = const Value.absent(),
+    this.frequency = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.hour = const Value.absent(),
+    this.minute = const Value.absent(),
+    this.status = const Value.absent(),
+    this.skippedDatesJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.disabledAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecurringTaskRulesCompanion.insert({
+    required String id,
+    required String title,
+    this.description = const Value.absent(),
+    this.frequency = const Value.absent(),
+    required DateTime startDate,
+    this.endDate = const Value.absent(),
+    required int hour,
+    required int minute,
+    required String status,
+    this.skippedDatesJson = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.disabledAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       startDate = Value(startDate),
+       hour = Value(hour),
+       minute = Value(minute),
+       status = Value(status),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<RecurringTaskRule> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? description,
+    Expression<String>? frequency,
+    Expression<DateTime>? startDate,
+    Expression<DateTime>? endDate,
+    Expression<int>? hour,
+    Expression<int>? minute,
+    Expression<String>? status,
+    Expression<String>? skippedDatesJson,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? disabledAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (frequency != null) 'frequency': frequency,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (hour != null) 'hour': hour,
+      if (minute != null) 'minute': minute,
+      if (status != null) 'status': status,
+      if (skippedDatesJson != null) 'skipped_dates_json': skippedDatesJson,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (disabledAt != null) 'disabled_at': disabledAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecurringTaskRulesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String?>? description,
+    Value<String>? frequency,
+    Value<DateTime>? startDate,
+    Value<DateTime?>? endDate,
+    Value<int>? hour,
+    Value<int>? minute,
+    Value<String>? status,
+    Value<String>? skippedDatesJson,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? disabledAt,
+    Value<int>? rowid,
+  }) {
+    return RecurringTaskRulesCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      frequency: frequency ?? this.frequency,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      hour: hour ?? this.hour,
+      minute: minute ?? this.minute,
+      status: status ?? this.status,
+      skippedDatesJson: skippedDatesJson ?? this.skippedDatesJson,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      disabledAt: disabledAt ?? this.disabledAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (frequency.present) {
+      map['frequency'] = Variable<String>(frequency.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<DateTime>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<DateTime>(endDate.value);
+    }
+    if (hour.present) {
+      map['hour'] = Variable<int>(hour.value);
+    }
+    if (minute.present) {
+      map['minute'] = Variable<int>(minute.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (skippedDatesJson.present) {
+      map['skipped_dates_json'] = Variable<String>(skippedDatesJson.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (disabledAt.present) {
+      map['disabled_at'] = Variable<DateTime>(disabledAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringTaskRulesCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('frequency: $frequency, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('hour: $hour, ')
+          ..write('minute: $minute, ')
+          ..write('status: $status, ')
+          ..write('skippedDatesJson: $skippedDatesJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('disabledAt: $disabledAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SedentarySessionsTable extends SedentarySessions
+    with TableInfo<$SedentarySessionsTable, SedentarySession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SedentarySessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reminderAtMeta = const VerificationMeta(
+    'reminderAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> reminderAt = GeneratedColumn<DateTime>(
+    'reminder_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    startedAt,
+    reminderAt,
+    endedAt,
+    status,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sedentary_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SedentarySession> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('reminder_at')) {
+      context.handle(
+        _reminderAtMeta,
+        reminderAt.isAcceptableOrUnknown(data['reminder_at']!, _reminderAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reminderAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SedentarySession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SedentarySession(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      reminderAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reminder_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SedentarySessionsTable createAlias(String alias) {
+    return $SedentarySessionsTable(attachedDatabase, alias);
+  }
+}
+
+class SedentarySession extends DataClass
+    implements Insertable<SedentarySession> {
+  final String id;
+  final DateTime startedAt;
+  final DateTime reminderAt;
+  final DateTime? endedAt;
+  final String status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const SedentarySession({
+    required this.id,
+    required this.startedAt,
+    required this.reminderAt,
+    this.endedAt,
+    required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['reminder_at'] = Variable<DateTime>(reminderAt);
+    if (!nullToAbsent || endedAt != null) {
+      map['ended_at'] = Variable<DateTime>(endedAt);
+    }
+    map['status'] = Variable<String>(status);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  SedentarySessionsCompanion toCompanion(bool nullToAbsent) {
+    return SedentarySessionsCompanion(
+      id: Value(id),
+      startedAt: Value(startedAt),
+      reminderAt: Value(reminderAt),
+      endedAt: endedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAt),
+      status: Value(status),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory SedentarySession.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SedentarySession(
+      id: serializer.fromJson<String>(json['id']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      reminderAt: serializer.fromJson<DateTime>(json['reminderAt']),
+      endedAt: serializer.fromJson<DateTime?>(json['endedAt']),
+      status: serializer.fromJson<String>(json['status']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'reminderAt': serializer.toJson<DateTime>(reminderAt),
+      'endedAt': serializer.toJson<DateTime?>(endedAt),
+      'status': serializer.toJson<String>(status),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  SedentarySession copyWith({
+    String? id,
+    DateTime? startedAt,
+    DateTime? reminderAt,
+    Value<DateTime?> endedAt = const Value.absent(),
+    String? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => SedentarySession(
+    id: id ?? this.id,
+    startedAt: startedAt ?? this.startedAt,
+    reminderAt: reminderAt ?? this.reminderAt,
+    endedAt: endedAt.present ? endedAt.value : this.endedAt,
+    status: status ?? this.status,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  SedentarySession copyWithCompanion(SedentarySessionsCompanion data) {
+    return SedentarySession(
+      id: data.id.present ? data.id.value : this.id,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      reminderAt: data.reminderAt.present
+          ? data.reminderAt.value
+          : this.reminderAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      status: data.status.present ? data.status.value : this.status,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SedentarySession(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('reminderAt: $reminderAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    startedAt,
+    reminderAt,
+    endedAt,
+    status,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SedentarySession &&
+          other.id == this.id &&
+          other.startedAt == this.startedAt &&
+          other.reminderAt == this.reminderAt &&
+          other.endedAt == this.endedAt &&
+          other.status == this.status &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class SedentarySessionsCompanion extends UpdateCompanion<SedentarySession> {
+  final Value<String> id;
+  final Value<DateTime> startedAt;
+  final Value<DateTime> reminderAt;
+  final Value<DateTime?> endedAt;
+  final Value<String> status;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const SedentarySessionsCompanion({
+    this.id = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.reminderAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SedentarySessionsCompanion.insert({
+    required String id,
+    required DateTime startedAt,
+    required DateTime reminderAt,
+    this.endedAt = const Value.absent(),
+    required String status,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       startedAt = Value(startedAt),
+       reminderAt = Value(reminderAt),
+       status = Value(status),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<SedentarySession> custom({
+    Expression<String>? id,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? reminderAt,
+    Expression<DateTime>? endedAt,
+    Expression<String>? status,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startedAt != null) 'started_at': startedAt,
+      if (reminderAt != null) 'reminder_at': reminderAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (status != null) 'status': status,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SedentarySessionsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? startedAt,
+    Value<DateTime>? reminderAt,
+    Value<DateTime?>? endedAt,
+    Value<String>? status,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return SedentarySessionsCompanion(
+      id: id ?? this.id,
+      startedAt: startedAt ?? this.startedAt,
+      reminderAt: reminderAt ?? this.reminderAt,
+      endedAt: endedAt ?? this.endedAt,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (reminderAt.present) {
+      map['reminder_at'] = Variable<DateTime>(reminderAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SedentarySessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('reminderAt: $reminderAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7761,6 +9194,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ScheduleBlocksTable scheduleBlocks = $ScheduleBlocksTable(this);
   late final $ScheduleBlockSourcesTable scheduleBlockSources =
       $ScheduleBlockSourcesTable(this);
+  late final $RecurringTaskRulesTable recurringTaskRules =
+      $RecurringTaskRulesTable(this);
+  late final $SedentarySessionsTable sedentarySessions =
+      $SedentarySessionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7778,6 +9215,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     schedulePlans,
     scheduleBlocks,
     scheduleBlockSources,
+    recurringTaskRules,
+    sedentarySessions,
   ];
 }
 
@@ -7805,10 +9244,7 @@ final class $$RawInputsTableReferences
   static MultiTypedResultKey<$AiParseResultsTable, List<AiParseResult>>
   _aiParseResultsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.aiParseResults,
-    aliasName: $_aliasNameGenerator(
-      db.rawInputs.id,
-      db.aiParseResults.rawInputId,
-    ),
+    aliasName: 'raw_inputs__id__ai_parse_results__raw_input_id',
   );
 
   $$AiParseResultsTableProcessedTableManager get aiParseResultsRefs {
@@ -7826,10 +9262,7 @@ final class $$RawInputsTableReferences
   static MultiTypedResultKey<$ExtractedItemsTable, List<ExtractedItem>>
   _extractedItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.extractedItems,
-    aliasName: $_aliasNameGenerator(
-      db.rawInputs.id,
-      db.extractedItems.rawInputId,
-    ),
+    aliasName: 'raw_inputs__id__extracted_items__raw_input_id',
   );
 
   $$ExtractedItemsTableProcessedTableManager get extractedItemsRefs {
@@ -7848,7 +9281,7 @@ final class $$RawInputsTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.tasks,
-    aliasName: $_aliasNameGenerator(db.rawInputs.id, db.tasks.sourceRawInputId),
+    aliasName: 'raw_inputs__id__tasks__source_raw_input_id',
   );
 
   $$TasksTableProcessedTableManager get tasksRefs {
@@ -7865,10 +9298,7 @@ final class $$RawInputsTableReferences
   static MultiTypedResultKey<$ShortTermStatesTable, List<ShortTermState>>
   _shortTermStatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.shortTermStates,
-    aliasName: $_aliasNameGenerator(
-      db.rawInputs.id,
-      db.shortTermStates.sourceRawInputId,
-    ),
+    aliasName: 'raw_inputs__id__short_term_states__source_raw_input_id',
   );
 
   $$ShortTermStatesTableProcessedTableManager get shortTermStatesRefs {
@@ -7888,10 +9318,7 @@ final class $$RawInputsTableReferences
   static MultiTypedResultKey<$LifeEventsTable, List<LifeEvent>>
   _lifeEventsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.lifeEvents,
-    aliasName: $_aliasNameGenerator(
-      db.rawInputs.id,
-      db.lifeEvents.sourceRawInputId,
-    ),
+    aliasName: 'raw_inputs__id__life_events__source_raw_input_id',
   );
 
   $$LifeEventsTableProcessedTableManager get lifeEventsRefs {
@@ -7908,10 +9335,7 @@ final class $$RawInputsTableReferences
   static MultiTypedResultKey<$ProfileItemsTable, List<ProfileItem>>
   _profileItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.profileItems,
-    aliasName: $_aliasNameGenerator(
-      db.rawInputs.id,
-      db.profileItems.sourceRawInputId,
-    ),
+    aliasName: 'raw_inputs__id__profile_items__source_raw_input_id',
   );
 
   $$ProfileItemsTableProcessedTableManager get profileItemsRefs {
@@ -8586,10 +10010,8 @@ final class $$AiParseResultsTableReferences
     super.$_typedResult,
   );
 
-  static $RawInputsTable _rawInputIdTable(_$AppDatabase db) =>
-      db.rawInputs.createAlias(
-        $_aliasNameGenerator(db.aiParseResults.rawInputId, db.rawInputs.id),
-      );
+  static $RawInputsTable _rawInputIdTable(_$AppDatabase db) => db.rawInputs
+      .createAlias('ai_parse_results__raw_input_id__raw_inputs__id');
 
   $$RawInputsTableProcessedTableManager get rawInputId {
     final $_column = $_itemColumn<String>('raw_input_id')!;
@@ -8608,10 +10030,7 @@ final class $$AiParseResultsTableReferences
   static MultiTypedResultKey<$ExtractedItemsTable, List<ExtractedItem>>
   _extractedItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.extractedItems,
-    aliasName: $_aliasNameGenerator(
-      db.aiParseResults.id,
-      db.extractedItems.aiParseResultId,
-    ),
+    aliasName: 'ai_parse_results__id__extracted_items__ai_parse_result_id',
   );
 
   $$ExtractedItemsTableProcessedTableManager get extractedItemsRefs {
@@ -9068,9 +10487,7 @@ final class $$ExtractedItemsTableReferences
   );
 
   static $RawInputsTable _rawInputIdTable(_$AppDatabase db) =>
-      db.rawInputs.createAlias(
-        $_aliasNameGenerator(db.extractedItems.rawInputId, db.rawInputs.id),
-      );
+      db.rawInputs.createAlias('extracted_items__raw_input_id__raw_inputs__id');
 
   $$RawInputsTableProcessedTableManager get rawInputId {
     final $_column = $_itemColumn<String>('raw_input_id')!;
@@ -9086,13 +10503,9 @@ final class $$ExtractedItemsTableReferences
     );
   }
 
-  static $AiParseResultsTable _aiParseResultIdTable(_$AppDatabase db) =>
-      db.aiParseResults.createAlias(
-        $_aliasNameGenerator(
-          db.extractedItems.aiParseResultId,
-          db.aiParseResults.id,
-        ),
-      );
+  static $AiParseResultsTable _aiParseResultIdTable(_$AppDatabase db) => db
+      .aiParseResults
+      .createAlias('extracted_items__ai_parse_result_id__ai_parse_results__id');
 
   $$AiParseResultsTableProcessedTableManager get aiParseResultId {
     final $_column = $_itemColumn<String>('ai_parse_result_id')!;
@@ -9112,10 +10525,7 @@ final class $$ExtractedItemsTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.tasks,
-    aliasName: $_aliasNameGenerator(
-      db.extractedItems.id,
-      db.tasks.sourceExtractedItemId,
-    ),
+    aliasName: 'extracted_items__id__tasks__source_extracted_item_id',
   );
 
   $$TasksTableProcessedTableManager get tasksRefs {
@@ -9132,10 +10542,8 @@ final class $$ExtractedItemsTableReferences
   static MultiTypedResultKey<$ShortTermStatesTable, List<ShortTermState>>
   _shortTermStatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.shortTermStates,
-    aliasName: $_aliasNameGenerator(
-      db.extractedItems.id,
-      db.shortTermStates.sourceExtractedItemId,
-    ),
+    aliasName:
+        'extracted_items__id__short_term_states__source_extracted_item_id',
   );
 
   $$ShortTermStatesTableProcessedTableManager get shortTermStatesRefs {
@@ -9156,10 +10564,7 @@ final class $$ExtractedItemsTableReferences
   static MultiTypedResultKey<$LifeEventsTable, List<LifeEvent>>
   _lifeEventsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.lifeEvents,
-    aliasName: $_aliasNameGenerator(
-      db.extractedItems.id,
-      db.lifeEvents.sourceExtractedItemId,
-    ),
+    aliasName: 'extracted_items__id__life_events__source_extracted_item_id',
   );
 
   $$LifeEventsTableProcessedTableManager get lifeEventsRefs {
@@ -9176,10 +10581,7 @@ final class $$ExtractedItemsTableReferences
   static MultiTypedResultKey<$ProfileItemsTable, List<ProfileItem>>
   _profileItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.profileItems,
-    aliasName: $_aliasNameGenerator(
-      db.extractedItems.id,
-      db.profileItems.sourceExtractedItemId,
-    ),
+    aliasName: 'extracted_items__id__profile_items__source_extracted_item_id',
   );
 
   $$ProfileItemsTableProcessedTableManager get profileItemsRefs {
@@ -10025,11 +11427,15 @@ typedef $$TasksTableCreateCompanionBuilder =
       required String sourceExtractedItemId,
       required String title,
       Value<String?> description,
+      Value<DateTime?> startTime,
+      Value<DateTime?> endTime,
       Value<String?> dueTimeText,
       Value<DateTime?> dueTime,
       Value<String> priority,
       required String status,
       Value<String> taskStatus,
+      Value<String?> recurrenceRuleId,
+      Value<DateTime?> recurrenceDate,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -10041,11 +11447,15 @@ typedef $$TasksTableUpdateCompanionBuilder =
       Value<String> sourceExtractedItemId,
       Value<String> title,
       Value<String?> description,
+      Value<DateTime?> startTime,
+      Value<DateTime?> endTime,
       Value<String?> dueTimeText,
       Value<DateTime?> dueTime,
       Value<String> priority,
       Value<String> status,
       Value<String> taskStatus,
+      Value<String?> recurrenceRuleId,
+      Value<DateTime?> recurrenceDate,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -10056,9 +11466,7 @@ final class $$TasksTableReferences
   $$TasksTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $RawInputsTable _sourceRawInputIdTable(_$AppDatabase db) =>
-      db.rawInputs.createAlias(
-        $_aliasNameGenerator(db.tasks.sourceRawInputId, db.rawInputs.id),
-      );
+      db.rawInputs.createAlias('tasks__source_raw_input_id__raw_inputs__id');
 
   $$RawInputsTableProcessedTableManager get sourceRawInputId {
     final $_column = $_itemColumn<String>('source_raw_input_id')!;
@@ -10076,10 +11484,7 @@ final class $$TasksTableReferences
 
   static $ExtractedItemsTable _sourceExtractedItemIdTable(_$AppDatabase db) =>
       db.extractedItems.createAlias(
-        $_aliasNameGenerator(
-          db.tasks.sourceExtractedItemId,
-          db.extractedItems.id,
-        ),
+        'tasks__source_extracted_item_id__extracted_items__id',
       );
 
   $$ExtractedItemsTableProcessedTableManager get sourceExtractedItemId {
@@ -10122,6 +11527,16 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<DateTime> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get dueTimeText => $composableBuilder(
     column: $table.dueTimeText,
     builder: (column) => ColumnFilters(column),
@@ -10144,6 +11559,16 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<String> get taskStatus => $composableBuilder(
     column: $table.taskStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recurrenceRuleId => $composableBuilder(
+    column: $table.recurrenceRuleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get recurrenceDate => $composableBuilder(
+    column: $table.recurrenceDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10228,6 +11653,16 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get dueTimeText => $composableBuilder(
     column: $table.dueTimeText,
     builder: (column) => ColumnOrderings(column),
@@ -10250,6 +11685,16 @@ class $$TasksTableOrderingComposer
 
   ColumnOrderings<String> get taskStatus => $composableBuilder(
     column: $table.taskStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recurrenceRuleId => $composableBuilder(
+    column: $table.recurrenceRuleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get recurrenceDate => $composableBuilder(
+    column: $table.recurrenceDate,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -10330,6 +11775,12 @@ class $$TasksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get startTime =>
+      $composableBuilder(column: $table.startTime, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endTime =>
+      $composableBuilder(column: $table.endTime, builder: (column) => column);
+
   GeneratedColumn<String> get dueTimeText => $composableBuilder(
     column: $table.dueTimeText,
     builder: (column) => column,
@@ -10346,6 +11797,16 @@ class $$TasksTableAnnotationComposer
 
   GeneratedColumn<String> get taskStatus => $composableBuilder(
     column: $table.taskStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recurrenceRuleId => $composableBuilder(
+    column: $table.recurrenceRuleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get recurrenceDate => $composableBuilder(
+    column: $table.recurrenceDate,
     builder: (column) => column,
   );
 
@@ -10438,11 +11899,15 @@ class $$TasksTableTableManager
                 Value<String> sourceExtractedItemId = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<DateTime?> startTime = const Value.absent(),
+                Value<DateTime?> endTime = const Value.absent(),
                 Value<String?> dueTimeText = const Value.absent(),
                 Value<DateTime?> dueTime = const Value.absent(),
                 Value<String> priority = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String> taskStatus = const Value.absent(),
+                Value<String?> recurrenceRuleId = const Value.absent(),
+                Value<DateTime?> recurrenceDate = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -10452,11 +11917,15 @@ class $$TasksTableTableManager
                 sourceExtractedItemId: sourceExtractedItemId,
                 title: title,
                 description: description,
+                startTime: startTime,
+                endTime: endTime,
                 dueTimeText: dueTimeText,
                 dueTime: dueTime,
                 priority: priority,
                 status: status,
                 taskStatus: taskStatus,
+                recurrenceRuleId: recurrenceRuleId,
+                recurrenceDate: recurrenceDate,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -10468,11 +11937,15 @@ class $$TasksTableTableManager
                 required String sourceExtractedItemId,
                 required String title,
                 Value<String?> description = const Value.absent(),
+                Value<DateTime?> startTime = const Value.absent(),
+                Value<DateTime?> endTime = const Value.absent(),
                 Value<String?> dueTimeText = const Value.absent(),
                 Value<DateTime?> dueTime = const Value.absent(),
                 Value<String> priority = const Value.absent(),
                 required String status,
                 Value<String> taskStatus = const Value.absent(),
+                Value<String?> recurrenceRuleId = const Value.absent(),
+                Value<DateTime?> recurrenceDate = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -10482,11 +11955,15 @@ class $$TasksTableTableManager
                 sourceExtractedItemId: sourceExtractedItemId,
                 title: title,
                 description: description,
+                startTime: startTime,
+                endTime: endTime,
                 dueTimeText: dueTimeText,
                 dueTime: dueTime,
                 priority: priority,
                 status: status,
                 taskStatus: taskStatus,
+                recurrenceRuleId: recurrenceRuleId,
+                recurrenceDate: recurrenceDate,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -10609,13 +12086,9 @@ final class $$ShortTermStatesTableReferences
     super.$_typedResult,
   );
 
-  static $RawInputsTable _sourceRawInputIdTable(_$AppDatabase db) =>
-      db.rawInputs.createAlias(
-        $_aliasNameGenerator(
-          db.shortTermStates.sourceRawInputId,
-          db.rawInputs.id,
-        ),
-      );
+  static $RawInputsTable _sourceRawInputIdTable(_$AppDatabase db) => db
+      .rawInputs
+      .createAlias('short_term_states__source_raw_input_id__raw_inputs__id');
 
   $$RawInputsTableProcessedTableManager get sourceRawInputId {
     final $_column = $_itemColumn<String>('source_raw_input_id')!;
@@ -10633,10 +12106,7 @@ final class $$ShortTermStatesTableReferences
 
   static $ExtractedItemsTable _sourceExtractedItemIdTable(_$AppDatabase db) =>
       db.extractedItems.createAlias(
-        $_aliasNameGenerator(
-          db.shortTermStates.sourceExtractedItemId,
-          db.extractedItems.id,
-        ),
+        'short_term_states__source_extracted_item_id__extracted_items__id',
       );
 
   $$ExtractedItemsTableProcessedTableManager get sourceExtractedItemId {
@@ -11113,10 +12583,9 @@ final class $$LifeEventsTableReferences
     extends BaseReferences<_$AppDatabase, $LifeEventsTable, LifeEvent> {
   $$LifeEventsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $RawInputsTable _sourceRawInputIdTable(_$AppDatabase db) =>
-      db.rawInputs.createAlias(
-        $_aliasNameGenerator(db.lifeEvents.sourceRawInputId, db.rawInputs.id),
-      );
+  static $RawInputsTable _sourceRawInputIdTable(_$AppDatabase db) => db
+      .rawInputs
+      .createAlias('life_events__source_raw_input_id__raw_inputs__id');
 
   $$RawInputsTableProcessedTableManager get sourceRawInputId {
     final $_column = $_itemColumn<String>('source_raw_input_id')!;
@@ -11134,10 +12603,7 @@ final class $$LifeEventsTableReferences
 
   static $ExtractedItemsTable _sourceExtractedItemIdTable(_$AppDatabase db) =>
       db.extractedItems.createAlias(
-        $_aliasNameGenerator(
-          db.lifeEvents.sourceExtractedItemId,
-          db.extractedItems.id,
-        ),
+        'life_events__source_extracted_item_id__extracted_items__id',
       );
 
   $$ExtractedItemsTableProcessedTableManager get sourceExtractedItemId {
@@ -11595,10 +13061,9 @@ final class $$ProfileItemsTableReferences
     extends BaseReferences<_$AppDatabase, $ProfileItemsTable, ProfileItem> {
   $$ProfileItemsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $RawInputsTable _sourceRawInputIdTable(_$AppDatabase db) =>
-      db.rawInputs.createAlias(
-        $_aliasNameGenerator(db.profileItems.sourceRawInputId, db.rawInputs.id),
-      );
+  static $RawInputsTable _sourceRawInputIdTable(_$AppDatabase db) => db
+      .rawInputs
+      .createAlias('profile_items__source_raw_input_id__raw_inputs__id');
 
   $$RawInputsTableProcessedTableManager get sourceRawInputId {
     final $_column = $_itemColumn<String>('source_raw_input_id')!;
@@ -11616,10 +13081,7 @@ final class $$ProfileItemsTableReferences
 
   static $ExtractedItemsTable _sourceExtractedItemIdTable(_$AppDatabase db) =>
       db.extractedItems.createAlias(
-        $_aliasNameGenerator(
-          db.profileItems.sourceExtractedItemId,
-          db.extractedItems.id,
-        ),
+        'profile_items__source_extracted_item_id__extracted_items__id',
       );
 
   $$ExtractedItemsTableProcessedTableManager get sourceExtractedItemId {
@@ -12136,10 +13598,7 @@ final class $$SummariesTableReferences
   static MultiTypedResultKey<$SummarySourcesTable, List<SummarySource>>
   _summarySourcesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.summarySources,
-    aliasName: $_aliasNameGenerator(
-      db.summaries.id,
-      db.summarySources.summaryId,
-    ),
+    aliasName: 'summaries__id__summary_sources__summary_id',
   );
 
   $$SummarySourcesTableProcessedTableManager get summarySourcesRefs {
@@ -12706,9 +14165,7 @@ final class $$SummarySourcesTableReferences
   );
 
   static $SummariesTable _summaryIdTable(_$AppDatabase db) =>
-      db.summaries.createAlias(
-        $_aliasNameGenerator(db.summarySources.summaryId, db.summaries.id),
-      );
+      db.summaries.createAlias('summary_sources__summary_id__summaries__id');
 
   $$SummariesTableProcessedTableManager get summaryId {
     final $_column = $_itemColumn<String>('summary_id')!;
@@ -13079,10 +14536,7 @@ final class $$SchedulePlansTableReferences
   static MultiTypedResultKey<$ScheduleBlocksTable, List<ScheduleBlock>>
   _scheduleBlocksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.scheduleBlocks,
-    aliasName: $_aliasNameGenerator(
-      db.schedulePlans.id,
-      db.scheduleBlocks.planId,
-    ),
+    aliasName: 'schedule_plans__id__schedule_blocks__plan_id',
   );
 
   $$ScheduleBlocksTableProcessedTableManager get scheduleBlocksRefs {
@@ -13605,10 +15059,8 @@ final class $$ScheduleBlocksTableReferences
     super.$_typedResult,
   );
 
-  static $SchedulePlansTable _planIdTable(_$AppDatabase db) =>
-      db.schedulePlans.createAlias(
-        $_aliasNameGenerator(db.scheduleBlocks.planId, db.schedulePlans.id),
-      );
+  static $SchedulePlansTable _planIdTable(_$AppDatabase db) => db.schedulePlans
+      .createAlias('schedule_blocks__plan_id__schedule_plans__id');
 
   $$SchedulePlansTableProcessedTableManager get planId {
     final $_column = $_itemColumn<String>('plan_id')!;
@@ -13631,10 +15083,7 @@ final class $$ScheduleBlocksTableReferences
   _scheduleBlockSourcesRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.scheduleBlockSources,
-        aliasName: $_aliasNameGenerator(
-          db.scheduleBlocks.id,
-          db.scheduleBlockSources.blockId,
-        ),
+        aliasName: 'schedule_blocks__id__schedule_block_sources__block_id',
       );
 
   $$ScheduleBlockSourcesTableProcessedTableManager
@@ -14196,13 +15645,9 @@ final class $$ScheduleBlockSourcesTableReferences
     super.$_typedResult,
   );
 
-  static $ScheduleBlocksTable _blockIdTable(_$AppDatabase db) =>
-      db.scheduleBlocks.createAlias(
-        $_aliasNameGenerator(
-          db.scheduleBlockSources.blockId,
-          db.scheduleBlocks.id,
-        ),
-      );
+  static $ScheduleBlocksTable _blockIdTable(_$AppDatabase db) => db
+      .scheduleBlocks
+      .createAlias('schedule_block_sources__block_id__schedule_blocks__id');
 
   $$ScheduleBlocksTableProcessedTableManager get blockId {
     final $_column = $_itemColumn<String>('block_id')!;
@@ -14509,6 +15954,630 @@ typedef $$ScheduleBlockSourcesTableProcessedTableManager =
       ScheduleBlockSource,
       PrefetchHooks Function({bool blockId})
     >;
+typedef $$RecurringTaskRulesTableCreateCompanionBuilder =
+    RecurringTaskRulesCompanion Function({
+      required String id,
+      required String title,
+      Value<String?> description,
+      Value<String> frequency,
+      required DateTime startDate,
+      Value<DateTime?> endDate,
+      required int hour,
+      required int minute,
+      required String status,
+      Value<String> skippedDatesJson,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> disabledAt,
+      Value<int> rowid,
+    });
+typedef $$RecurringTaskRulesTableUpdateCompanionBuilder =
+    RecurringTaskRulesCompanion Function({
+      Value<String> id,
+      Value<String> title,
+      Value<String?> description,
+      Value<String> frequency,
+      Value<DateTime> startDate,
+      Value<DateTime?> endDate,
+      Value<int> hour,
+      Value<int> minute,
+      Value<String> status,
+      Value<String> skippedDatesJson,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> disabledAt,
+      Value<int> rowid,
+    });
+
+class $$RecurringTaskRulesTableFilterComposer
+    extends Composer<_$AppDatabase, $RecurringTaskRulesTable> {
+  $$RecurringTaskRulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get frequency => $composableBuilder(
+    column: $table.frequency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hour => $composableBuilder(
+    column: $table.hour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minute => $composableBuilder(
+    column: $table.minute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get skippedDatesJson => $composableBuilder(
+    column: $table.skippedDatesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get disabledAt => $composableBuilder(
+    column: $table.disabledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RecurringTaskRulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecurringTaskRulesTable> {
+  $$RecurringTaskRulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get frequency => $composableBuilder(
+    column: $table.frequency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hour => $composableBuilder(
+    column: $table.hour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minute => $composableBuilder(
+    column: $table.minute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get skippedDatesJson => $composableBuilder(
+    column: $table.skippedDatesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get disabledAt => $composableBuilder(
+    column: $table.disabledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RecurringTaskRulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecurringTaskRulesTable> {
+  $$RecurringTaskRulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get frequency =>
+      $composableBuilder(column: $table.frequency, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<int> get hour =>
+      $composableBuilder(column: $table.hour, builder: (column) => column);
+
+  GeneratedColumn<int> get minute =>
+      $composableBuilder(column: $table.minute, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get skippedDatesJson => $composableBuilder(
+    column: $table.skippedDatesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get disabledAt => $composableBuilder(
+    column: $table.disabledAt,
+    builder: (column) => column,
+  );
+}
+
+class $$RecurringTaskRulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecurringTaskRulesTable,
+          RecurringTaskRule,
+          $$RecurringTaskRulesTableFilterComposer,
+          $$RecurringTaskRulesTableOrderingComposer,
+          $$RecurringTaskRulesTableAnnotationComposer,
+          $$RecurringTaskRulesTableCreateCompanionBuilder,
+          $$RecurringTaskRulesTableUpdateCompanionBuilder,
+          (
+            RecurringTaskRule,
+            BaseReferences<
+              _$AppDatabase,
+              $RecurringTaskRulesTable,
+              RecurringTaskRule
+            >,
+          ),
+          RecurringTaskRule,
+          PrefetchHooks Function()
+        > {
+  $$RecurringTaskRulesTableTableManager(
+    _$AppDatabase db,
+    $RecurringTaskRulesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecurringTaskRulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecurringTaskRulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecurringTaskRulesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> frequency = const Value.absent(),
+                Value<DateTime> startDate = const Value.absent(),
+                Value<DateTime?> endDate = const Value.absent(),
+                Value<int> hour = const Value.absent(),
+                Value<int> minute = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> skippedDatesJson = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> disabledAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringTaskRulesCompanion(
+                id: id,
+                title: title,
+                description: description,
+                frequency: frequency,
+                startDate: startDate,
+                endDate: endDate,
+                hour: hour,
+                minute: minute,
+                status: status,
+                skippedDatesJson: skippedDatesJson,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                disabledAt: disabledAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                Value<String?> description = const Value.absent(),
+                Value<String> frequency = const Value.absent(),
+                required DateTime startDate,
+                Value<DateTime?> endDate = const Value.absent(),
+                required int hour,
+                required int minute,
+                required String status,
+                Value<String> skippedDatesJson = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> disabledAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringTaskRulesCompanion.insert(
+                id: id,
+                title: title,
+                description: description,
+                frequency: frequency,
+                startDate: startDate,
+                endDate: endDate,
+                hour: hour,
+                minute: minute,
+                status: status,
+                skippedDatesJson: skippedDatesJson,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                disabledAt: disabledAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RecurringTaskRulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecurringTaskRulesTable,
+      RecurringTaskRule,
+      $$RecurringTaskRulesTableFilterComposer,
+      $$RecurringTaskRulesTableOrderingComposer,
+      $$RecurringTaskRulesTableAnnotationComposer,
+      $$RecurringTaskRulesTableCreateCompanionBuilder,
+      $$RecurringTaskRulesTableUpdateCompanionBuilder,
+      (
+        RecurringTaskRule,
+        BaseReferences<
+          _$AppDatabase,
+          $RecurringTaskRulesTable,
+          RecurringTaskRule
+        >,
+      ),
+      RecurringTaskRule,
+      PrefetchHooks Function()
+    >;
+typedef $$SedentarySessionsTableCreateCompanionBuilder =
+    SedentarySessionsCompanion Function({
+      required String id,
+      required DateTime startedAt,
+      required DateTime reminderAt,
+      Value<DateTime?> endedAt,
+      required String status,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$SedentarySessionsTableUpdateCompanionBuilder =
+    SedentarySessionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> startedAt,
+      Value<DateTime> reminderAt,
+      Value<DateTime?> endedAt,
+      Value<String> status,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$SedentarySessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $SedentarySessionsTable> {
+  $$SedentarySessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SedentarySessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SedentarySessionsTable> {
+  $$SedentarySessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SedentarySessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SedentarySessionsTable> {
+  $$SedentarySessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$SedentarySessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SedentarySessionsTable,
+          SedentarySession,
+          $$SedentarySessionsTableFilterComposer,
+          $$SedentarySessionsTableOrderingComposer,
+          $$SedentarySessionsTableAnnotationComposer,
+          $$SedentarySessionsTableCreateCompanionBuilder,
+          $$SedentarySessionsTableUpdateCompanionBuilder,
+          (
+            SedentarySession,
+            BaseReferences<
+              _$AppDatabase,
+              $SedentarySessionsTable,
+              SedentarySession
+            >,
+          ),
+          SedentarySession,
+          PrefetchHooks Function()
+        > {
+  $$SedentarySessionsTableTableManager(
+    _$AppDatabase db,
+    $SedentarySessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SedentarySessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SedentarySessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SedentarySessionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime> reminderAt = const Value.absent(),
+                Value<DateTime?> endedAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SedentarySessionsCompanion(
+                id: id,
+                startedAt: startedAt,
+                reminderAt: reminderAt,
+                endedAt: endedAt,
+                status: status,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime startedAt,
+                required DateTime reminderAt,
+                Value<DateTime?> endedAt = const Value.absent(),
+                required String status,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SedentarySessionsCompanion.insert(
+                id: id,
+                startedAt: startedAt,
+                reminderAt: reminderAt,
+                endedAt: endedAt,
+                status: status,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SedentarySessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SedentarySessionsTable,
+      SedentarySession,
+      $$SedentarySessionsTableFilterComposer,
+      $$SedentarySessionsTableOrderingComposer,
+      $$SedentarySessionsTableAnnotationComposer,
+      $$SedentarySessionsTableCreateCompanionBuilder,
+      $$SedentarySessionsTableUpdateCompanionBuilder,
+      (
+        SedentarySession,
+        BaseReferences<
+          _$AppDatabase,
+          $SedentarySessionsTable,
+          SedentarySession
+        >,
+      ),
+      SedentarySession,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -14537,4 +16606,8 @@ class $AppDatabaseManager {
       $$ScheduleBlocksTableTableManager(_db, _db.scheduleBlocks);
   $$ScheduleBlockSourcesTableTableManager get scheduleBlockSources =>
       $$ScheduleBlockSourcesTableTableManager(_db, _db.scheduleBlockSources);
+  $$RecurringTaskRulesTableTableManager get recurringTaskRules =>
+      $$RecurringTaskRulesTableTableManager(_db, _db.recurringTaskRules);
+  $$SedentarySessionsTableTableManager get sedentarySessions =>
+      $$SedentarySessionsTableTableManager(_db, _db.sedentarySessions);
 }

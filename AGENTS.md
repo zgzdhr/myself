@@ -14,11 +14,11 @@
 
 ## 当前规划状态
 
-截至 2026-06-22，项目已经从早期 0-6 阶段的 MVP 建设路线，经过 **Phase 4：真实试用信任修复阶段**，进入 **Phase 5：账号云端化、每日复盘与设置完善阶段**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理、Phase 4A-4E 信任修复都已经完成。
+截至 2026-07-06，项目已经从早期 0-6 阶段的 MVP 建设路线，经过 **Phase 4：真实试用信任修复阶段**，进入 **Phase 5：移动端可用体验补强阶段**。Flutter App、API proxy、本地数据库、解析链路、基础确认流程、记忆管理页面、移动端 smoke、真实 Android APK + DeepSeek API proxy 试用、`current_suggestion` / `task_update_resolution` ContextBuilder、解释性 UI、中文语义边界校准、Phase 3 真实试用反馈整理、Phase 4A-4E 信任修复都已经完成。
 
-Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。Phase 4C 已完成：取消类表达、任务匹配噪声清洗和真实失败样例覆盖。Phase 4D 已完成：首页 AI 建议和今日行动可展开，建议依据按任务、当前状态、长期偏好分组展示。Phase 4D.5 已完成：新增 `task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。Phase 4E 已完成：Android debug APK + 本地 API proxy + DeepSeek 真实试用链路文档和构建验证。Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本地任务提醒、底部四栏导航、复盘入口骨架和“我的 / 设置”页面骨架。Phase 5A 账号与云端数据已完成第一版：Supabase Flutter 接入、邮箱 OTP 登录、退出登录、云端 schema/RLS/表权限、数据边界文档，以及本地 SQLite 到 Supabase 的手动单向同步。当前下一步是 **每日复盘 `/review`**。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“Phase 4 首页建议 / Phase 5 记忆管理 / Phase 6 双端验证”路线理解当前项目。
+Phase 4A 已完成并提交：保留最近 3 批 pending 待确认内容、删除操作二次确认、Debug 日期切换能力。Phase 4B 已完成并提交：时间上下文传给 DeepSeek、可选地点上下文合同、同日隐含时间语义、今天 / 明天 / 未来 / 未安排任务过滤、任务时间展示和日期时间编辑器。Phase 4C 已完成：取消类表达、任务匹配噪声清洗和真实失败样例覆盖。Phase 4D 已完成：首页 AI 建议和今日行动可展开，建议依据按任务、当前状态、长期偏好分组展示。Phase 4D.5 已完成：新增 `task_status: active / completed / cancelled`，完成/取消任务保持可见但不参与建议和任务更新匹配。Phase 4E 已完成：Android debug APK + 本地 API proxy + DeepSeek 真实试用链路文档和构建验证。Phase 5 前置 A/B/C 已完成第一轮：AI 文字解析准确性增强、本地任务提醒、底部四栏导航、复盘入口骨架和“我的 / 设置”页面骨架。Phase 5A 账号与云端数据已完成第一版；Phase 5B `/review`、Phase 5C 复盘弱上下文、Phase 5D AI 时间规划与类课表日历已完成第一版；Phase 5D.1 统一日历、每日重复任务、周历拖拽和首页“开始久坐”也已完成第一版。当前下一步改为 **Phase 5D.1 真机验证与体验微调**。账号、云端、国内部署和发布稳定化继续后移。不要回头重复做 Phase 3 D0/D1/D2，也不要继续按旧的“先账号云端化 / 每日复盘 / 国内发布”路线理解当前项目。
 
-Phase 5 的长期方向仍可以包括电脑端分析界面、受控知识库和可控自进化，但这些不是近期任务。根据 2026-06-18 的最新决策，学习目标、学习进展和学习卡点全部后置；当前先把 App 做成可以直接使用的成品。账号登录和手动云同步已完成第一版，接下来做每日复盘和复盘轻量服务每日任务建议。
+Phase 5 的长期方向仍可以包括电脑端分析界面、受控知识库和可控自进化，但这些不是近期任务。根据 2026-07-06 的最新决策，学习目标、学习进展、学习卡点、账号云端扩展、国内部署和发布稳定化都先后置；当前先把 App 的手机端任务体验做扎实。最近一轮已落地：统一日历展示普通任务、每日重复任务实例和已有时间规划块；周历支持 7 天任务 / 时间块拖拽；新增任务流程中用“重复任务”选项创建每日重复；首页增加“开始久坐”手动会话并按时提醒站起来活动。
 
 当前架构判断：
 
@@ -49,11 +49,13 @@ Phase 5 的长期方向仍可以包括电脑端分析界面、受控知识库和
 - `apps/mobile/lib/features/input/input_screen.dart`：万能输入页。
 - `apps/mobile/lib/features/extracted_items/`：待确认卡片、编辑弹层、确认 / 修改 / 拒绝控制器。
 - `apps/mobile/lib/features/home/`：首页 UI 和基础建议服务。
-- `apps/mobile/lib/features/review/review_screen.dart`：每日复盘入口骨架，真实 `/review` 尚未接入。
+- `apps/mobile/lib/features/review/review_screen.dart`：每日复盘入口，已接入 `/review` 第一版。
+- `apps/mobile/lib/features/review/schedule_plan_screen.dart`：AI 时间规划 / 类课表页面，后续统一日历需要复用已有 `schedule_blocks` 能力。
 - `apps/mobile/lib/features/settings/profile_settings_screen.dart`：“我的 / 设置”页面骨架，包含账号、同步、提醒、复盘、AI、隐私和 App 状态入口。
 - `apps/mobile/lib/features/account/`：Supabase 账号初始化、邮箱 OTP 登录抽象、未配置兜底和本地到云端手动同步服务。
 - `apps/mobile/lib/features/context/context_builder.dart`：受控 ContextBuilder，目前支持 `current_suggestion` 和 `task_update_resolution`。
 - `apps/mobile/lib/features/memory/`：记忆入口、隐私页、短期状态 / 生活事件 / 长期画像页面。
+- `apps/mobile/lib/features/memory/tasks_screen.dart`：当前任务页，已升级为统一日历，支持月历 / 周历、每日重复任务创建和周历拖拽。
 - `apps/mobile/lib/data/local_db/`：Drift / SQLite schema 和本地数据库访问。
 - `apps/mobile/lib/data/parser/`：Mock Parser、HTTP Parser Client、ParserClient 抽象。
 - `apps/mobile/lib/domain/`：解析结果、结构化条目、类型和状态模型。
@@ -78,7 +80,8 @@ Phase 5 的长期方向仍可以包括电脑端分析界面、受控知识库和
 - `docs/architecture/mobile-smoke-test.md`：移动端 smoke 验证记录。
 - `docs/architecture/summary-system-design.md`：Task 10 小总结机制设计。
 - `docs/architecture/context-builder-design.md`：Task 11 受控 Context Builder 设计。
-- `docs/architecture/phase-5-task-map.md`：Phase 5 中文任务地图，记录当前建议执行顺序。
+- `docs/architecture/phase-5-task-map.md`：Phase 5 中文任务地图，记录当前建议执行顺序；Phase 5D.1 第一版已落地，后续先真机验证和体验微调。
+- `docs/architecture/open-source-calendar-recurring-focus-research-2026-07-06.md`：2026-07-06 开源项目源码调研记录，沉淀统一日历、重复任务和久坐会话的设计取舍。
 - `docs/architecture/phase-5a-account-cloud-data.md`：Phase 5A 账号和云端数据边界。
 - `docs/architecture/supabase/phase-5a-schema.sql`：Supabase 表结构和 RLS 草案。
 - `docs/architecture/phase-5-reflection-goals-evolution.md`：Phase 5 复盘、目标对齐、电脑端和自进化长期路线。
@@ -98,21 +101,17 @@ Phase 5 的长期方向仍可以包括电脑端分析界面、受控知识库和
 新窗口 / 新 session 建议阅读顺序：
 
 1. `AGENTS.md`：先了解当前项目状态、边界和协作规则。
-2. `README.md`：快速看项目入口、目录和当前能力。
-3. `docs/architecture/current-verification.md`：确认最近一次自动化验证状态。
-4. `docs/architecture/mobile-smoke-test.md`：确认 Android / iOS smoke 状态。
-5. `docs/architecture/phase-2-ai-parse-smoke.md`：确认真实 DeepSeek parse smoke 流程。
-6. `docs/architecture/phase-3-verification.md`：确认 Phase 3 已收尾到真实试用，并了解哪些问题进入 Phase 4。
-7. `docs/architecture/phase-3-real-trial-feedback.md`：查看三星 Android 真机反馈原始整理。
-8. `2026-06-05-mvp-next-task-map.md`：确认当前 Phase 4A/4B/4C/4D/4E 任务地图。
-9. `docs/architecture/chinese-semantic-classification-rules.md`：查看 D0 正式语义规则。
-10. `docs/architecture/task-update-resolution.md`：理解 `task_update` 匹配和后续增强边界。
-11. `docs/architecture/phase-5-task-map.md`：先看 Phase 5 当前中文任务地图和执行顺序。
-12. `docs/architecture/phase-5-reflection-goals-evolution.md`：长期路线背景；注意其中学习目标 / 卡点路线已后置。
-13. `docs/architecture/context-builder-design.md`：理解 Context Builder 总设计。
-14. `apps/mobile/lib/features/context/context_builder.dart`：看当前已实现的 `current_suggestion` / `task_update_resolution` ContextBuilder。
-15. `apps/mobile/lib/features/home/home_suggestion_service.dart`：看首页建议如何复用 ContextBuilder。
-16. `apps/mobile/test/features/context/context_builder_test.dart`：看当前 ContextBuilder 的测试边界。
+2. `docs/architecture/phase-5-task-map.md`：确认 Phase 5D.1 第一版状态和后续验收点。
+3. `docs/architecture/open-source-calendar-recurring-focus-research-2026-07-06.md`：查看本轮借鉴 Super Productivity、Tasks.org、Loop Habit Tracker、Vikunja 的源码调研经验。
+4. `README.md`：快速看项目入口、目录和当前能力。
+5. `apps/mobile/lib/app/app_shell.dart`：理解底部导航和页面入口。
+6. `apps/mobile/lib/features/home/home_screen.dart`：看首页“开始久坐”入口。
+7. `apps/mobile/lib/features/memory/tasks_screen.dart`：看统一日历、重复任务创建和周历拖拽。
+8. `apps/mobile/lib/features/review/schedule_plan_screen.dart`：看已有 AI 时间规划 / 类课表时间块，统一日历不要重复造一套计划模型。
+9. `apps/mobile/lib/data/local_db/tables.dart` 和 `apps/mobile/lib/data/local_db/app_database.dart`：看 `tasks`、`summaries`、`schedule_plans`、`schedule_blocks` 等当前数据结构。
+10. `apps/mobile/lib/features/reminders/task_reminder_scheduler.dart`：看本地提醒能力，久坐提醒和重复任务提醒应复用或扩展这里。
+11. `docs/architecture/current-verification.md`：确认最近一次自动化验证状态。
+12. `docs/architecture/task-update-resolution.md`：理解任务更新匹配边界，避免拖拽或重复任务静默改错任务。
 
 ## 目标平台与技术方向
 
@@ -707,13 +706,13 @@ myself/
 
 ## 当前下一步
 
-当前下一步是 **每日复盘 `/review`**。AI 文字解析准确性增强、任务提醒、设置 / 个人页面骨架、账号登录、Supabase 表权限和本地到云端手动单向同步已经完成第一轮。
+当前下一步是 **Phase 5D.1 真机验证与体验微调**。AI 文字解析准确性增强、本地任务提醒、设置 / 个人页面骨架、账号登录、Supabase 表权限、本地到云端手动单向同步、每日复盘 `/review`、复盘弱上下文、AI 时间规划 `/plan`、统一日历、每日重复任务、周历拖拽和首页“开始久坐”都已经完成第一版。账号、云端、国内部署和发布稳定化继续后移。
 
-1. 先读 `docs/architecture/phase-5-task-map.md`，确认当前路线：Phase 5A 已完成账号与手动云同步第一版 → 每日复盘 `/review` → 复盘轻量服务任务建议。
-2. 再看 `apps/mobile/lib/app/app_shell.dart`、`apps/mobile/lib/features/settings/profile_settings_screen.dart` 和 `apps/mobile/lib/features/review/review_screen.dart`，理解当前 App 入口和设置骨架。
-3. 再看 `docs/architecture/phase-5a-account-cloud-data.md` 和 `docs/architecture/supabase/phase-5a-schema.sql`，理解 Supabase 配置、schema 和 RLS 边界。
-4. 现有 `apps/api` 继续作为 DeepSeek proxy；不要把完整账号系统塞进当前 Express API。
-5. 每日复盘应新增 `/review` 类能力，不继续压给 `/parse`；复盘 summary 必须可见、可编辑、可删除、可重新生成。
-6. 复盘结果第一版只作为弱上下文服务首页任务建议，不自动创建任务、不自动修改任务、不自动生成长期画像。
-7. 如果要先做云端数据落库，优先考虑只保存新生成的 summary；不要急着把全部 SQLite 历史记录做双向同步。
-8. 学习目标、学习进展、学习卡点、电脑端、通用知识库、向量检索、自动画像进化、深度建议、个人问答、LLM rerank 和完整 Agent 都后置。
+1. 先读 `docs/architecture/phase-5-task-map.md`，确认 Phase 5D.1 第一版实现和验证记录。
+2. 再读 `docs/architecture/open-source-calendar-recurring-focus-research-2026-07-06.md`，不要重复下载和重新研究 Super Productivity、Tasks.org、Loop Habit Tracker、Vikunja；先复用这份调研结论。
+3. 真机验收任务页：月历能看到任务 / 时间块 / 久坐数量，周历能看到 7 天任务、已有 `schedule_blocks` 和久坐会话。
+4. 真机验收拖拽：长按任务或时间块拖到上午 / 下午 / 晚上，只调整任务时间或时间块时间，不改变任务完成 / 取消 / 删除状态。
+5. 真机验收重复任务：普通新增任务流程里打开“重复任务”，选择日期范围和每天时间；同一规则同一天不重复生成；删除某天实例后当天不自动补回。
+6. 真机验收首页久坐：点击“开始久坐”后生成会话并安排 60 分钟提醒；点击结束后取消未触发提醒；会话能在任务日历中显示。
+7. 当前自动化验证：`dart run build_runner build --delete-conflicting-outputs` 和 `dart analyze` 已通过；`flutter analyze --no-pub` / `flutter test ...` 在当前 Codex 沙箱里长时间无输出被中断，真机验证前建议在本机终端重跑。
+8. 学习目标、学习进展、学习卡点、电脑端、通用知识库、向量检索、自动画像进化、深度建议、个人问答、LLM rerank、完整 Agent、复杂多设备同步和习惯 streak 都后置。

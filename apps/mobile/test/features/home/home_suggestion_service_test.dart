@@ -346,16 +346,8 @@ void main() {
   test(
     'general answer parse rows do not create context for home suggestions',
     () async {
-      final cleanDatabase = AppDatabase(
-        DatabaseConnection(
-          NativeDatabase.memory(),
-          closeStreamsSynchronously: true,
-        ),
-      );
-      addTearDown(cleanDatabase.close);
-
-      await cleanDatabase
-          .into(cleanDatabase.rawInputs)
+      await database
+          .into(database.rawInputs)
           .insert(
             RawInputsCompanion.insert(
               id: 'raw-general',
@@ -363,8 +355,8 @@ void main() {
               createdAt: now,
             ),
           );
-      await cleanDatabase
-          .into(cleanDatabase.aiParseResults)
+      await database
+          .into(database.aiParseResults)
           .insert(
             AiParseResultsCompanion.insert(
               id: 'parse-general',
@@ -375,10 +367,7 @@ void main() {
             ),
           );
 
-      final context = await service.loadContext(
-        database: cleanDatabase,
-        now: now,
-      );
+      final context = await service.loadContext(database: database, now: now);
 
       expect(context.tasks, isEmpty);
       expect(context.shortTermStates, isEmpty);

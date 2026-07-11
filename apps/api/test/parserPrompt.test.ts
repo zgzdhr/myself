@@ -25,6 +25,13 @@ test("parser prompt states profile candidates are proposals, not active memory",
   assert.match(prompt, /profile_candidate\.need_user_confirm.*true/i);
 });
 
+test("parser prompt treats need_user_confirm as a write safety boundary", () => {
+  const prompt = buildParserSystemPrompt();
+
+  assert.match(prompt, /binding safety flag/i);
+  assert.match(prompt, /task_update must always set need_user_confirm to true/i);
+});
+
 test("parser prompt allows non-saveable ordinary answers without memory items", () => {
   const prompt = buildParserSystemPrompt();
 

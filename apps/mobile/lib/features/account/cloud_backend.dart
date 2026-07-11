@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../data/api/api_access_token_provider.dart';
 import 'cloud_auth_service.dart';
 import 'cloud_sync_service.dart';
+import 'secure_auth_storage.dart';
 
 const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const supabasePublishableKey = String.fromEnvironment(
@@ -22,9 +24,19 @@ Future<void> initializeCloudBackendFromEnvironment() async {
     return;
   }
 
+  final secureStore = FlutterSecureKeyValueStore(
+    createPrivateTrialSecureStorage(),
+  );
   await Supabase.initialize(
     url: supabaseUrl,
     publishableKey: supabasePublishableKey,
+    authOptions: FlutterAuthClientOptions(
+      localStorage: SecureSupabaseLocalStorage(
+        storage: secureStore,
+        persistSessionKey: supabasePersistSessionKeyFor(supabaseUrl),
+      ),
+      pkceAsyncStorage: SecureGotrueAsyncStorage(storage: secureStore),
+    ),
   );
   _cloudBackendInitialized = true;
 }
@@ -43,4 +55,12 @@ final cloudSyncServiceProvider = Provider<CloudSyncService>((ref) {
   }
 
   return SupabaseCloudSyncService(Supabase.instance.client);
+});
+
+final apiAccessTokenProvider = Provider<ApiAccessTokenProvider>((ref) {
+  if (!isCloudBackendAvailable) {
+    return const UnavailableApiAccessTokenProvider();
+  }
+
+  return SupabaseApiAccessTokenProvider(Supabase.instance.client);
 });

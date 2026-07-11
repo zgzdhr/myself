@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local_db/app_database.dart';
+import '../../data/api/api_error_code.dart';
 import '../../data/parser/http_parser_client.dart';
 import '../../data/parser/mock_parser_client.dart';
 import '../../data/parser/parser_client.dart';
 import '../extracted_items/extracted_items_controller.dart';
+import '../account/cloud_backend.dart';
 import '../reminders/task_reminder_scheduler.dart';
 import '../settings/user_preference_providers.dart';
 import 'home_suggestion_service.dart';
@@ -17,7 +19,7 @@ import '../memory/memory_screen.dart';
 
 part 'home_screen_widgets.dart';
 
-const productionParserBaseUrl = 'https://myself-three-plum.vercel.app';
+const productionParserBaseUrl = 'https://$unconfiguredApiHost';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
@@ -53,7 +55,11 @@ final parserClientProvider = Provider<ParserClient>((ref) {
     return const MockParserClient();
   }
 
-  return HttpParserClient(baseUri: defaultParserBaseUri());
+  return HttpParserClient(
+    baseUri: defaultParserBaseUri(),
+    accessTokenProvider: ref.watch(apiAccessTokenProvider),
+    requireAuthentication: true,
+  );
 });
 
 class DebugNowOverride extends Notifier<DateTime?> {
@@ -109,6 +115,9 @@ Uri defaultParserBaseUri({
   }
 
   if (isRelease) {
+    // A release build must provide PARSER_BASE_URL. Falling back to a historic
+    // public proxy would bypass the current authentication/quota deployment
+    // contract and could expose the paid DeepSeek endpoint.
     return Uri.parse(productionParserBaseUrl);
   }
 
@@ -153,6 +162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final database = ref.watch(appDatabaseProvider);
     final suggestionService = ref.watch(homeSuggestionServiceProvider);
     final nowProvider = ref.watch(appNowProvider);
+    final taskReminderScheduler = ref.watch(taskReminderSchedulerProvider);
     final reviewAffectsHome = ref.watch(reviewAffectsHomeProvider);
     final dataRefreshVersion = ref.watch(appDataRefreshProvider);
     ref.watch(homeTaskChangesProvider);
@@ -187,6 +197,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               contextData: contextData,
               database: database,
               nowProvider: nowProvider,
+              taskReminderScheduler: taskReminderScheduler,
+              onRecordsChanged: () {
+                ref.read(appDataRefreshProvider.notifier).bump();
+                setState(() {
+                  _refreshVersion += 1;
+                });
+              },
             );
           },
         ),

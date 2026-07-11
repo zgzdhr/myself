@@ -2,7 +2,9 @@
 
 Date: 2026-06-18, updated 2026-06-22
 
-Status: first account implementation plus first one-way cloud sync complete.
+Status: first account implementation plus first one-way cloud sync complete;
+cloud-copy deletion is implemented in source and awaits live Supabase/device
+verification.
 This document records the account and cloud-data boundary that new sessions
 should follow.
 
@@ -24,8 +26,11 @@ Implemented in this phase:
 - Email OTP login flow:
   - send OTP to email;
   - verify OTP;
-  - persist session through Supabase Flutter's built-in local storage.
+  - persist session through the platform Keychain/Keystore-backed storage.
 - Sign out from the "我的" page.
+- Completing email OTP does not write an app profile or any local records to
+  Supabase. The first app-data write happens only after the user explicitly
+  chooses "立即同步到云端".
 - Cloud data schema and RLS draft:
   - `docs/architecture/supabase/phase-5a-schema.sql`.
 - Manual one-way sync from local SQLite to Supabase:
@@ -34,8 +39,9 @@ Implemented in this phase:
   - `extracted_items`;
   - `tasks`;
   - `short_term_states`;
-  - `life_events`;
-  - `profile_items`.
+- `life_events`;
+- `profile_items`.
+- `summaries` and `summary_sources`.
 - The sync path first upserts `profiles`, then upserts local records in foreign
   key order. Existing cloud rows with the same id are updated.
 
@@ -44,8 +50,7 @@ Not implemented yet:
 - bidirectional offline sync;
 - multi-device conflict resolution;
 - third-party login;
-- deleting real cloud account data from the app;
-- server-side DeepSeek proxy authentication.
+- durable server-side quota or billing enforcement.
 
 ## 2. Runtime Configuration
 
@@ -73,6 +78,13 @@ role key into the mobile app.
 If either value is missing, the app still runs, but the "我的" page shows
 "未配置云端" and login opens a configuration explanation instead of making a
 network call.
+
+The private trial deliberately does not use Supabase Flutter's default
+SharedPreferences session persistence. Session and PKCE verifier values are
+stored through `flutter_secure_storage`, using Android KeyStore-backed
+encryption and iOS Keychain items that do not migrate to another device. The
+actual Android/iOS build and restart behavior still require true-device
+verification before release.
 
 ## 3. Data Ownership Boundary
 
@@ -121,7 +133,9 @@ local SQLite -> Supabase
 ```
 
 The app does not yet read records back from Supabase into local SQLite, and it
-does not merge edits across devices. SQLite should become:
+does not merge edits across devices. A signed-in user can explicitly choose
+"删除云端副本" to delete all remote rows owned by that account; this leaves the
+local SQLite data intact. SQLite should become:
 
 - cache for fast local display;
 - migration source for existing user data;
@@ -134,7 +148,47 @@ Do not implement automatic two-way sync until these decisions are made:
 - source deletion propagation to summaries;
 - whether local raw inputs should be uploaded by default.
 
-## 6. First Sync Verification
+## 6. Local-only calendar boundary (2026-07-10)
+
+The user chose a stricter privacy boundary for Phase 5D.1:
+
+- explicit task start/end times;
+- daily recurrence rules and generated recurrence instances;
+- sedentary sessions and their reminder timing;
+- schedule plans, schedule blocks, and their source links.
+
+These data stay on the device, including when the user manually triggers the
+existing one-way cloud sync. For a task carrying a local-only calendar field,
+the sync service deliberately omits the legacy cloud `due_time` fields too, so
+an exact schedule is not reconstructed remotely by accident.
+
+This rule only stops future uploads. It does not delete calendar data that an
+earlier build may already have uploaded. The visible, confirmed "删除云端副本"
+action removes these older rows along with the user's other cloud records;
+verify it against the live project before offering it beyond the private trial.
+
+## 7. AI endpoint login boundary (2026-07-10)
+
+Email OTP login is now also the gate for the three paid/sensitive AI actions:
+`/parse`, `/review`, and `/plan`.
+
+- Flutter attaches the current Supabase user access token only for those AI
+  calls.
+- The API proxy verifies that token with Supabase Auth using a publishable key.
+- Missing, expired, or invalid sessions are rejected before a DeepSeek request
+  is made.
+- The API has an in-memory per-user burst limit (20 requests per minute per
+  warm instance) plus a durable Supabase-backed daily limit (30 requests per
+  UTC day). The daily quota is consumed by a narrowly scoped RPC using the
+  caller's own JWT; it fails closed if the RPC cannot be reached.
+- The server must be configured with `SUPABASE_URL` and
+  `SUPABASE_PUBLISHABLE_KEY` before this change is deployed. Do not put a
+  Supabase service-role key in Flutter or use it for token verification.
+
+See `docs/architecture/private-trial-security-runbook-2026-07-10.md` for the
+deployment and device-test order.
+
+## 8. First Sync Verification
 
 The first manual sync is triggered from the "我的" page through the data/sync
 entry. Verification should check Supabase Table Editor after pressing sync:
@@ -149,7 +203,7 @@ If only `raw_inputs`, `ai_parse_results`, and `extracted_items` appear, that is
 expected when the user has submitted input but has not confirmed the extracted
 task yet.
 
-## 7. Suggested Next Step
+## 9. Suggested Next Step
 
 Next session should choose one of two paths:
 
@@ -162,7 +216,7 @@ The safer next step is usually option 1, because it turns the current manual
 sync into a more natural product behavior without taking on multi-device
 conflict resolution yet.
 
-## 8. Source References
+## 10. Source References
 
 - Supabase Flutter quickstart:
   https://supabase.com/docs/guides/getting-started/quickstarts/flutter

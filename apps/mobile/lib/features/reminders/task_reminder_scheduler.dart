@@ -10,11 +10,19 @@ class TaskReminderRequest {
     required this.taskId,
     required this.title,
     required this.dueTime,
+    this.notificationTitle = '任务提醒',
+    this.channelId = 'task_reminders',
+    this.channelName = '任务提醒',
+    this.channelDescription = '已确认任务的本地提醒',
   });
 
   final String taskId;
   final String title;
   final DateTime dueTime;
+  final String notificationTitle;
+  final String channelId;
+  final String channelName;
+  final String channelDescription;
 }
 
 abstract interface class TaskReminderScheduler {
@@ -110,18 +118,18 @@ class SystemTaskReminderScheduler implements TaskReminderScheduler {
 
     await _notifications.zonedSchedule(
       id: _notificationIdForTask(request.taskId),
-      title: '任务提醒',
+      title: request.notificationTitle,
       body: request.title,
       scheduledDate: tz.TZDateTime.from(request.dueTime, tz.local),
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          'task_reminders',
-          '任务提醒',
-          channelDescription: '已确认任务的本地提醒',
+          request.channelId,
+          request.channelName,
+          channelDescription: request.channelDescription,
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(threadIdentifier: 'task_reminders'),
+        iOS: DarwinNotificationDetails(threadIdentifier: request.channelId),
       ),
       payload: request.taskId,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -179,6 +187,40 @@ class SystemTaskReminderScheduler implements TaskReminderScheduler {
     }
     return hash;
   }
+}
+
+class SedentaryReminderCoordinator {
+  const SedentaryReminderCoordinator({required this.scheduler});
+
+  final TaskReminderScheduler scheduler;
+
+  Future<void> schedule({
+    required String sessionId,
+    required DateTime reminderAt,
+    required DateTime now,
+  }) {
+    if (!reminderAt.isAfter(now)) {
+      return scheduler.cancel(_notificationKey(sessionId));
+    }
+
+    return scheduler.schedule(
+      TaskReminderRequest(
+        taskId: _notificationKey(sessionId),
+        notificationTitle: '久坐提醒',
+        title: '已经坐了大约 1 小时，可以站起来活动一下。',
+        dueTime: reminderAt,
+        channelId: 'sedentary_reminders',
+        channelName: '久坐提醒',
+        channelDescription: '手动久坐会话的活动提醒',
+      ),
+    );
+  }
+
+  Future<void> cancel(String sessionId) {
+    return scheduler.cancel(_notificationKey(sessionId));
+  }
+
+  String _notificationKey(String sessionId) => 'sedentary:$sessionId';
 }
 
 class TaskReminderCoordinator {

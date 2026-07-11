@@ -19,6 +19,10 @@ void main() {
         () => service.sendEmailOtp('user@example.com'),
         throwsA(isA<CloudAuthNotConfiguredException>()),
       );
+      expect(
+        () => service.deleteAccount(),
+        throwsA(isA<CloudAuthNotConfiguredException>()),
+      );
     },
   );
 }

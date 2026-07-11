@@ -1,0 +1,6 @@
+# Copy this file to android/key.properties. The real file and keystore are
+# ignored by Git. Never paste real passwords into this example.
+storeFile=keystores/myself-release.jks
+storePassword=replace-locally
+keyAlias=myself
+keyPassword=replace-locally

@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Local real-device trials can call an HTTP proxy on the developer LAN.
+         Release builds inherit the secure Android default: cleartext is denied. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

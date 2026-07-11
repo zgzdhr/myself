@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/local_db/app_database.dart';
 import 'cloud_auth_service.dart';
+import 'cloud_restore_service.dart';
 
 class CloudSyncResult {
   const CloudSyncResult({
@@ -53,6 +54,14 @@ abstract class CloudSyncService {
   const CloudSyncService();
 
   Future<CloudSyncResult> syncFromLocal(AppDatabase database);
+
+  Future<CloudRestorePreview> previewCloudRestore();
+
+  Future<CloudRestoreResult> restoreFromCloud(AppDatabase database);
+
+  /// Removes the signed-in user's cloud copy only. Local SQLite records stay
+  /// on the device, so the user can choose to sync again later.
+  Future<void> deleteCloudCopy();
 }
 
 class DisabledCloudSyncService extends CloudSyncService {
@@ -60,6 +69,21 @@ class DisabledCloudSyncService extends CloudSyncService {
 
   @override
   Future<CloudSyncResult> syncFromLocal(AppDatabase database) {
+    throw const CloudAuthNotConfiguredException();
+  }
+
+  @override
+  Future<CloudRestorePreview> previewCloudRestore() {
+    throw const CloudAuthNotConfiguredException();
+  }
+
+  @override
+  Future<CloudRestoreResult> restoreFromCloud(AppDatabase database) {
+    throw const CloudAuthNotConfiguredException();
+  }
+
+  @override
+  Future<void> deleteCloudCopy() {
     throw const CloudAuthNotConfiguredException();
   }
 }
@@ -88,11 +112,6 @@ class SupabaseCloudSyncService extends CloudSyncService {
     final profileItems = await database.select(database.profileItems).get();
     final summaries = await database.select(database.summaries).get();
     final summarySources = await database.select(database.summarySources).get();
-    final schedulePlans = await database.select(database.schedulePlans).get();
-    final scheduleBlocks = await database.select(database.scheduleBlocks).get();
-    final scheduleBlockSources = await database
-        .select(database.scheduleBlockSources)
-        .get();
 
     await _upsert('raw_inputs', [
       for (final row in rawInputs)
@@ -149,8 +168,11 @@ class SupabaseCloudSyncService extends CloudSyncService {
           'source_extracted_item_id': row.sourceExtractedItemId,
           'title': row.title,
           'description': row.description,
-          'due_time_text': row.dueTimeText,
-          'due_time': _dateOrNull(row.dueTime),
+          // 5D.1 calendar, recurrence, and sedentary data are intentionally
+          // local-only. A task carrying an explicit local schedule must not
+          // leak that schedule through the legacy due-time cloud fields.
+          'due_time_text': _cloudDueTimeText(row),
+          'due_time': _cloudDueTime(row),
           'priority': row.priority,
           'status': row.status,
           'task_status': row.taskStatus,
@@ -246,65 +268,6 @@ class SupabaseCloudSyncService extends CloudSyncService {
         },
     ]);
 
-    await _upsert('schedule_plans', [
-      for (final row in schedulePlans)
-        {
-          'id': row.id,
-          'user_id': userId,
-          'plan_date': _date(row.planDate),
-          'title': row.title,
-          'overview': row.overview,
-          'suggestions': _json(row.suggestionsJson, fallback: const []),
-          'unscheduled_task_ids': _json(
-            row.unscheduledTaskIdsJson,
-            fallback: const [],
-          ),
-          'status': row.status,
-          'generated_by': row.generatedBy,
-          'model_name': row.modelName,
-          'prompt_version': row.promptVersion,
-          'confidence': row.confidence,
-          'created_at': _date(row.createdAt),
-          'updated_at': _date(row.updatedAt),
-          'confirmed_at': _dateOrNull(row.confirmedAt),
-          'user_edited_at': _dateOrNull(row.userEditedAt),
-          'deleted_at': _dateOrNull(row.deletedAt),
-        },
-    ]);
-
-    await _upsert('schedule_blocks', [
-      for (final row in scheduleBlocks)
-        {
-          'id': row.id,
-          'user_id': userId,
-          'plan_id': row.planId,
-          'title': row.title,
-          'block_type': row.blockType,
-          'start_time': _date(row.startTime),
-          'end_time': _date(row.endTime),
-          'task_id': row.taskId,
-          'note': row.note,
-          'reason': row.reason,
-          'sort_order': row.sortOrder,
-          'status': row.status,
-          'confidence': row.confidence,
-          'created_at': _date(row.createdAt),
-          'updated_at': _date(row.updatedAt),
-        },
-    ]);
-
-    await _upsert('schedule_block_sources', [
-      for (final row in scheduleBlockSources)
-        {
-          'id': row.id,
-          'user_id': userId,
-          'block_id': row.blockId,
-          'source_table': row.sourceTable,
-          'source_record_id': row.sourceRecordId,
-          'created_at': _date(row.createdAt),
-        },
-    ]);
-
     return CloudSyncResult(
       rawInputCount: rawInputs.length,
       aiParseResultCount: aiParseResults.length,
@@ -315,15 +278,127 @@ class SupabaseCloudSyncService extends CloudSyncService {
       profileItemCount: profileItems.length,
       summaryCount: summaries.length,
       summarySourceCount: summarySources.length,
-      schedulePlanCount: schedulePlans.length,
-      scheduleBlockCount: scheduleBlocks.length,
-      scheduleBlockSourceCount: scheduleBlockSources.length,
+      schedulePlanCount: 0,
+      scheduleBlockCount: 0,
+      scheduleBlockSourceCount: 0,
     );
+  }
+
+  @override
+  Future<CloudRestorePreview> previewCloudRestore() async {
+    _requireSignedInUser();
+    return (await _downloadCloudSnapshot()).preview;
+  }
+
+  @override
+  Future<CloudRestoreResult> restoreFromCloud(AppDatabase database) async {
+    _requireSignedInUser();
+    final snapshot = await _downloadCloudSnapshot();
+    return const CloudBackupImporter().restore(
+      database: database,
+      snapshot: snapshot,
+    );
+  }
+
+  @override
+  Future<void> deleteCloudCopy() async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const CloudAuthNotSignedInException();
+    }
+
+    // Delete dependents before their sources so the operation works with the
+    // documented foreign keys. Calendar tables are included to remove a copy
+    // written by an older build, even though current calendar data is local.
+    for (final table in const [
+      'schedule_block_sources',
+      'schedule_blocks',
+      'schedule_plans',
+      'summary_sources',
+      'summaries',
+      'profile_items',
+      'life_events',
+      'short_term_states',
+      'tasks',
+      'extracted_items',
+      'ai_parse_results',
+      'raw_inputs',
+      'profiles',
+    ]) {
+      await _client.from(table).delete().eq('user_id', user.id);
+    }
+  }
+
+  User _requireSignedInUser() {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const CloudAuthNotSignedInException();
+    }
+    return user;
+  }
+
+  Future<CloudBackupSnapshot> _downloadCloudSnapshot() async {
+    final tables = await Future.wait([
+      _selectCloudRows('raw_inputs'),
+      _selectCloudRows('ai_parse_results'),
+      _selectCloudRows('extracted_items'),
+      _selectCloudRows('tasks'),
+      _selectCloudRows('short_term_states'),
+      _selectCloudRows('life_events'),
+      _selectCloudRows('profile_items'),
+      _selectCloudRows('summaries'),
+      _selectCloudRows('summary_sources'),
+    ]);
+
+    return CloudBackupSnapshot(
+      rawInputs: tables[0],
+      aiParseResults: tables[1],
+      extractedItems: tables[2],
+      tasks: tables[3],
+      shortTermStates: tables[4],
+      lifeEvents: tables[5],
+      profileItems: tables[6],
+      summaries: tables[7],
+      summarySources: tables[8],
+    );
+  }
+
+  Future<List<CloudBackupRow>> _selectCloudRows(String table) async {
+    const pageSize = 500;
+    const maxRowsPerTable = 50_000;
+    final result = <CloudBackupRow>[];
+
+    while (true) {
+      final rows = await _client
+          .from(table)
+          .select()
+          .order('id')
+          .range(result.length, result.length + pageSize - 1);
+      result.addAll([
+        for (final row in rows) Map<String, Object?>.from(row),
+      ]);
+
+      if (result.length > maxRowsPerTable) {
+        throw const CloudBackupImportException(
+          'Cloud backup exceeds the private-trial restore limit.',
+        );
+      }
+      if (rows.length < pageSize) return result;
+    }
   }
 
   Future<void> _upsert(String table, List<Map<String, Object?>> rows) async {
     if (rows.isEmpty) return;
-    await _client.from(table).upsert(rows, onConflict: 'id');
+    const batchSize = 250;
+    for (var offset = 0; offset < rows.length; offset += batchSize) {
+      final end = (offset + batchSize < rows.length)
+          ? offset + batchSize
+          : rows.length;
+      await _client.from(table).upsert(
+        rows.sublist(offset, end),
+        onConflict: 'id',
+      );
+    }
   }
 
   static String _date(DateTime value) => value.toUtc().toIso8601String();
@@ -331,6 +406,21 @@ class SupabaseCloudSyncService extends CloudSyncService {
   static String? _dateOrNull(DateTime? value) {
     if (value == null) return null;
     return _date(value);
+  }
+
+  static bool _hasLocalOnlySchedule(Task row) {
+    return row.startTime != null ||
+        row.endTime != null ||
+        row.recurrenceRuleId != null ||
+        row.recurrenceDate != null;
+  }
+
+  static String? _cloudDueTimeText(Task row) {
+    return _hasLocalOnlySchedule(row) ? null : row.dueTimeText;
+  }
+
+  static String? _cloudDueTime(Task row) {
+    return _hasLocalOnlySchedule(row) ? null : _dateOrNull(row.dueTime);
   }
 
   static Object? _json(String value, {required Object fallback}) {

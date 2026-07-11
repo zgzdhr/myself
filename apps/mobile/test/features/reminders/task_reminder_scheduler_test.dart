@@ -54,6 +54,23 @@ void main() {
       expect(scheduler.cancelled, ['task-overdue']);
     },
   );
+
+  test('schedules and cancels sedentary reminders by session id', () async {
+    final scheduler = _RecordingTaskReminderScheduler();
+    final coordinator = SedentaryReminderCoordinator(scheduler: scheduler);
+    final now = DateTime(2026, 7, 6, 10);
+
+    await coordinator.schedule(
+      sessionId: 'session-1',
+      reminderAt: now.add(const Duration(hours: 1)),
+      now: now,
+    );
+    await coordinator.cancel('session-1');
+
+    expect(scheduler.scheduled.single.taskId, 'sedentary:session-1');
+    expect(scheduler.scheduled.single.notificationTitle, '久坐提醒');
+    expect(scheduler.cancelled, ['sedentary:session-1']);
+  });
 }
 
 class _RecordingTaskReminderScheduler implements TaskReminderScheduler {

@@ -6,6 +6,7 @@ import {
   type PlanRequest,
   type PlanResult,
 } from "../schemas/planResultSchema.js";
+import { validatePlanResultForRequest } from "../services/aiResultGuard.js";
 import { PlanServiceError } from "../services/deepseekPlan.js";
 
 export type GeneratePlan = (request: PlanRequest) => Promise<unknown>;
@@ -55,6 +56,20 @@ export function createPlanRouter(
           error: {
             code: "invalid_plan_result",
             issues: planResult.error.issues,
+          },
+        });
+        return;
+      }
+
+      const resultGuard = validatePlanResultForRequest(
+        requestResult.data,
+        planResult.data,
+      );
+      if (!resultGuard.ok) {
+        response.status(502).json({
+          error: {
+            code: "invalid_plan_result",
+            issues: resultGuard.issues,
           },
         });
         return;
