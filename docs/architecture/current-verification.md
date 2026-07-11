@@ -1,5 +1,60 @@
 # Current Verification
 
+## Live Supabase and Vercel private-trial verification
+
+Date: 2026-07-11
+Scope: live Supabase schema/RLS/quota/deletion verification, Vercel production
+configuration and deployment, and authenticated production API verification.
+
+### Result
+
+- Supabase project `myself` (`rzztfwzgivhwtqmbdztr`) was restored from
+  `INACTIVE` and is now `ACTIVE_HEALTHY`.
+- The full Phase 5A schema and the following recorded hardening migrations are
+  active:
+  - `20260711100728 private_trial_security_hardening`;
+  - `20260711100813 restrict_rls_auto_enable_execution`;
+  - `20260711102010 add_foreign_key_indexes`.
+- Live schema verification found 14 public tables with RLS, 13 owner policies,
+  and 9 cross-table ownership triggers. `ai_daily_request_usage` intentionally
+  has no direct client policy: table privileges are revoked and access is only
+  through the authenticated quota RPC.
+- A rollback-only two-user database test passed:
+  - User A could not read, update, or delete User B's row;
+  - a same-user source reference succeeded while a cross-user reference was
+    rejected by SQLSTATE `23514`;
+  - owner cloud-copy deletion succeeded;
+  - quota calls 1-30 succeeded and call 31 was rejected;
+  - `delete_my_account()` deleted the temporary Auth user and dependent rows.
+- Supabase's public `rls_auto_enable()` event-trigger helper no longer grants
+  execute permission to `public`, `anon`, or `authenticated`.
+- All 21 missing foreign-key covering indexes reported by the performance
+  advisor were added. The remaining `unused_index` notices are expected on an
+  empty/new database and are not removal evidence.
+- Vercel Production now has Supabase URL and publishable-key configuration;
+  no service-role key was added.
+- Production deployment succeeded and is aliased to:
+  `https://myself-three-plum.vercel.app`.
+- Live API verification passed:
+  - `/health` returned 200 with `no-store`, HSTS, no-referrer, and nosniff;
+  - anonymous and invalid-token `/parse` calls returned 401;
+  - an authenticated disposable user completed `/parse`, `/review`, and
+    `/plan` through the real DeepSeek path;
+  - the 21st per-minute user request returned `429 rate_limited`;
+  - a user at the durable daily limit returned
+    `429 daily_quota_exhausted` from the deployed API.
+- All disposable test accounts, security-test rows, and quota rows were removed
+  after verification. One pre-existing Auth user was left untouched.
+
+### Accepted advisor notices
+
+- `consume_ai_daily_request_quota()` and `delete_my_account()` intentionally
+  use `SECURITY DEFINER`, require an authenticated `auth.uid()`, use a blank
+  search path, and operate only on the caller's identity.
+- Leaked-password protection remains disabled. The current private trial uses
+  email OTP rather than password login; enable this Supabase Auth setting before
+  adding password authentication.
+
 ## Latest Verification: Private-trial security remediation and native builds
 
 Date: 2026-07-11
@@ -33,11 +88,6 @@ native builds.
 
 The following are deliberately **not** marked verified yet:
 
-- Applying `20260711_private_trial_security.sql` to the real Supabase project.
-- Two-account RLS, owner-reference, quota, cloud deletion, and account-deletion
-  verification with disposable non-sensitive accounts.
-- Vercel Supabase environment variables, new deployment, and real endpoint
-  authentication/rate-limit/quota verification.
 - Secure persistent session restoration, biometric app lock, backup exclusion,
   and calendar-localization behavior on physical Android/iOS devices. No phone
   was connected during this verification; `flutter devices` found only macOS

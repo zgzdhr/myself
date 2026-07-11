@@ -1,9 +1,9 @@
 # Private trial security runbook
 
 Date: 2026-07-10
-Status: source implementation, full automated tests, and unsigned/debug native
-builds pass; live Supabase/Vercel and true-device verification are still
-required.
+Status: source implementation, full automated tests, unsigned/debug native
+builds, live Supabase security checks, and Vercel production API verification
+pass; true-device verification is still required.
 
 ## Scope and decisions
 
@@ -108,9 +108,8 @@ such as `http://192.168.x.x:8787`. Do not use that HTTP URL in a release build.
   checklist passes.
 - Android release builds no longer use debug signing, but a private production
   key has not been created and the app still uses `com.example.mobile`.
-- The Supabase SQL draft now adds owner-reference triggers, delete grants, and
-  an anonymous-role revoke, plus the durable daily-quota RPC. These protections
-  and the cloud-copy deletion flow must be applied and tested against the live
-  project before broader use.
+- Supabase owner-reference triggers, delete grants, anonymous-role revokes,
+  durable quota, cloud-copy deletion, and self-service account deletion passed
+  live rollback/disposable-account verification on 2026-07-11.
 - Automated tests now pass (Flutter 171, API 90). Physical Android/iOS testing
   remains required because no phone was connected on 2026-07-11.
