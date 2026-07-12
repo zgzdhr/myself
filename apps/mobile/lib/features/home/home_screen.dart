@@ -169,10 +169,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.watch(homeTaskChangesProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0x66FFFFFF),
       body: InputScreen(
         controller: ref.watch(extractedItemsControllerProvider),
         header: const _HomeHeader(),
+        compactHomeLayout: true,
         onRefresh: () async {
           setState(() {
             _refreshVersion += 1;

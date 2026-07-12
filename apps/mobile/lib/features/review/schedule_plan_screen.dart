@@ -138,6 +138,10 @@ class _SchedulePlanScreenState extends State<SchedulePlanScreen> {
         context,
       ).showSnackBar(const SnackBar(content: Text('时间规划草稿已生成。')));
       await _reload();
+      final refreshed = await _dayFuture;
+      if (mounted && refreshed.plan != null) {
+        await _showPlanConfirmationSheet(refreshed);
+      }
     } on PlanFailure catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -148,6 +152,22 @@ class _SchedulePlanScreenState extends State<SchedulePlanScreen> {
         setState(() => _isGenerating = false);
       }
     }
+  }
+
+  Future<void> _showPlanConfirmationSheet(_ScheduleDayData data) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _PlanConfirmationSheet(
+        data: data,
+        onConfirm: () {
+          Navigator.of(context).pop();
+          _confirmPlan(data.plan!);
+        },
+        onEdit: () => Navigator.of(context).pop(),
+      ),
+    );
   }
 
   Future<String?> _askUserNote() {
@@ -478,6 +498,200 @@ class _SchedulePlanScreenState extends State<SchedulePlanScreen> {
   }
 }
 
+class _PlanConfirmationSheet extends StatelessWidget {
+  const _PlanConfirmationSheet({
+    required this.data,
+    required this.onConfirm,
+    required this.onEdit,
+  });
+
+  final _ScheduleDayData data;
+  final VoidCallback onConfirm;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = data.plan!;
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
+            child: Column(
+              children: [
+                Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCE3EE),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    const SizedBox(width: 40),
+                    const Expanded(
+                      child: Text(
+                        'AI 时间规划草稿确认 ✨',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.text,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: '关闭',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        plan.title,
+                        style: const TextStyle(
+                          color: AppColors.text,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        plan.overview,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 10,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '今日时间规划草稿 · ${data.blocks.length} 个时间块',
+                    style: const TextStyle(
+                      color: AppColors.text,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: data.blocks.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 7),
+                    itemBuilder: (context, index) {
+                      final block = data.blocks[index];
+                      final color = _blockColor(block.blockType);
+                      return Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(
+                            color: color.withValues(alpha: 0.18),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 82,
+                              child: Text(
+                                '${_timeText(block.startTime)}–${_timeText(block.endTime)}',
+                                style: const TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                block.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: color,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: onConfirm,
+                    icon: const Icon(Icons.check_circle_outline_rounded),
+                    label: const Text('确认草稿'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: onEdit,
+                        icon: const Icon(Icons.grid_view_rounded),
+                        label: const Text('编辑时间块'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('取消'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ScheduleDayPanel extends StatelessWidget {
   const _ScheduleDayPanel({
     required this.data,
@@ -509,7 +723,7 @@ class _ScheduleDayPanel extends StatelessWidget {
       children: [
         _ScheduleCard(
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -522,14 +736,19 @@ class _ScheduleDayPanel extends StatelessWidget {
                         children: [
                           Text(
                             _dateTitle(data.day),
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            style: const TextStyle(
+                              color: AppColors.text,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             '可参考 $activeTasks 个活跃任务、${data.states.length} 条当前状态、${data.recentSummaries.length} 条近期复盘。',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: const Color(0xFF6E6A63)),
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
@@ -683,9 +902,9 @@ class _TimeBlockTile extends StatelessWidget {
                 ),
                 Text(
                   _timeText(block.endTime),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: const Color(0xFF817A70),
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.copyWith(color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -731,9 +950,9 @@ class _TimeBlockTile extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     block.reason,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF6E6A63),
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -782,9 +1001,9 @@ class _SuggestionPanel extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 '未排入时间块：${unscheduled.length} 个任务',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF6E6A63),
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
               ),
             ],
           ],
@@ -880,7 +1099,7 @@ class _DayButton extends StatelessWidget {
       child: Container(
         height: 64,
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF53736A) : const Color(0xFFF4EFE7),
+          color: selected ? AppColors.primary : AppColors.primarySoft,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -889,14 +1108,14 @@ class _DayButton extends StatelessWidget {
             Text(
               _weekdayText(day.weekday),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: selected ? Colors.white : const Color(0xFF6E6A63),
+                color: selected ? Colors.white : AppColors.textMuted,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               '${day.day}',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: selected ? Colors.white : const Color(0xFF262626),
+                color: selected ? Colors.white : AppColors.text,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -931,13 +1150,13 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8EFEA),
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: const Color(0xFF31584E),
+          color: AppColors.primary,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -1023,16 +1242,16 @@ bool _sameDay(DateTime a, DateTime b) {
 Color _blockColor(String blockType) {
   switch (blockType) {
     case 'task':
-      return const Color(0xFF53736A);
+      return AppColors.primary;
     case 'break':
-      return const Color(0xFFB7795F);
+      return AppColors.mint;
     case 'buffer':
-      return const Color(0xFF6F77A8);
+      return AppColors.orange;
     case 'review':
-      return const Color(0xFF8A6F9E);
+      return AppColors.purple;
     case 'personal':
     default:
-      return const Color(0xFF8A7A52);
+      return const Color(0xFFFF6FAE);
   }
 }
 

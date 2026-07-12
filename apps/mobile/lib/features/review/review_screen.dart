@@ -32,9 +32,7 @@ class ReviewScreen extends StatefulWidget {
 }
 
 class _ReviewScreenState extends State<ReviewScreen> {
-  late DateTime _visibleMonth;
   late DateTime _selectedDay;
-  late Future<_ReviewMonthData> _monthFuture;
   late Future<_ReviewDayData> _dayFuture;
   bool _isGenerating = false;
 
@@ -42,27 +40,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
   void initState() {
     super.initState();
     final now = widget.nowProvider();
-    _visibleMonth = DateTime(now.year, now.month);
     _selectedDay = DateTime(now.year, now.month, now.day);
-    _monthFuture = _loadMonth();
     _dayFuture = _loadDay(_selectedDay);
-  }
-
-  Future<_ReviewMonthData> _loadMonth() async {
-    final start = DateTime(_visibleMonth.year, _visibleMonth.month);
-    final end = DateTime(_visibleMonth.year, _visibleMonth.month + 1);
-    final summaries = await widget.database.getSummariesForRange(
-      start: start,
-      end: end,
-    );
-    return _ReviewMonthData(
-      month: start,
-      weeks: _buildWeeks(start),
-      summariesByDay: {
-        for (final summary in summaries)
-          _dayKey(summary.timeRangeStart): summary,
-      },
-    );
   }
 
   Future<_ReviewDayData> _loadDay(DateTime day) async {
@@ -85,6 +64,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final sources = summary == null
         ? <SummarySource>[]
         : await widget.database.getSourcesForSummary(summary.id);
+    final schedulePlan = await widget.database.getSchedulePlanForDay(day);
+    final scheduleBlocks = schedulePlan == null
+        ? <ScheduleBlock>[]
+        : await widget.database.getScheduleBlocksForPlan(schedulePlan.id);
 
     return _ReviewDayData(
       day: start,
@@ -94,6 +77,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
       profileItems: profiles,
       summary: summary,
       sources: sources,
+      schedulePlan: schedulePlan,
+      scheduleBlocks: scheduleBlocks,
     );
   }
 
@@ -108,87 +93,89 @@ class _ReviewScreenState extends State<ReviewScreen> {
           child: Column(
             children: [
               const Padding(
-                padding: EdgeInsets.fromLTRB(20, 18, 20, 0),
-                child: AppPageHeader(
-                  title: '复盘',
-                  subtitle: '回顾总结，持续进步',
-                  icon: Icons.pie_chart_rounded,
-                ),
+                padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
+                child: _ReviewHeader(),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5FB),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.border),
                   ),
-                  child: const TabBar(
-                    dividerColor: Colors.transparent,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    indicator: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.all(Radius.circular(14)),
+                  child: const SizedBox(
+                    height: 40,
+                    child: TabBar(
+                      dividerColor: Colors.transparent,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicator: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(14)),
+                      ),
+                      labelColor: AppColors.primary,
+                      unselectedLabelColor: AppColors.textMuted,
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      tabs: [
+                        Tab(text: '每日复盘'),
+                        Tab(text: '时间规划'),
+                      ],
                     ),
-                    labelColor: AppColors.primary,
-                    unselectedLabelColor: AppColors.textMuted,
-                    tabs: [
-                      Tab(text: '每日复盘'),
-                      Tab(text: '时间规划'),
-                    ],
                   ),
                 ),
               ),
               Expanded(
                 child: TabBarView(
                   children: [
-                    RefreshIndicator(
-                      onRefresh: _reload,
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                        children: [
-                          _MonthHeader(
-                            month: _visibleMonth,
-                            onPrevious: () => _changeMonth(-1),
-                            onNext: () => _changeMonth(1),
-                          ),
-                          const SizedBox(height: 12),
-                          FutureBuilder<_ReviewMonthData>(
-                            future: _monthFuture,
-                            builder: (context, snapshot) {
-                              final data = snapshot.data;
-                              if (data == null) {
-                                return const _LoadingCard(label: '正在整理复盘目录...');
-                              }
-                              return _MonthReviewFolders(
-                                data: data,
-                                selectedDay: _selectedDay,
-                                onSelectDay: _selectDay,
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          FutureBuilder<_ReviewDayData>(
-                            future: _dayFuture,
-                            builder: (context, snapshot) {
-                              final data = snapshot.data;
-                              if (data == null) {
-                                return const _LoadingCard(label: '正在读取当天记录...');
-                              }
-                              return _DayReviewPanel(
-                                data: data,
-                                isGenerating: _isGenerating,
-                                onGenerate: () => _generateReview(data),
-                                onEdit: data.summary == null
-                                    ? null
-                                    : () => _editSummary(data.summary!),
-                                onDelete: data.summary == null
-                                    ? null
-                                    : () => _deleteSummary(data.summary!),
-                              );
-                            },
-                          ),
-                        ],
+                    Builder(
+                      builder: (tabContext) => RefreshIndicator(
+                        onRefresh: _reload,
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                          children: [
+                            _ReviewDateSelector(
+                              day: _selectedDay,
+                              onTap: _chooseReviewDate,
+                            ),
+                            const SizedBox(height: 12),
+                            FutureBuilder<_ReviewDayData>(
+                              future: _dayFuture,
+                              builder: (context, snapshot) {
+                                final data = snapshot.data;
+                                if (data == null) {
+                                  return const _LoadingCard(
+                                    label: '正在读取当天记录...',
+                                  );
+                                }
+                                return Column(
+                                  children: [
+                                    _DayReviewPanel(
+                                      data: data,
+                                      isGenerating: _isGenerating,
+                                      onGenerate: () => _generateReview(data),
+                                      onEdit: data.summary == null
+                                          ? null
+                                          : () => _editSummary(data.summary!),
+                                      onDelete: data.summary == null
+                                          ? null
+                                          : () => _deleteSummary(data.summary!),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _SchedulePreviewCard(
+                                      data: data,
+                                      onOpen: () => DefaultTabController.of(
+                                        tabContext,
+                                      ).animateTo(1),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     SchedulePlanScreen(
@@ -208,19 +195,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Future<void> _reload() async {
     setState(() {
-      _monthFuture = _loadMonth();
       _dayFuture = _loadDay(_selectedDay);
     });
-    await Future.wait([_monthFuture, _dayFuture]);
-  }
-
-  void _changeMonth(int delta) {
-    setState(() {
-      _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
-      _selectedDay = DateTime(_visibleMonth.year, _visibleMonth.month, 1);
-      _monthFuture = _loadMonth();
-      _dayFuture = _loadDay(_selectedDay);
-    });
+    await _dayFuture;
   }
 
   void _selectDay(DateTime day) {
@@ -228,6 +205,17 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _selectedDay = day;
       _dayFuture = _loadDay(day);
     });
+  }
+
+  Future<void> _chooseReviewDate() async {
+    final day = await showDatePicker(
+      context: context,
+      initialDate: _selectedDay,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      helpText: '切换复盘日期',
+    );
+    if (day != null) _selectDay(day);
   }
 
   Future<void> _generateReview(_ReviewDayData data) async {
@@ -438,62 +426,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
     await _reload();
   }
 
-  List<_ReviewWeek> _buildWeeks(DateTime month) {
-    final end = DateTime(month.year, month.month + 1);
-    final weeks = <_ReviewWeek>[];
-    var weekStart = month;
-    var index = 1;
-
-    while (weekStart.isBefore(end)) {
-      final weekEnd = weekStart.add(const Duration(days: 7)).isBefore(end)
-          ? weekStart.add(const Duration(days: 7))
-          : end;
-      weeks.add(
-        _ReviewWeek(
-          label: '第$index周',
-          days: [
-            for (
-              var day = weekStart;
-              day.isBefore(weekEnd);
-              day = day.add(const Duration(days: 1))
-            )
-              day,
-          ],
-        ),
-      );
-      weekStart = weekEnd;
-      index += 1;
-    }
-
-    return weeks;
-  }
-
-  static String _dayKey(DateTime day) => _dateKey(day);
-
   static String _dateKey(DateTime day) {
     final month = day.month.toString().padLeft(2, '0');
     final date = day.day.toString().padLeft(2, '0');
     return '${day.year}-$month-$date';
   }
-}
-
-class _ReviewMonthData {
-  const _ReviewMonthData({
-    required this.month,
-    required this.weeks,
-    required this.summariesByDay,
-  });
-
-  final DateTime month;
-  final List<_ReviewWeek> weeks;
-  final Map<String, Summary> summariesByDay;
-}
-
-class _ReviewWeek {
-  const _ReviewWeek({required this.label, required this.days});
-
-  final String label;
-  final List<DateTime> days;
 }
 
 class _ReviewDayData {
@@ -505,6 +442,8 @@ class _ReviewDayData {
     required this.profileItems,
     required this.summary,
     required this.sources,
+    required this.schedulePlan,
+    required this.scheduleBlocks,
   });
 
   final DateTime day;
@@ -514,8 +453,13 @@ class _ReviewDayData {
   final List<ProfileItem> profileItems;
   final Summary? summary;
   final List<SummarySource> sources;
+  final SchedulePlan? schedulePlan;
+  final List<ScheduleBlock> scheduleBlocks;
 
   int get sourceCount => tasks.length + states.length + events.length;
+  int get completedTaskCount => tasks
+      .where((task) => task.taskStatus == TaskStatus.completed.value)
+      .length;
 
   List<ReviewSourceRef> get defaultSourceRefs {
     return [
@@ -532,151 +476,236 @@ class _ReviewDayData {
   }
 }
 
-class _MonthHeader extends StatelessWidget {
-  const _MonthHeader({
-    required this.month,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  final DateTime month;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
+class _ReviewHeader extends StatelessWidget {
+  const _ReviewHeader();
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        IconButton(
-          tooltip: '上个月',
-          onPressed: onPrevious,
-          icon: const Icon(Icons.chevron_left_rounded),
-        ),
-        Expanded(
-          child: Text(
-            '${month.year}年${month.month}月',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        const AppAssistantAvatar(size: 42),
+        const SizedBox(width: 11),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '复盘',
+                style: TextStyle(
+                  color: AppColors.text,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                '回顾总结，持续进步',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+            ],
           ),
         ),
-        IconButton(
-          tooltip: '下个月',
-          onPressed: onNext,
-          icon: const Icon(Icons.chevron_right_rounded),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.adjust_rounded, color: AppColors.text),
         ),
       ],
     );
   }
 }
 
-class _MonthReviewFolders extends StatelessWidget {
-  const _MonthReviewFolders({
-    required this.data,
-    required this.selectedDay,
-    required this.onSelectDay,
-  });
-
-  final _ReviewMonthData data;
-  final DateTime selectedDay;
-  final ValueChanged<DateTime> onSelectDay;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: [
-          for (final week in data.weeks)
-            ExpansionTile(
-              initiallyExpanded: week.days.any(_sameDayAsSelected),
-              leading: const Icon(
-                Icons.folder_rounded,
-                color: Color(0xFF53736A),
-              ),
-              title: Text(
-                week.label,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                  child: GridView.count(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 1.05,
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    children: [
-                      for (final day in week.days)
-                        _DayTile(
-                          day: day,
-                          selected: _sameDay(day, selectedDay),
-                          hasSummary: data.summariesByDay.containsKey(
-                            _ReviewScreenState._dayKey(day),
-                          ),
-                          onTap: () => onSelectDay(day),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  bool _sameDayAsSelected(DateTime day) => _sameDay(day, selectedDay);
-}
-
-class _DayTile extends StatelessWidget {
-  const _DayTile({
-    required this.day,
-    required this.selected,
-    required this.hasSummary,
-    required this.onTap,
-  });
+class _ReviewDateSelector extends StatelessWidget {
+  const _ReviewDateSelector({required this.day, required this.onTap});
 
   final DateTime day;
-  final bool selected;
-  final bool hasSummary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFEAF0EC) : const Color(0xFFFFFCF7),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected ? const Color(0xFF53736A) : const Color(0xFFE7E0D6),
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.calendar_month_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 9),
+              Text(
+                '${day.year}年${day.month}月${day.day}日',
+                style: const TextStyle(
+                  color: AppColors.text,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.textMuted,
+                size: 18,
+              ),
+              const Spacer(),
+              const Text(
+                '切换日期',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+              ),
+              const SizedBox(width: 3),
+              const Icon(
+                Icons.swap_horiz_rounded,
+                color: AppColors.textMuted,
+                size: 17,
+              ),
+            ],
           ),
         ),
-        padding: const EdgeInsets.all(8),
+      ),
+    );
+  }
+}
+
+class _SchedulePreviewCard extends StatelessWidget {
+  const _SchedulePreviewCard({required this.data, required this.onOpen});
+
+  final _ReviewDayData data;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = data.schedulePlan;
+    final blocks = data.scheduleBlocks;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${day.day}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            Row(
+              children: [
+                const Icon(
+                  Icons.event_available_rounded,
+                  color: AppColors.purple,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    '时间规划（AI 规划草稿）',
+                    style: TextStyle(
+                      color: AppColors.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${data.day.month}月${data.day.day}日',
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 3),
-            Icon(
-              hasSummary
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked,
-              size: 16,
-              color: hasSummary
-                  ? const Color(0xFF53736A)
-                  : const Color(0xFFB3AAA0),
+            const SizedBox(height: 12),
+            Text(
+              plan?.title ?? '这一天还没有时间规划草稿',
+              style: const TextStyle(
+                color: AppColors.text,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              plan?.overview ?? '可根据当天任务、状态和习惯生成可确认的时间分配方案。',
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
+            if (blocks.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: [
+                  for (final block in blocks.take(5))
+                    _PlanBlockPreview(block: block),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onOpen,
+                icon: Icon(
+                  plan == null
+                      ? Icons.auto_awesome_rounded
+                      : Icons.grid_view_rounded,
+                ),
+                label: Text(plan == null ? '生成时间规划' : '查看并编辑时间块'),
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+class _PlanBlockPreview extends StatelessWidget {
+  const _PlanBlockPreview({required this.block});
+
+  final ScheduleBlock block;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 92,
+      padding: const EdgeInsets.all(9),
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            block.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${_shortTime(block.startTime)}–${_shortTime(block.endTime)}',
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 9),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _shortTime(DateTime time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 }
 
@@ -700,25 +729,59 @@ class _DayReviewPanel extends StatelessWidget {
     final summary = data.summary;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${data.day.month}月${data.day.day}日',
-              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+            const Text(
+              '当天记录汇总',
+              style: TextStyle(
+                color: AppColors.text,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            const SizedBox(height: 7),
+            Row(
               children: [
-                _MetricChip(label: '任务', value: data.tasks.length),
-                _MetricChip(label: '状态', value: data.states.length),
-                _MetricChip(label: '事件', value: data.events.length),
+                Expanded(
+                  child: _ReviewMetricTile(
+                    icon: Icons.check_box_rounded,
+                    color: AppColors.primary,
+                    label: '任务完成',
+                    value: '${data.completedTaskCount} / ${data.tasks.length}',
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: _ReviewMetricTile(
+                    icon: Icons.bolt_rounded,
+                    color: AppColors.mint,
+                    label: '当前状态',
+                    value: '${data.states.length} 条',
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: _ReviewMetricTile(
+                    icon: Icons.sentiment_satisfied_alt_rounded,
+                    color: AppColors.orange,
+                    label: '记录条数',
+                    value: '${data.events.length} 条',
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: _ReviewMetricTile(
+                    icon: Icons.auto_awesome_rounded,
+                    color: AppColors.purple,
+                    label: '来源依据',
+                    value: '${data.sourceCount} 条',
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             if (summary == null)
               _EmptyReviewState(
                 sourceCount: data.sourceCount,
@@ -726,46 +789,200 @@ class _DayReviewPanel extends StatelessWidget {
                 onGenerate: onGenerate,
               )
             else ...[
-              _SummarySection(title: '今日总结', body: summary.content),
-              _SummarySection(title: '鼓励', body: summary.encouragement),
-              _SummarySection(title: '今天的不足', body: summary.improvementNotes),
-              _SummarySection(title: '任务处理建议', body: summary.taskGuidance),
-              _OpenItems(openItemsJson: summary.openItemsJson),
-              const SizedBox(height: 8),
-              Text(
-                '来源依据 ${data.sources.length} 条',
-                style: const TextStyle(
-                  color: Color(0xFF8A8278),
-                  fontWeight: FontWeight.w700,
+              _ReviewInsightCard(
+                title: '今日总结',
+                body: summary.content,
+                icon: Icons.summarize_rounded,
+                color: AppColors.primary,
+              ),
+              const SizedBox(height: 9),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _ReviewInsightCard(
+                        title: '鼓励',
+                        body: summary.encouragement,
+                        icon: Icons.thumb_up_alt_outlined,
+                        color: AppColors.mint,
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: _ReviewInsightCard(
+                        title: '不足',
+                        body: summary.improvementNotes,
+                        icon: Icons.warning_amber_rounded,
+                        color: AppColors.orange,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              const SizedBox(height: 9),
+              _ReviewInsightCard(
+                title: '任务建议',
+                body: summary.taskGuidance,
+                icon: Icons.assignment_turned_in_outlined,
+                color: AppColors.primary,
+              ),
+              _OpenItems(openItemsJson: summary.openItemsJson),
+              const SizedBox(height: 10),
+              Row(
                 children: [
-                  OutlinedButton.icon(
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.edit_rounded),
-                    label: const Text('编辑'),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_rounded),
+                      label: const Text('编辑'),
+                    ),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: isGenerating ? null : onGenerate,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: Text(isGenerating ? '生成中' : '重新生成'),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      onPressed: isGenerating ? null : onGenerate,
+                      icon: const Icon(Icons.auto_awesome_rounded),
+                      label: Text(isGenerating ? '生成中' : '重新生成'),
+                    ),
                   ),
-                  OutlinedButton.icon(
+                  IconButton(
+                    tooltip: '删除复盘',
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline_rounded),
-                    label: const Text('删除'),
                   ),
                 ],
               ),
+              Text(
+                '来源依据 ${data.sources.length} 条',
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 10,
+                ),
+              ),
             ],
-            const SizedBox(height: 18),
-            _SourcePreview(data: data),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ReviewMetricTile extends StatelessWidget {
+  const _ReviewMetricTile({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 14),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.text,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewInsightCard extends StatelessWidget {
+  const _ReviewInsightCard({
+    required this.title,
+    required this.body,
+    required this.icon,
+    required this.color,
+  });
+
+  final String title;
+  final String? body;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = body?.trim();
+    if (text == null || text.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: color.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 15),
+              const SizedBox(width: 5),
+              Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            text,
+            style: const TextStyle(
+              color: AppColors.text,
+              fontSize: 10,
+              height: 1.32,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -812,31 +1029,6 @@ class _EmptyReviewState extends StatelessWidget {
   }
 }
 
-class _SummarySection extends StatelessWidget {
-  const _SummarySection({required this.title, required this.body});
-
-  final String title;
-  final String? body;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = body?.trim();
-    if (text == null || text.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          Text(text, style: const TextStyle(height: 1.35)),
-        ],
-      ),
-    );
-  }
-}
-
 class _OpenItems extends StatelessWidget {
   const _OpenItems({required this.openItemsJson});
 
@@ -848,13 +1040,17 @@ class _OpenItems extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(top: 7, bottom: 7),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('未解决事项', style: TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          for (final item in items) Text('• $item'),
+          const Text(
+            '未解决事项',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 2),
+          for (final item in items)
+            Text('• $item', style: const TextStyle(fontSize: 10, height: 1.3)),
         ],
       ),
     );
@@ -866,94 +1062,6 @@ class _OpenItems extends StatelessWidget {
     } catch (_) {
       return const [];
     }
-  }
-}
-
-class _SourcePreview extends StatelessWidget {
-  const _SourcePreview({required this.data});
-
-  final _ReviewDayData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      title: const Text(
-        '当天来源记录',
-        style: TextStyle(fontWeight: FontWeight.w800),
-      ),
-      children: [
-        if (data.sourceCount == 0)
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text('这一天还没有可见任务、状态或生活事件。'),
-          ),
-        for (final task in data.tasks)
-          _SourceLine(icon: _taskIcon(task.taskStatus), label: task.title),
-        for (final state in data.states)
-          _SourceLine(
-            icon: Icons.battery_charging_full_rounded,
-            label: state.content,
-          ),
-        for (final event in data.events)
-          _SourceLine(icon: Icons.event_note_rounded, label: event.content),
-      ],
-    );
-  }
-
-  static IconData _taskIcon(String taskStatus) {
-    if (taskStatus == TaskStatus.completed.value) {
-      return Icons.check_circle_rounded;
-    }
-    if (taskStatus == TaskStatus.cancelled.value) return Icons.cancel_rounded;
-    return Icons.radio_button_checked_rounded;
-  }
-}
-
-class _SourceLine extends StatelessWidget {
-  const _SourceLine({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: const Color(0xFF53736A)),
-          const SizedBox(width: 8),
-          Expanded(child: Text(label)),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricChip extends StatelessWidget {
-  const _MetricChip({required this.label, required this.value});
-
-  final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1EAE0),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        '$label $value',
-        style: const TextStyle(
-          color: Color(0xFF3A3835),
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
   }
 }
 
@@ -1001,8 +1109,4 @@ class _LoadingCard extends StatelessWidget {
       ),
     );
   }
-}
-
-bool _sameDay(DateTime a, DateTime b) {
-  return a.year == b.year && a.month == b.month && a.day == b.day;
 }

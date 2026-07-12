@@ -106,12 +106,14 @@ void main() {
       await tester.tap(find.text('管理').first);
       await tester.pumpAndSettle();
 
-      expect(find.text('任务日历'), findsOneWidget);
+      expect(find.text('任务'), findsOneWidget);
     });
   });
 
   group('TasksScreen', () {
-    testWidgets('shows active tasks for the selected calendar day', (tester) async {
+    testWidgets('shows active tasks for the selected calendar day', (
+      tester,
+    ) async {
       final scheduledTasks = await database.getTasksForRange(
         start: DateTime(2026, 6, 1),
         end: DateTime(2026, 6, 2),
@@ -123,14 +125,15 @@ void main() {
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('联系王总'),
-        300,
-        scrollable: find.byType(Scrollable).first,
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, -1200),
+        1200,
       );
+      await tester.pumpAndSettle();
 
-      expect(find.text('联系王总'), findsOneWidget);
-      expect(find.text('6月1日 10:00｜原文：明天'), findsOneWidget);
+      expect(find.text('联系王总'), findsWidgets);
+      expect(find.textContaining('6月1日 10:00'), findsWidgets);
     });
 
     testWidgets('shows completed and cancelled task status labels', (
@@ -152,16 +155,17 @@ void main() {
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('联系王总'),
-        300,
-        scrollable: find.byType(Scrollable).first,
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, -1200),
+        1200,
       );
+      await tester.pumpAndSettle();
 
-      expect(find.text('联系王总'), findsOneWidget);
-      expect(find.text('已完成'), findsOneWidget);
-      expect(find.text('取消的任务'), findsOneWidget);
-      expect(find.text('已取消'), findsOneWidget);
+      expect(find.text('联系王总'), findsWidgets);
+      expect(find.text('已完成'), findsWidgets);
+      expect(find.text('取消的任务'), findsWidgets);
+      expect(find.text('已取消'), findsWidgets);
     });
 
     testWidgets('delete task requires confirmation before marking deleted', (
@@ -171,15 +175,14 @@ void main() {
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('删除'),
-        300,
-        scrollable: find.byType(Scrollable).first,
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, -1200),
+        1200,
       );
-      await tester.ensureVisible(find.text('删除'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('删除'));
+      await tester.tap(find.byTooltip('删除').last);
       await tester.pumpAndSettle();
       expect(find.text('删除任务？'), findsOneWidget);
 
@@ -188,9 +191,7 @@ void main() {
       var task = await database.select(database.tasks).getSingle();
       expect(task.status, RecordStatus.confirmed.value);
 
-      await tester.ensureVisible(find.text('删除'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('删除'));
+      await tester.tap(find.byTooltip('删除').last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('确认删除'));
       await tester.pumpAndSettle();
@@ -209,15 +210,14 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('编辑'),
-        300,
-        scrollable: find.byType(Scrollable).first,
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, -1200),
+        1200,
       );
-      await tester.ensureVisible(find.text('编辑'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('编辑'));
+      await tester.tap(find.byTooltip('编辑').last);
       await tester.pumpAndSettle();
 
       expect(find.text('选择日期'), findsOneWidget);
@@ -242,16 +242,20 @@ void main() {
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('编辑'),
-        300,
-        scrollable: find.byType(Scrollable).first,
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, -1200),
+        1200,
       );
-      await tester.ensureVisible(find.text('编辑'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('编辑'));
+      await tester.tap(find.byTooltip('编辑').last);
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('清除时间'),
+        240,
+        scrollable: find.byType(Scrollable).last,
+      );
       await tester.tap(find.text('清除时间'));
       await tester.tap(find.text('保存'));
       await tester.pumpAndSettle();
@@ -270,13 +274,14 @@ void main() {
         _wrap(TasksScreen(database: database, nowProvider: () => now)),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('这一天暂无任务或时间块。'),
-        300,
-        scrollable: find.byType(Scrollable).first,
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, -1200),
+        1200,
       );
+      await tester.pumpAndSettle();
 
-      expect(find.text('这一天暂无任务或时间块。'), findsOneWidget);
+      expect(find.text('这一天暂无任务或时间规划。'), findsOneWidget);
     });
   });
 

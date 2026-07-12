@@ -40,7 +40,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('早上好'), findsOneWidget);
-    expect(find.text('今天想记点什么？'), findsOneWidget);
+    expect(find.text('想记录什么，交给我吧…'), findsOneWidget);
     expect(find.text('首页'), findsOneWidget);
     expect(find.text('任务'), findsOneWidget);
     expect(find.text('复盘'), findsOneWidget);
@@ -135,14 +135,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('测试日期'), findsOneWidget);
+    expect(find.byTooltip('测试日期'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -520));
     await tester.pumpAndSettle();
     expect(find.text('状态 1 条 · 长期画像 0 条'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, 520));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('后一天'));
+    await tester.tap(find.byTooltip('测试日期'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('后一天'));
     await tester.pumpAndSettle();
 
     await tester.drag(find.byType(ListView), const Offset(0, -520));
@@ -180,7 +182,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, '今天下午4点要和朋友见面');
-    await tester.tap(find.text('整理'));
+    await tester.tap(find.byTooltip('AI 整理'));
     await tester.pumpAndSettle();
 
     expect(find.text('已纳入行动：和朋友见面'), findsOneWidget);
@@ -192,7 +194,7 @@ void main() {
       3000,
     );
     await tester.pumpAndSettle();
-    expect(find.text('今日行动 · 1'), findsOneWidget);
+    expect(find.text('今日行动'), findsOneWidget);
     expect(find.textContaining('和朋友见面'), findsWidgets);
   });
 
@@ -224,12 +226,12 @@ void main() {
     await tester.tap(find.text('复盘'));
     await tester.pumpAndSettle();
     expect(find.textContaining('年'), findsWidgets);
-    expect(find.text('第1周'), findsOneWidget);
-    expect(find.byIcon(Icons.folder_rounded), findsWidgets);
+    expect(find.text('当天记录汇总'), findsOneWidget);
+    expect(find.text('时间规划（AI 规划草稿）'), findsOneWidget);
 
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
-    expect(find.text('未配置云端'), findsOneWidget);
+    expect(find.text('登录 / 注册'), findsOneWidget);
     expect(find.text('通知权限'), findsOneWidget);
     expect(find.text('手动同步'), findsNothing);
     expect(find.text('每日计划提醒'), findsNothing);
@@ -240,8 +242,6 @@ void main() {
       500,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('复盘设置'));
     await tester.pumpAndSettle();
     expect(find.text('复盘结果参与首页建议'), findsOneWidget);
     expect(find.text('打开每日复盘'), findsOneWidget);
@@ -259,9 +259,8 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('App 与帮助'));
-    await tester.pumpAndSettle();
-    expect(find.text('API 连接状态'), findsOneWidget);
+    expect(find.text('关于 App'), findsOneWidget);
+    expect(find.text('当前版本'), findsOneWidget);
   });
 }
 

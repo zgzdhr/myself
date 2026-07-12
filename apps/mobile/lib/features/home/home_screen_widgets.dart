@@ -8,14 +8,40 @@ class _HomeHeader extends StatelessWidget {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppPageHeader(
-          title: 'Myself',
-          subtitle: '你的记忆与行动助手',
-          icon: Icons.face_rounded,
+        Row(
+          children: [
+            AppAssistantAvatar(),
+            SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Myself',
+                    style: TextStyle(
+                      color: AppColors.text,
+                      fontSize: 18,
+                      height: 1.1,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    '你的记忆与行动助手',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _DebugDateSwitcher(),
+          ],
         ),
-        SizedBox(height: 26),
+        SizedBox(height: 19),
         _HomeGreeting(),
-        _DebugDateSwitcher(),
       ],
     );
   }
@@ -51,22 +77,23 @@ class _HomeGreeting extends StatelessWidget {
           children: [
             Text(
               '早上好',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              style: const TextStyle(
                 color: AppColors.text,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0,
+                fontSize: 24,
+                height: 1.15,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: 8),
-            const Text('✨', style: TextStyle(fontSize: 24)),
+            const SizedBox(width: 7),
+            const Text('✨', style: TextStyle(fontSize: 20)),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 5),
         const Text(
           '记录 · 整理 · 行动 · 成长',
           style: TextStyle(
             color: AppColors.textMuted,
-            fontSize: 16,
+            fontSize: 14,
             height: 1.35,
             fontWeight: FontWeight.w500,
           ),
@@ -91,67 +118,38 @@ class _DebugDateSwitcher extends ConsumerWidget {
     final label =
         '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
 
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.fromLTRB(8, 4, 6, 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.70),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 4),
-            child: Icon(
-              Icons.bug_report_outlined,
-              size: 16,
-              color: AppColors.textMuted,
+    return PopupMenuButton<String>(
+      tooltip: '测试日期',
+      onSelected: (value) {
+        if (value == 'previous') {
+          ref.read(debugNowOverrideProvider.notifier).setPreviousDay(local);
+        } else if (value == 'next') {
+          ref.read(debugNowOverrideProvider.notifier).setNextDay(local);
+        } else {
+          ref.read(debugNowOverrideProvider.notifier).clear();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(enabled: false, child: Text('测试日期 · $label')),
+        const PopupMenuItem(value: 'previous', child: Text('前一天')),
+        const PopupMenuItem(value: 'next', child: Text('后一天')),
+        const PopupMenuItem(value: 'real', child: Text('真实日期')),
+      ],
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x142F7DF6),
+              blurRadius: 12,
+              offset: Offset(0, 4),
             ),
-          ),
-          const SizedBox(width: 5),
-          const Text(
-            '测试日期',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: '前一天',
-            onPressed: () {
-              ref.read(debugNowOverrideProvider.notifier).setPreviousDay(local);
-            },
-            icon: const Icon(Icons.chevron_left_rounded, size: 19),
-          ),
-          Expanded(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.text,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: '后一天',
-            onPressed: () {
-              ref.read(debugNowOverrideProvider.notifier).setNextDay(local);
-            },
-            icon: const Icon(Icons.chevron_right_rounded, size: 19),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(debugNowOverrideProvider.notifier).clear();
-            },
-            child: const Text('真实日期', style: TextStyle(fontSize: 12)),
-          ),
-        ],
+          ],
+        ),
+        child: const Icon(Icons.adjust_rounded, size: 22),
       ),
     );
   }
@@ -185,18 +183,18 @@ class _HomeFollowUp extends StatelessWidget {
           taskReminderScheduler: taskReminderScheduler,
           onRecordsChanged: onRecordsChanged,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         _HomeListSection(
           title: '今日行动',
           emptyText: '暂无今日任务',
           items: [for (final task in contextData.todayTasks) task.displayText],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         _HomeSuggestionPanel(
           suggestions: suggestions,
           contextData: contextData,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         _MemoryEntryPanel(
           stateCount: contextData.shortTermStates.length,
           profileCount: contextData.profileItems.length,
@@ -250,12 +248,12 @@ class _SedentarySessionPanelState extends State<_SedentarySessionPanel> {
         final session = snapshot.data;
         final isActive = session != null;
         return _SurfacePanel(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(10),
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: isActive
                       ? const Color(0xFFFFF4DB)
@@ -274,7 +272,7 @@ class _SedentarySessionPanelState extends State<_SedentarySessionPanel> {
                   color: isActive ? const Color(0xFF9B6A00) : AppColors.primary,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,34 +281,39 @@ class _SedentarySessionPanelState extends State<_SedentarySessionPanel> {
                       isActive ? '久坐中' : '开始久坐',
                       style: const TextStyle(
                         color: AppColors.text,
-                        fontSize: 17,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       isActive
                           ? '将在 ${_timeLabel(session.reminderAt)} 提醒你站起来活动'
                           : '手动开始，默认 60 分钟后提醒活动',
                       style: const TextStyle(
                         color: AppColors.textMuted,
-                        fontSize: 14,
-                        height: 1.35,
+                        fontSize: 11,
+                        height: 1.25,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: isActive ? () => _end(session) : _start,
-                icon: Icon(
-                  isActive
-                      ? Icons.stop_circle_outlined
-                      : Icons.play_arrow_rounded,
+              const SizedBox(width: 6),
+              SizedBox(
+                height: 34,
+                child: FilledButton(
+                  onPressed: isActive ? () => _end(session) : _start,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  child: Text(isActive ? '结束' : '开始计时'),
                 ),
-                label: Text(isActive ? '结束' : '开始'),
               ),
             ],
           ),
@@ -550,43 +553,117 @@ class _HomeListSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SurfacePanel(
-      padding: EdgeInsets.zero,
-      child: Material(
-        color: Colors.transparent,
-        child: Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            initiallyExpanded: true,
-            tilePadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
-            childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-            title: Text(
-              items.isEmpty ? title : '$title · ${items.length}',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              title,
               style: const TextStyle(
-                color: Color(0xFF1D1D1F),
+                color: AppColors.text,
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            children: [
-              if (items.isEmpty)
-                Align(
-                  alignment: Alignment.centerLeft,
+            if (items.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: const BoxDecoration(
+                  color: AppColors.primarySoft,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '${items.length}',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+            const Spacer(),
+            const Text(
+              '全部任务 ›',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+            ),
+          ],
+        ),
+        const SizedBox(height: 7),
+        _SurfacePanel(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: items.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Text(
                     emptyText,
                     style: const TextStyle(
-                      color: Color(0xFF8A8278),
-                      fontSize: 14,
-                      height: 1.35,
+                      color: AppColors.textMuted,
+                      fontSize: 12,
                     ),
                   ),
                 )
-              else
-                for (final item in items)
-                  _CompactBullet(text: item, color: const Color(0xFF53736A)),
-            ],
-          ),
+              : Column(
+                  children: [
+                    for (var index = 0; index < items.take(4).length; index++)
+                      _HomeTaskRow(
+                        text: items[index],
+                        showDivider: index < items.take(4).length - 1,
+                      ),
+                  ],
+                ),
         ),
+      ],
+    );
+  }
+}
+
+class _HomeTaskRow extends StatelessWidget {
+  const _HomeTaskRow({required this.text, required this.showDivider});
+
+  final String text;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 34,
+      decoration: BoxDecoration(
+        border: showDivider
+            ? const Border(bottom: BorderSide(color: AppColors.border))
+            : null,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFB4C0D2)),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const Icon(
+            Icons.notifications_none_rounded,
+            color: Color(0xFFA8B3C4),
+            size: 16,
+          ),
+        ],
       ),
     );
   }

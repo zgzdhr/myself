@@ -94,6 +94,7 @@ class _TactileInputPanel extends StatelessWidget {
     required this.isPressed,
     required this.onSubmit,
     required this.onPressChanged,
+    this.compact = false,
   });
 
   final TextEditingController controller;
@@ -102,10 +103,23 @@ class _TactileInputPanel extends StatelessWidget {
   final bool isPressed;
   final VoidCallback onSubmit;
   final ValueChanged<bool> onPressChanged;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final isActive = focusNode.hasFocus || isPressed;
+
+    if (compact) {
+      return _CompactInputPanel(
+        controller: controller,
+        focusNode: focusNode,
+        isLoading: isLoading,
+        isActive: isActive,
+        isPressed: isPressed,
+        onSubmit: onSubmit,
+        onPressChanged: onPressChanged,
+      );
+    }
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -243,9 +257,10 @@ class _TactileInputPanel extends StatelessWidget {
 }
 
 class _InputQuickActions extends StatelessWidget {
-  const _InputQuickActions({required this.onSelect});
+  const _InputQuickActions({required this.onSelect, this.compact = false});
 
   final ValueChanged<String> onSelect;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -270,10 +285,11 @@ class _InputQuickActions extends StatelessWidget {
               onTap: () => onSelect(actions[index].$4),
               borderRadius: BorderRadius.circular(16),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                height: compact ? 42 : null,
+                padding: EdgeInsets.symmetric(vertical: compact ? 7 : 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(compact ? 13 : 16),
                   border: Border.all(color: const Color(0xFFE7EDF7)),
                   boxShadow: const [
                     BoxShadow(
@@ -283,25 +299,262 @@ class _InputQuickActions extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Column(
-                  children: [
-                    Icon(actions[index].$1, color: actions[index].$2, size: 20),
-                    const SizedBox(height: 5),
-                    Text(
-                      actions[index].$3,
-                      maxLines: 1,
-                      style: const TextStyle(
-                        color: Color(0xFF33405A),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                child: compact
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            actions[index].$1,
+                            color: actions[index].$2,
+                            size: 17,
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              actions[index].$3,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF33405A),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          Icon(
+                            actions[index].$1,
+                            color: actions[index].$2,
+                            size: 20,
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            actions[index].$3,
+                            maxLines: 1,
+                            style: const TextStyle(
+                              color: Color(0xFF33405A),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+class _CompactInputPanel extends StatelessWidget {
+  const _CompactInputPanel({
+    required this.controller,
+    required this.focusNode,
+    required this.isLoading,
+    required this.isActive,
+    required this.isPressed,
+    required this.onSubmit,
+    required this.onPressChanged,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool isLoading;
+  final bool isActive;
+  final bool isPressed;
+  final VoidCallback onSubmit;
+  final ValueChanged<bool> onPressChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: focusNode.requestFocus,
+      onTapDown: (_) => onPressChanged(true),
+      onTapCancel: () => onPressChanged(false),
+      onTapUp: (_) => onPressChanged(false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 94,
+        padding: const EdgeInsets.fromLTRB(15, 12, 10, 9),
+        transform: Matrix4.translationValues(0, isPressed ? 1 : 0, 0),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.97),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isActive ? const Color(0xFF7FB0FF) : const Color(0xFFE7EDF7),
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x142F7DF6),
+              blurRadius: 18,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            TextField(
+              controller: controller,
+              focusNode: focusNode,
+              minLines: 2,
+              maxLines: 3,
+              style: const TextStyle(
+                color: Color(0xFF172033),
+                fontSize: 14,
+                height: 1.35,
+                fontWeight: FontWeight.w500,
+              ),
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.only(right: 46, bottom: 28),
+                hintText: '想记录什么，交给我吧…',
+                hintStyle: TextStyle(color: Color(0xFFACB5C4), fontSize: 14),
+                filled: false,
+                border: InputBorder.none,
+              ),
+            ),
+            Positioned(
+              right: 6,
+              top: -8,
+              child: IconButton(
+                tooltip: 'AI 整理',
+                onPressed: isLoading ? null : onSubmit,
+                icon: Icon(
+                  isLoading
+                      ? Icons.hourglass_top_rounded
+                      : Icons.auto_awesome_rounded,
+                  color: const Color(0xFF2F7DF6),
+                  size: 20,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFE),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFDDE8F8)),
+                ),
+                child: const Icon(
+                  Icons.mic_none_rounded,
+                  size: 19,
+                  color: Color(0xFF172033),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactResultsSection extends StatelessWidget {
+  const _CompactResultsSection({
+    required this.autoSavedItems,
+    required this.pendingBatches,
+    required this.onConfirm,
+    required this.onEdit,
+    required this.onReject,
+  });
+
+  final List<ExtractedItem> autoSavedItems;
+  final List<PendingExtractedBatch> pendingBatches;
+  final ValueChanged<ExtractedItem> onConfirm;
+  final ValueChanged<ExtractedItem> onEdit;
+  final ValueChanged<ExtractedItem> onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <ExtractedItem>[
+      ...autoSavedItems,
+      for (final batch in pendingBatches) ...batch.items,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'AI 整理结果',
+              style: TextStyle(
+                color: Color(0xFF172033),
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 5),
+            const Icon(
+              Icons.auto_awesome_rounded,
+              size: 15,
+              color: Color(0xFF6D9FFF),
+            ),
+            const Spacer(),
+            if (items.isNotEmpty)
+              Text(
+                '共 ${items.length} 条',
+                style: const TextStyle(
+                  color: Color(0xFF8A96AA),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 9),
+        if (items.isEmpty)
+          Container(
+            width: double.infinity,
+            height: 52,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.80),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE7EDF7)),
+            ),
+            child: const Text(
+              '输入后，任务、状态和记忆会先在这里显示。',
+              style: TextStyle(color: Color(0xFF8A96AA), fontSize: 12),
+            ),
+          )
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cardWidth = (constraints.maxWidth - 16) / 3;
+              return SizedBox(
+                height: 98,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return SizedBox(
+                      width: cardWidth,
+                      child: ExtractedItemCard(
+                        item: item,
+                        compact: true,
+                        onConfirm: () => onConfirm(item),
+                        onEdit: () => onEdit(item),
+                        onReject: () => onReject(item),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
       ],
     );
   }

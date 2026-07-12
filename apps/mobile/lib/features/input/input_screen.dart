@@ -15,6 +15,7 @@ class InputScreen extends StatefulWidget {
     required this.controller,
     this.header,
     this.afterInput,
+    this.compactHomeLayout = false,
     this.onRecordsChanged,
     this.onRefresh,
     super.key,
@@ -23,6 +24,7 @@ class InputScreen extends StatefulWidget {
   final ExtractedItemsController controller;
   final Widget? header;
   final Widget? afterInput;
+  final bool compactHomeLayout;
   final VoidCallback? onRecordsChanged;
   final Future<void> Function()? onRefresh;
 
@@ -64,7 +66,7 @@ class _InputScreenState extends State<InputScreen> {
       children: [
         if (widget.header != null) ...[
           widget.header!,
-          const SizedBox(height: 20),
+          SizedBox(height: widget.compactHomeLayout ? 12 : 20),
         ],
         _TactileInputPanel(
           controller: _textController,
@@ -77,14 +79,17 @@ class _InputScreenState extends State<InputScreen> {
               _isInputPressed = isPressed;
             });
           },
+          compact: widget.compactHomeLayout,
         ),
-        if (_currentAutoSavedItems.isEmpty &&
-            _pendingBatches.isEmpty &&
-            !_isLoading &&
-            _assistantReply == null &&
-            _errorMessage == null) ...[
-          const SizedBox(height: 12),
+        if (widget.compactHomeLayout ||
+            (_currentAutoSavedItems.isEmpty &&
+                _pendingBatches.isEmpty &&
+                !_isLoading &&
+                _assistantReply == null &&
+                _errorMessage == null)) ...[
+          SizedBox(height: widget.compactHomeLayout ? 8 : 12),
           _InputQuickActions(
+            compact: widget.compactHomeLayout,
             onSelect: (text) {
               _textController.text = text;
               _textController.selection = TextSelection.collapsed(
@@ -113,7 +118,16 @@ class _InputScreenState extends State<InputScreen> {
           const SizedBox(height: 20),
           _AssistantReplyPanel(message: _assistantReply!),
         ],
-        if (_currentAutoSavedItems.isNotEmpty ||
+        if (widget.compactHomeLayout) ...[
+          const SizedBox(height: 18),
+          _CompactResultsSection(
+            autoSavedItems: _currentAutoSavedItems,
+            pendingBatches: _pendingBatches,
+            onConfirm: _confirm,
+            onEdit: _edit,
+            onReject: _reject,
+          ),
+        ] else if (_currentAutoSavedItems.isNotEmpty ||
             _pendingBatches.isNotEmpty) ...[
           const SizedBox(height: 20),
           Text(
@@ -147,11 +161,12 @@ class _InputScreenState extends State<InputScreen> {
           ],
         ],
         if (widget.afterInput != null) ...[
-          const SizedBox(height: 20),
+          SizedBox(height: widget.compactHomeLayout ? 14 : 20),
           widget.afterInput!,
         ],
         if (_currentAutoSavedItems.isEmpty &&
             _pendingBatches.isEmpty &&
+            !widget.compactHomeLayout &&
             !_isLoading &&
             _assistantReply == null &&
             _errorMessage == null) ...[
@@ -167,7 +182,9 @@ class _InputScreenState extends State<InputScreen> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+        padding: widget.compactHomeLayout
+            ? const EdgeInsets.fromLTRB(16, 14, 16, 20)
+            : const EdgeInsets.fromLTRB(20, 18, 20, 28),
         child: scrollable,
       ),
     );

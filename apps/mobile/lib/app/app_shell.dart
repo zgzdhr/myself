@@ -149,8 +149,8 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Container(
-        width: 60,
-        height: 60,
+        width: 54,
+        height: 54,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
@@ -169,7 +169,7 @@ class _MainNavigationScreenState extends ConsumerState<_MainNavigationScreen> {
         child: IconButton(
           tooltip: '快速记录',
           onPressed: () => _selectDestination(0),
-          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 34),
+          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
         ),
       ),
       bottomNavigationBar: _AppBottomNavigation(
@@ -198,7 +198,7 @@ class _AppBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
-      height: 78,
+      height: 66,
       padding: EdgeInsets.zero,
       color: Colors.white.withValues(alpha: 0.96),
       elevation: 12,
@@ -225,7 +225,7 @@ class _AppBottomNavigation extends StatelessWidget {
               onTap: () => onSelected(1),
             ),
           ),
-          const SizedBox(width: 72),
+          const SizedBox(width: 64),
           Expanded(
             child: _NavItem(
               icon: Icons.pie_chart_outline_rounded,

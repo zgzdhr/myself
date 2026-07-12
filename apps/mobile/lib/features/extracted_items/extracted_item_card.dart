@@ -12,6 +12,7 @@ class ExtractedItemCard extends StatelessWidget {
     this.onConfirm,
     this.onEdit,
     this.onReject,
+    this.compact = false,
     super.key,
   });
 
@@ -19,6 +20,7 @@ class ExtractedItemCard extends StatelessWidget {
   final VoidCallback? onConfirm;
   final VoidCallback? onEdit;
   final VoidCallback? onReject;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +38,18 @@ class ExtractedItemCard extends StatelessWidget {
         ? '关闭'
         : '拒绝';
     final accent = _accentFor(item.type);
+
+    if (compact) {
+      return _CompactExtractedItemCard(
+        item: item,
+        title: title,
+        accent: accent,
+        icon: _iconFor(item.type),
+        onConfirm: onConfirm,
+        onEdit: onEdit,
+        onReject: onReject,
+      );
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -182,6 +196,153 @@ class ExtractedItemCard extends StatelessWidget {
     final day = local.day.toString().padLeft(2, '0');
     return '${local.year}-$month-$day';
   }
+}
+
+class _CompactExtractedItemCard extends StatelessWidget {
+  const _CompactExtractedItemCard({
+    required this.item,
+    required this.title,
+    required this.accent,
+    required this.icon,
+    required this.onConfirm,
+    required this.onEdit,
+    required this.onReject,
+  });
+
+  final ExtractedItem item;
+  final String title;
+  final Color accent;
+  final IconData icon;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onEdit;
+  final VoidCallback? onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final isAutoSaved = item.status == RecordStatus.confirmed;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.97),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE7EDF7)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x102F7DF6),
+            blurRadius: 14,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 5, 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          _compactTypeLabel(item.type),
+                          style: TextStyle(
+                            color: accent,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(icon, size: 15, color: accent),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.text,
+                      fontSize: 11,
+                      height: 1.18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    isAutoSaved ? '已自动整理' : '等待确认',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Container(
+            height: 26,
+            decoration: const BoxDecoration(color: Color(0xFFF9FBFF)),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: isAutoSaved ? onReject : onConfirm,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      foregroundColor: AppColors.primary,
+                      textStyle: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    child: Text(isAutoSaved ? '撤销' : '确认'),
+                  ),
+                ),
+                Container(width: 1, height: 16, color: AppColors.border),
+                Expanded(
+                  child: TextButton(
+                    onPressed: onEdit,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      foregroundColor: AppColors.textMuted,
+                      textStyle: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    child: const Text('编辑'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _compactTypeLabel(ItemType type) => switch (type) {
+    ItemType.taskCreate => '任务',
+    ItemType.taskUpdate => '任务更新',
+    ItemType.shortTermState => '短期状态',
+    ItemType.lifeEvent => '生活事件',
+    ItemType.profileCandidate => '长期画像',
+    ItemType.generalAnswer => '回答',
+  };
 }
 
 class _TaskUpdateResolutionPanel extends StatelessWidget {

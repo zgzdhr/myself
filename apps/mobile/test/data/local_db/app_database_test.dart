@@ -154,6 +154,16 @@ void main() {
       visibleTasks = await database.getVisibleTasks();
       expect(visibleTasks.single.status, RecordStatus.confirmed.value);
       expect(visibleTasks.single.taskStatus, TaskStatus.cancelled.value);
+
+      await database.markTaskActive(
+        id: 'task-1',
+        updatedAt: now.add(const Duration(minutes: 3)),
+      );
+
+      expect(await database.getActiveTasks(), hasLength(1));
+      visibleTasks = await database.getVisibleTasks();
+      expect(visibleTasks.single.status, RecordStatus.confirmed.value);
+      expect(visibleTasks.single.taskStatus, TaskStatus.active.value);
     },
   );
 

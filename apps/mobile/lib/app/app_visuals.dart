@@ -14,6 +14,82 @@ abstract final class AppColors {
   static const danger = Color(0xFFFF5267);
 }
 
+class AppAssistantAvatar extends StatelessWidget {
+  const AppAssistantAvatar({this.size = 44, super.key});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      padding: EdgeInsets.all(size * 0.07),
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFFDCEEFF),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x332F7DF6),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const CustomPaint(painter: _AppAssistantAvatarPainter()),
+    );
+  }
+}
+
+class _AppAssistantAvatarPainter extends CustomPainter {
+  const _AppAssistantAvatarPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    canvas.drawCircle(center, size.width / 2, Paint()..color = Colors.white);
+    final dark = Paint()..color = AppColors.text;
+    canvas.drawArc(
+      Rect.fromLTWH(7, 5, size.width - 14, size.height * 0.48),
+      3.08,
+      3.25,
+      true,
+      dark,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: size.width * 0.40),
+      3.45,
+      2.48,
+      false,
+      Paint()
+        ..color = const Color(0xFF78B7F7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+    canvas.drawCircle(Offset(size.width * 0.36, size.height * 0.52), 1.7, dark);
+    canvas.drawCircle(Offset(size.width * 0.64, size.height * 0.52), 1.7, dark);
+    final smile = Path()
+      ..moveTo(size.width * 0.42, size.height * 0.67)
+      ..quadraticBezierTo(
+        size.width * 0.50,
+        size.height * 0.74,
+        size.width * 0.58,
+        size.height * 0.67,
+      );
+    canvas.drawPath(
+      smile,
+      Paint()
+        ..color = AppColors.text
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class AppBackdrop extends StatelessWidget {
   const AppBackdrop({required this.child, super.key});
 

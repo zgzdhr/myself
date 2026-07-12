@@ -450,6 +450,19 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> markTaskActive({
+    required String id,
+    required DateTime updatedAt,
+  }) {
+    return (update(tasks)..where((task) => task.id.equals(id))).write(
+      TasksCompanion(
+        status: Value(RecordStatus.confirmed.value),
+        taskStatus: Value(TaskStatus.active.value),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
   Future<void> markTaskDeletedBySourceExtractedItemId({
     required String extractedItemId,
     required DateTime updatedAt,

@@ -34,6 +34,7 @@ class _TasksScreenState extends State<TasksScreen> {
   late Future<_CalendarData> _dataFuture;
   late DateTime _selectedDay;
   var _mode = _CalendarMode.month;
+  var _taskFilter = _TaskFilter.all;
 
   @override
   void initState() {
@@ -104,54 +105,46 @@ class _TasksScreenState extends State<TasksScreen> {
             child: RefreshIndicator(
               onRefresh: _reload,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
                 children: [
-                  AppPageHeader(
-                    title: '任务日历',
-                    subtitle: '有计划的行动，成就更好的自己',
-                    icon: Icons.task_alt_rounded,
-                    trailing: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        tooltip: '新增任务',
-                        onPressed: () => _createTask(_selectedDay),
-                        icon: const Icon(
-                          Icons.add_rounded,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                  _TaskPageHeader(onAdd: () => _createTask(_selectedDay)),
+                  const SizedBox(height: 16),
                   _CalendarToolbar(
                     mode: _mode,
-                    selectedDay: _selectedDay,
                     onModeChanged: (mode) => setState(() => _mode = mode),
-                    onPrevious: _goPrevious,
-                    onNext: _goNext,
-                    onToday: _goToday,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   if (_mode == _CalendarMode.month) ...[
                     _MonthCalendar(
                       data: data,
                       selectedDay: _selectedDay,
                       onSelectDay: _selectDay,
+                      onPrevious: _goPrevious,
+                      onNext: _goNext,
+                      onToday: _goToday,
                     ),
-                    const SizedBox(height: 12),
-                    _DayDetail(
+                    const SizedBox(height: 10),
+                    _CompactDayTimeline(
                       day: _selectedDay,
                       tasks: data.tasksForDay(_selectedDay),
                       blocks: data.blocksForDay(_selectedDay),
                       sessions: data.sessionsForDay(_selectedDay),
                       now: widget.nowProvider(),
+                      onAddTask: () => _createTask(_selectedDay),
                       onEditTask: _edit,
                       onDeleteTask: _delete,
+                    ),
+                    const SizedBox(height: 10),
+                    _TaskListSection(
+                      tasks: data.tasks,
+                      now: widget.nowProvider(),
+                      filter: _taskFilter,
+                      onFilterChanged: (value) {
+                        setState(() => _taskFilter = value);
+                      },
+                      onToggleStatus: _toggleTaskStatus,
+                      onEdit: _edit,
+                      onDelete: _delete,
                     ),
                   ] else
                     _WeekCalendar(
@@ -295,6 +288,32 @@ class _TasksScreenState extends State<TasksScreen> {
     widget.onRecordsChanged?.call();
   }
 
+  Future<void> _toggleTaskStatus(Task task) async {
+    final now = widget.nowProvider();
+    final status = TaskStatus.fromValue(task.taskStatus);
+    if (status == TaskStatus.active) {
+      await widget.database.markTaskCompleted(id: task.id, updatedAt: now);
+      await widget.taskReminderCoordinator.sync(
+        taskId: task.id,
+        title: task.title,
+        dueTime: null,
+        isActive: false,
+        now: now,
+      );
+    } else {
+      await widget.database.markTaskActive(id: task.id, updatedAt: now);
+      await widget.taskReminderCoordinator.sync(
+        taskId: task.id,
+        title: task.title,
+        dueTime: _taskScheduledStartTime(task),
+        isActive: true,
+        now: now,
+      );
+    }
+    _refresh();
+    widget.onRecordsChanged?.call();
+  }
+
   Future<void> _moveCalendarItem(_CalendarDrop drop) async {
     final now = widget.nowProvider();
     if (drop.item.task != null) {
@@ -375,6 +394,57 @@ class _TasksScreenState extends State<TasksScreen> {
 
 enum _CalendarMode { month, week }
 
+enum _TaskFilter { all, active, completed, cancelled }
+
+class _TaskPageHeader extends StatelessWidget {
+  const _TaskPageHeader({required this.onAdd});
+
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const AppAssistantAvatar(size: 42),
+        const SizedBox(width: 11),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '任务',
+                style: TextStyle(
+                  color: AppColors.text,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                '有计划的行动，成就更好的自己',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            tooltip: '新增任务',
+            onPressed: onAdd,
+            icon: const Icon(Icons.adjust_rounded, color: AppColors.text),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _CalendarData {
   const _CalendarData({
     required this.monthStart,
@@ -409,96 +479,54 @@ class _CalendarData {
 }
 
 class _CalendarToolbar extends StatelessWidget {
-  const _CalendarToolbar({
-    required this.mode,
-    required this.selectedDay,
-    required this.onModeChanged,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onToday,
-  });
+  const _CalendarToolbar({required this.mode, required this.onModeChanged});
 
   final _CalendarMode mode;
-  final DateTime selectedDay;
   final ValueChanged<_CalendarMode> onModeChanged;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onToday;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<_CalendarMode>(
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith(
-                    (states) => states.contains(WidgetState.selected)
-                        ? Colors.white
-                        : const Color(0xFFF3F6FB),
-                  ),
-                  foregroundColor: WidgetStateProperty.resolveWith(
-                    (states) => states.contains(WidgetState.selected)
-                        ? AppColors.primary
-                        : AppColors.textMuted,
-                  ),
-                  side: const WidgetStatePropertyAll(
-                    BorderSide(color: AppColors.border),
-                  ),
-                ),
-                segments: const [
-                  ButtonSegment(
-                    value: _CalendarMode.month,
-                    icon: Icon(Icons.calendar_month_rounded),
-                    label: Text('月视图'),
-                  ),
-                  ButtonSegment(
-                    value: _CalendarMode.week,
-                    icon: Icon(Icons.view_week_rounded),
-                    label: Text('周视图'),
-                  ),
-                ],
-                selected: {mode},
-                onSelectionChanged: (value) => onModeChanged(value.single),
-              ),
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F5FA),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: SegmentedButton<_CalendarMode>(
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+                  ? Colors.white
+                  : const Color(0xFFF3F6FB),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                IconButton(
-                  tooltip: '上一段',
-                  onPressed: onPrevious,
-                  icon: const Icon(Icons.chevron_left_rounded),
-                ),
-                Expanded(
-                  child: Text(
-                    '${selectedDay.year} 年 ${selectedDay.month} 月',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: '下一段',
-                  onPressed: onNext,
-                  icon: const Icon(Icons.chevron_right_rounded),
-                ),
-              ],
+            foregroundColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+                  ? AppColors.primary
+                  : AppColors.textMuted,
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton.icon(
-                onPressed: onToday,
-                icon: const Icon(Icons.my_location_rounded, size: 16),
-                label: const Text('回到今天'),
-              ),
+            side: const WidgetStatePropertyAll(BorderSide.none),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          segments: const [
+            ButtonSegment(
+              value: _CalendarMode.month,
+              icon: Icon(Icons.calendar_month_rounded),
+              label: Text('月视图'),
+            ),
+            ButtonSegment(
+              value: _CalendarMode.week,
+              icon: Icon(Icons.view_week_rounded),
+              label: Text('周视图'),
             ),
           ],
+          selected: {mode},
+          onSelectionChanged: (value) => onModeChanged(value.single),
         ),
       ),
     );
@@ -510,11 +538,17 @@ class _MonthCalendar extends StatelessWidget {
     required this.data,
     required this.selectedDay,
     required this.onSelectDay,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onToday,
   });
 
   final _CalendarData data;
   final DateTime selectedDay;
   final ValueChanged<DateTime> onSelectDay;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onToday;
 
   @override
   Widget build(BuildContext context) {
@@ -527,9 +561,46 @@ class _MonthCalendar extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         child: Column(
           children: [
+            Row(
+              children: [
+                IconButton(
+                  tooltip: '上个月',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onPrevious,
+                  icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                ),
+                Text(
+                  '${selectedDay.year}年${selectedDay.month}月',
+                  style: const TextStyle(
+                    color: AppColors.text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                IconButton(
+                  tooltip: '下个月',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onNext,
+                  icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                ),
+                const Spacer(),
+                SizedBox(
+                  height: 32,
+                  child: OutlinedButton(
+                    onPressed: onToday,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 11),
+                      side: const BorderSide(color: Color(0xFFD7E5FB)),
+                    ),
+                    child: const Text('回到今天', style: TextStyle(fontSize: 11)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
             Row(
               children: [
                 for (final label in ['日', '一', '二', '三', '四', '五', '六'])
@@ -537,20 +608,24 @@ class _MonthCalendar extends StatelessWidget {
                     child: Center(
                       child: Text(
                         label,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 3),
             GridView.count(
               crossAxisCount: 7,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 6,
-              crossAxisSpacing: 6,
-              childAspectRatio: 0.72,
+              mainAxisSpacing: 1,
+              crossAxisSpacing: 2,
+              childAspectRatio: 2.3,
               children: [
                 for (final day in days)
                   _MonthDayCell(
@@ -558,10 +633,25 @@ class _MonthCalendar extends StatelessWidget {
                     inMonth: day.month == data.monthStart.month,
                     selected: _isSameDay(day, selectedDay),
                     taskCount: data.tasksForDay(day).length,
+                    recurringCount: data
+                        .tasksForDay(day)
+                        .where((task) => task.recurrenceRuleId != null)
+                        .length,
                     blockCount: data.blocksForDay(day).length,
                     sedentaryCount: data.sessionsForDay(day).length,
                     onTap: () => onSelectDay(day),
                   ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _CalendarLegendDot(color: AppColors.mint, label: '普通任务'),
+                SizedBox(width: 16),
+                _CalendarLegendDot(color: AppColors.orange, label: '每日重复'),
+                SizedBox(width: 16),
+                _CalendarLegendDot(color: AppColors.purple, label: 'AI 时间规划'),
               ],
             ),
           ],
@@ -577,6 +667,7 @@ class _MonthDayCell extends StatelessWidget {
     required this.inMonth,
     required this.selected,
     required this.taskCount,
+    required this.recurringCount,
     required this.blockCount,
     required this.sedentaryCount,
     required this.onTap,
@@ -586,6 +677,7 @@ class _MonthDayCell extends StatelessWidget {
   final bool inMonth;
   final bool selected;
   final int taskCount;
+  final int recurringCount;
   final int blockCount;
   final int sedentaryCount;
   final VoidCallback onTap;
@@ -595,22 +687,22 @@ class _MonthDayCell extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? colorScheme.primary : Colors.transparent,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+      borderRadius: BorderRadius.circular(99),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 18,
+            height: 18,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected ? colorScheme.primary : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
               '${day.day}',
               style: TextStyle(
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: selected
                     ? Colors.white
@@ -619,18 +711,50 @@ class _MonthDayCell extends StatelessWidget {
                     : const Color(0xFFB9C3D3),
               ),
             ),
-            const Spacer(),
-            Row(
+          ),
+          Positioned(
+            bottom: 0,
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _TinyDot(color: Colors.teal, enabled: taskCount > 0),
-                _TinyDot(color: Colors.indigo, enabled: blockCount > 0),
+                _TinyDot(
+                  color: AppColors.mint,
+                  enabled: taskCount - recurringCount > 0,
+                ),
+                _TinyDot(color: AppColors.orange, enabled: recurringCount > 0),
+                _TinyDot(color: AppColors.purple, enabled: blockCount > 0),
                 _TinyDot(color: Colors.amber, enabled: sedentaryCount > 0),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _CalendarLegendDot extends StatelessWidget {
+  const _CalendarLegendDot({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 9),
+        ),
+      ],
     );
   }
 }
@@ -1082,9 +1206,9 @@ class _TinyDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 5,
-      height: 5,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
+      width: 3,
+      height: 3,
+      margin: const EdgeInsets.symmetric(horizontal: 1),
       decoration: BoxDecoration(
         color: enabled ? color : Colors.transparent,
         shape: BoxShape.circle,
@@ -1149,13 +1273,14 @@ class _DraggableCalendarItem extends StatelessWidget {
   }
 }
 
-class _DayDetail extends StatelessWidget {
-  const _DayDetail({
+class _CompactDayTimeline extends StatelessWidget {
+  const _CompactDayTimeline({
     required this.day,
     required this.tasks,
     required this.blocks,
     required this.sessions,
     required this.now,
+    required this.onAddTask,
     required this.onEditTask,
     required this.onDeleteTask,
   });
@@ -1165,39 +1290,480 @@ class _DayDetail extends StatelessWidget {
   final List<ScheduleBlock> blocks;
   final List<SedentarySession> sessions;
   final DateTime now;
+  final VoidCallback onAddTask;
   final ValueChanged<Task> onEditTask;
   final ValueChanged<Task> onDeleteTask;
 
   @override
   Widget build(BuildContext context) {
+    final entries = <_CompactTimelineEntry>[
+      for (final task in tasks) _CompactTimelineEntry.task(task),
+      for (final block in blocks) _CompactTimelineEntry.block(block),
+    ]..sort((a, b) => a.start.compareTo(b.start));
+
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${day.month}月${day.day}日 ${_weekdayName(day)}',
+                    style: const TextStyle(
+                      color: AppColors.text,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                if (_isSameDay(day, now))
+                  const _SmallPill(label: '今天', color: AppColors.primary),
+                const SizedBox(width: 6),
+                SizedBox(
+                  height: 30,
+                  child: FilledButton.icon(
+                    onPressed: onAddTask,
+                    icon: const Icon(Icons.add_rounded, size: 16),
+                    label: const Text('新增任务'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      textStyle: const TextStyle(fontSize: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            if (_isSameDay(day, now)) ...[
+              Row(
+                children: [
+                  Text(
+                    _timeText(now),
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 9,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  const Expanded(
+                    child: Divider(color: Colors.redAccent, height: 1),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+            ],
+            if (entries.isEmpty && sessions.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '这一天暂无任务或时间规划。',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                  ),
+                ),
+              )
+            else ...[
+              for (final entry in entries.take(5))
+                _CompactTimelineRow(
+                  entry: entry,
+                  onEditTask: onEditTask,
+                  onDeleteTask: onDeleteTask,
+                ),
+              for (final session in sessions.take(1))
+                _CompactTimelineSedentaryRow(session: session),
+            ],
+            const SizedBox(height: 5),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _CalendarLegendDot(color: AppColors.primary, label: '普通任务'),
+                SizedBox(width: 14),
+                _CalendarLegendDot(color: AppColors.mint, label: '每日重复'),
+                SizedBox(width: 14),
+                _CalendarLegendDot(color: AppColors.purple, label: 'AI 时间规划'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactTimelineEntry {
+  const _CompactTimelineEntry._({this.task, this.block, required this.start});
+
+  factory _CompactTimelineEntry.task(Task task) =>
+      _CompactTimelineEntry._(task: task, start: _taskStartTime(task));
+
+  factory _CompactTimelineEntry.block(ScheduleBlock block) =>
+      _CompactTimelineEntry._(block: block, start: block.startTime);
+
+  final Task? task;
+  final ScheduleBlock? block;
+  final DateTime start;
+}
+
+class _CompactTimelineRow extends StatelessWidget {
+  const _CompactTimelineRow({
+    required this.entry,
+    required this.onEditTask,
+    required this.onDeleteTask,
+  });
+
+  final _CompactTimelineEntry entry;
+  final ValueChanged<Task> onEditTask;
+  final ValueChanged<Task> onDeleteTask;
+
+  @override
+  Widget build(BuildContext context) {
+    final task = entry.task;
+    final block = entry.block;
+    final color = block != null
+        ? AppColors.purple
+        : task!.recurrenceRuleId != null
+        ? AppColors.mint
+        : AppColors.primary;
+    final title = block?.title ?? task!.title;
+    final time = block != null
+        ? '${_timeText(block.startTime)}-${_timeText(block.endTime)}'
+        : _taskTimeRangeText(task!);
+
+    return Container(
+      height: 38,
+      margin: const EdgeInsets.only(bottom: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          Container(width: 4, color: color),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 68,
+            child: Text(
+              time,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 9),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          if (task != null)
+            PopupMenuButton<String>(
+              padding: EdgeInsets.zero,
+              iconSize: 17,
+              onSelected: (value) {
+                if (value == 'edit') onEditTask(task);
+                if (value == 'delete') onDeleteTask(task);
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: Text('编辑')),
+                PopupMenuItem(value: 'delete', child: Text('删除')),
+              ],
+            )
+          else
+            const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactTimelineSedentaryRow extends StatelessWidget {
+  const _CompactTimelineSedentaryRow({required this.session});
+
+  final SedentarySession session;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 34,
+      margin: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.orange.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.orange.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.self_improvement_rounded,
+            color: AppColors.orange,
+            size: 16,
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              '${_timeText(session.startedAt)} 久坐会话',
+              style: const TextStyle(color: AppColors.text, fontSize: 10),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskListSection extends StatelessWidget {
+  const _TaskListSection({
+    required this.tasks,
+    required this.now,
+    required this.filter,
+    required this.onFilterChanged,
+    required this.onToggleStatus,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final List<Task> tasks;
+  final DateTime now;
+  final _TaskFilter filter;
+  final ValueChanged<_TaskFilter> onFilterChanged;
+  final ValueChanged<Task> onToggleStatus;
+  final ValueChanged<Task> onEdit;
+  final ValueChanged<Task> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = tasks.where((task) {
+      final status = TaskStatus.fromValue(task.taskStatus);
+      return switch (filter) {
+        _TaskFilter.all => true,
+        _TaskFilter.active => status == TaskStatus.active,
+        _TaskFilter.completed => status == TaskStatus.completed,
+        _TaskFilter.cancelled => status == TaskStatus.cancelled,
+      };
+    }).toList();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${day.month} 月 ${day.day} 日详情',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            const Text(
+              '任务列表',
+              style: TextStyle(
+                color: AppColors.text,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-            const SizedBox(height: 10),
-            if (tasks.isEmpty && blocks.isEmpty && sessions.isEmpty)
-              const Text('这一天暂无任务或时间块。')
-            else ...[
-              for (final task in tasks)
-                _TaskCard(
+            const SizedBox(height: 7),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _TaskFilterChip(
+                    label: '全部 ${tasks.length}',
+                    selected: filter == _TaskFilter.all,
+                    onTap: () => onFilterChanged(_TaskFilter.all),
+                  ),
+                  _TaskFilterChip(
+                    label: '进行中',
+                    selected: filter == _TaskFilter.active,
+                    onTap: () => onFilterChanged(_TaskFilter.active),
+                  ),
+                  _TaskFilterChip(
+                    label: '已完成',
+                    selected: filter == _TaskFilter.completed,
+                    onTap: () => onFilterChanged(_TaskFilter.completed),
+                  ),
+                  _TaskFilterChip(
+                    label: '已取消',
+                    selected: filter == _TaskFilter.cancelled,
+                    onTap: () => onFilterChanged(_TaskFilter.cancelled),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 5),
+            if (visible.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  '当前筛选下没有任务。',
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                ),
+              )
+            else
+              for (final task in visible.take(8))
+                _TaskListRow(
                   task: task,
                   now: now,
-                  onEdit: () => onEditTask(task),
-                  onDelete: () => onDeleteTask(task),
+                  onToggleStatus: () => onToggleStatus(task),
+                  onEdit: () => onEdit(task),
+                  onDelete: () => onDelete(task),
                 ),
-              for (final block in blocks) _ScheduleBlockTile(block: block),
-              for (final session in sessions) _SedentaryTile(session: session),
-            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TaskFilterChip extends StatelessWidget {
+  const _TaskFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Material(
+        color: selected ? AppColors.primarySoft : Colors.transparent,
+        borderRadius: BorderRadius.circular(99),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(99),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected ? AppColors.primary : AppColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskListRow extends StatelessWidget {
+  const _TaskListRow({
+    required this.task,
+    required this.now,
+    required this.onToggleStatus,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Task task;
+  final DateTime now;
+  final VoidCallback onToggleStatus;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = TaskStatus.fromValue(task.taskStatus);
+    final active = status == TaskStatus.active;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 54),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(
+              active ? Icons.circle_outlined : Icons.check_circle_rounded,
+              color: active ? AppColors.textMuted : AppColors.mint,
+              size: 20,
+            ),
+          ),
+          IconButton(
+            tooltip: active ? '完成' : '恢复',
+            visualDensity: VisualDensity.compact,
+            onPressed: onToggleStatus,
+            icon: Icon(
+              active
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.replay_rounded,
+              color: active ? AppColors.mint : AppColors.primary,
+              size: 18,
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        task.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: active ? AppColors.text : AppColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          decoration: status == TaskStatus.completed
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _TaskStatusBadge(status: status),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  _taskTimeRangeText(task, now: now),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 9,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: '编辑',
+            visualDensity: VisualDensity.compact,
+            onPressed: onEdit,
+            icon: const Icon(
+              Icons.edit_outlined,
+              color: AppColors.primary,
+              size: 18,
+            ),
+          ),
+          IconButton(
+            tooltip: '删除',
+            visualDensity: VisualDensity.compact,
+            onPressed: onDelete,
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColors.danger,
+              size: 18,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1335,92 +1901,6 @@ class _SedentaryTile extends StatelessWidget {
   }
 }
 
-class _TaskCard extends StatelessWidget {
-  const _TaskCard({
-    required this.task,
-    required this.now,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final Task task;
-  final DateTime now;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final taskStatus = TaskStatus.fromValue(task.taskStatus);
-    final isDone = taskStatus != TaskStatus.active;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.teal.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.teal.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  task.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: isDone
-                        ? Theme.of(
-                            context,
-                          ).textTheme.bodyLarge?.color?.withValues(alpha: 0.55)
-                        : null,
-                    decoration: taskStatus == TaskStatus.completed
-                        ? TextDecoration.lineThrough
-                        : null,
-                  ),
-                ),
-              ),
-              if (task.recurrenceRuleId != null)
-                const Padding(
-                  padding: EdgeInsets.only(right: 6),
-                  child: Icon(Icons.repeat_rounded, size: 18),
-                ),
-              if (taskStatus != TaskStatus.active) ...[
-                _TaskStatusBadge(status: taskStatus),
-                const SizedBox(width: 6),
-              ],
-              _PriorityBadge(priority: task.priority),
-            ],
-          ),
-          if (task.description != null && task.description!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(task.description!),
-          ],
-          const SizedBox(height: 8),
-          Text(
-            _taskTimeRangeText(task, now: now),
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(onPressed: onEdit, child: const Text('编辑')),
-              TextButton(onPressed: onDelete, child: const Text('删除')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _TaskStatusBadge extends StatelessWidget {
   const _TaskStatusBadge({required this.status});
 
@@ -1439,27 +1919,6 @@ class _TaskStatusBadge extends StatelessWidget {
       TaskStatus.cancelled => Colors.grey,
     };
 
-    return _SmallPill(label: label, color: color);
-  }
-}
-
-class _PriorityBadge extends StatelessWidget {
-  const _PriorityBadge({required this.priority});
-
-  final String priority;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = switch (priority) {
-      'high' => '高',
-      'low' => '低',
-      _ => '中',
-    };
-    final color = switch (priority) {
-      'high' => Colors.red,
-      'low' => Colors.grey,
-      _ => Colors.orange,
-    };
     return _SmallPill(label: label, color: color);
   }
 }
@@ -1703,7 +2162,7 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
           top: false,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+              maxHeight: MediaQuery.sizeOf(context).height * 0.72,
             ),
             child: Column(
               children: [
@@ -1761,7 +2220,7 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
                               Expanded(
                                 child: _TaskTypeChip(
                                   icon: Icons.event_repeat_rounded,
-                                  label: '每日重复',
+                                  label: '每日重复任务',
                                   selected: _repeatDaily,
                                   onTap: () =>
                                       setState(() => _repeatDaily = true),
@@ -1773,10 +2232,16 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
                         const SizedBox(height: 16),
                         TextField(
                           controller: _titleController,
-                          autofocus: true,
                           decoration: const InputDecoration(
-                            labelText: '标题',
-                            prefixIcon: Icon(Icons.title_rounded),
+                            labelText: '任务标题',
+                            hintText: '输入任务标题…',
+                            filled: true,
+                            fillColor: Color(0xFFF8FAFE),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(16),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -1784,8 +2249,15 @@ class _EditTaskDialogState extends State<_EditTaskDialog> {
                           controller: _descController,
                           maxLines: 2,
                           decoration: const InputDecoration(
-                            labelText: '描述',
-                            prefixIcon: Icon(Icons.notes_rounded),
+                            labelText: '备注',
+                            hintText: '添加备注（可选）…',
+                            filled: true,
+                            fillColor: Color(0xFFF8FAFE),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(16),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),

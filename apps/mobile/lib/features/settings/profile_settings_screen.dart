@@ -80,7 +80,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
 
   Future<_ProfileOverviewData> _load() async {
     final now = widget.nowProvider();
-    final tasks = await widget.database.getVisibleTasks();
+    final tasks = await widget.database.getActiveTasks();
     final states = await widget.database.getActiveShortTermStates(now: now);
     final events = await widget.database.getActiveLifeEvents();
     final profiles = await widget.database.getActiveProfileItems();
@@ -122,30 +122,24 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
                 children: [
-                  const SafeArea(
+                  SafeArea(
                     bottom: false,
-                    child: AppPageHeader(
-                      title: '我的',
-                      subtitle: '管理你的账号、记忆与偏好',
-                      icon: Icons.person_rounded,
+                    child: _ProfileHeader(
+                      authState: authState,
+                      onLogin: _openEmailOtpSignIn,
+                      onSettings: () => _showAccountActions(authState),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  _AccountCard(
-                    authState: authState,
-                    onLogin: () => _openEmailOtpSignIn(),
-                    onSignOut: authState.isSignedIn ? _signOut : null,
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
                   _TodayOverviewCard(data: data),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   _QuickActions(
                     onNotifications: _requestNotificationPermission,
                     onSync: () => _syncCloudProfileNow(authState),
                     onPrivacy: () => _openPrivacy(),
                     onMemory: _openMemory,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   _SettingsSection(
                     title: '账号与同步',
                     children: [
@@ -211,7 +205,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _SettingsSection(
                     title: '提醒与任务',
                     children: [
@@ -242,7 +236,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _SettingsSection(
                     title: '复盘设置',
                     children: [
@@ -262,9 +256,23 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                         onTap: widget.onOpenReview,
                       ),
                       SwitchListTile(
-                        secondary: const Icon(Icons.lightbulb_outline_rounded),
-                        title: const Text('复盘结果参与首页建议'),
-                        subtitle: const Text('已接入首页建议；当前开关在 App 重启后恢复默认开启。'),
+                        dense: true,
+                        visualDensity: const VisualDensity(vertical: -3),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 3,
+                        ),
+                        secondary: const Icon(
+                          Icons.lightbulb_outline_rounded,
+                          size: 18,
+                          color: AppColors.purple,
+                        ),
+                        title: const Text(
+                          '复盘结果参与首页建议',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         value: reviewAffectsHome,
                         onChanged: (value) {
                           ref
@@ -274,7 +282,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _SettingsSection(
                     title: 'AI 与记忆',
                     children: [
@@ -316,7 +324,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _SettingsSection(
                     title: '隐私与数据',
                     children: [
@@ -348,7 +356,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _SettingsSection(
                     title: 'App 与帮助',
                     children: [
@@ -418,6 +426,80 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
       return '账号已连接，但云端同步失败：$_cloudProfileSyncError';
     }
     return '账号已连接。点击后会把本机任务、记忆和复盘单向写入云端；日历排期仍只留在本机。';
+  }
+
+  Future<void> _showAccountActions(CloudAuthState authState) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.person_outline_rounded),
+              title: Text(authState.isSignedIn ? '切换登录账号' : '登录 / 注册'),
+              onTap: () => Navigator.of(context).pop('login'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloud_sync_rounded),
+              title: const Text('立即同步到云端'),
+              onTap: () => Navigator.of(context).pop('sync'),
+            ),
+            if (authState.isSignedIn) ...[
+              ListTile(
+                leading: const Icon(Icons.cloud_download_outlined),
+                title: const Text('从云端恢复到本机'),
+                onTap: () => Navigator.of(context).pop('restore'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_forever_outlined),
+                title: const Text('删除云端副本'),
+                onTap: () => Navigator.of(context).pop('delete_cloud'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout_rounded),
+                title: const Text('退出登录'),
+                onTap: () => Navigator.of(context).pop('sign_out'),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.person_remove_outlined,
+                  color: AppColors.danger,
+                ),
+                title: const Text(
+                  '永久注销云端账号',
+                  style: TextStyle(color: AppColors.danger),
+                ),
+                onTap: () => Navigator.of(context).pop('delete_account'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+    switch (action) {
+      case 'login':
+        await _openEmailOtpSignIn();
+        break;
+      case 'sync':
+        await _syncCloudProfileNow(authState);
+        break;
+      case 'restore':
+        await _previewAndRestoreCloudCopy();
+        break;
+      case 'delete_cloud':
+        await _confirmAndDeleteCloudCopy();
+        break;
+      case 'sign_out':
+        await _signOut();
+        break;
+      case 'delete_account':
+        await _confirmAndDeleteAccount();
+        break;
+    }
   }
 
   Future<void> _syncCloudProfileNow(CloudAuthState authState) async {
@@ -730,90 +812,68 @@ class _ProfileOverviewData {
   final bool hasTodaySummary;
 }
 
-class _AccountCard extends StatelessWidget {
-  const _AccountCard({
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
     required this.authState,
     required this.onLogin,
-    required this.onSignOut,
+    required this.onSettings,
   });
 
   final CloudAuthState authState;
   final VoidCallback onLogin;
-  final VoidCallback? onSignOut;
+  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
-    final subtitle = !authState.isConfigured
-        ? '配置 Supabase 后可使用云端账号'
-        : authState.isSignedIn
-        ? '云端账号已连接（会话受系统安全存储保护）'
-        : '登录后可把本机数据手动备份到云端';
-    final icon = authState.isSignedIn
-        ? Icons.verified_user_rounded
-        : Icons.person_rounded;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFD8E7FF)),
+    final signedIn = authState.isSignedIn;
+    return Row(
+      children: [
+        const AppAssistantAvatar(size: 54),
+        const SizedBox(width: 14),
+        Expanded(
+          child: InkWell(
+            onTap: onLogin,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    signedIn ? authState.displayName : '登录 / 注册',
+                    style: const TextStyle(
+                      color: AppColors.text,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                  child: Icon(icon, color: AppColors.primary),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        authState.displayName,
-                        style: const TextStyle(
-                          color: AppColors.text,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 3),
+                  Text(
+                    signedIn ? '账号已连接，继续你的记忆之旅' : '登录后开启你的记忆之旅 ✨',
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: onLogin,
-                    icon: const Icon(Icons.mail_outline_rounded),
-                    label: Text(authState.isSignedIn ? '切换账号' : '邮箱登录'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                OutlinedButton(onPressed: onSignOut, child: const Text('退出')),
-              ],
-            ),
-          ],
+          ),
         ),
-      ),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            tooltip: '账号与高级设置',
+            onPressed: onSettings,
+            icon: const Icon(Icons.settings_outlined, size: 21),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1003,18 +1063,44 @@ class _TodayOverviewCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Row(
               children: [
-                _OverviewPill(label: '任务', value: data?.taskCount),
-                _OverviewPill(label: '状态', value: data?.activeStateCount),
-                _OverviewPill(label: '事件', value: data?.lifeEventCount),
-                _OverviewPill(label: '画像', value: data?.profileCount),
-                _OverviewPill(label: '待确认', value: data?.pendingCount),
-                _OverviewPill(
-                  label: '今日复盘',
-                  textValue: data?.hasTodaySummary == true ? '已生成' : '未生成',
+                Expanded(
+                  child: _OverviewPill(
+                    icon: Icons.task_alt_rounded,
+                    color: AppColors.primary,
+                    label: '待办任务',
+                    value: data?.taskCount,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: _OverviewPill(
+                    icon: Icons.monitor_heart_outlined,
+                    color: AppColors.mint,
+                    label: '记录条数',
+                    value: data == null
+                        ? null
+                        : data!.activeStateCount + data!.lifeEventCount,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: _OverviewPill(
+                    icon: Icons.pending_actions_rounded,
+                    color: AppColors.orange,
+                    label: '待确认',
+                    value: data?.pendingCount,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: _OverviewPill(
+                    icon: Icons.psychology_alt_outlined,
+                    color: AppColors.purple,
+                    label: '长期记忆',
+                    value: data?.profileCount,
+                  ),
                 ),
               ],
             ),
@@ -1026,27 +1112,48 @@ class _TodayOverviewCard extends StatelessWidget {
 }
 
 class _OverviewPill extends StatelessWidget {
-  const _OverviewPill({required this.label, this.value, this.textValue});
+  const _OverviewPill({
+    required this.icon,
+    required this.color,
+    required this.label,
+    this.value,
+  });
 
+  final IconData icon;
+  final Color color;
   final String label;
   final int? value;
-  final String? textValue;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.primarySoft,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Text(
-        '$label ${textValue ?? value ?? '-'}',
-        style: const TextStyle(
-          color: AppColors.primary,
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 19),
+          const SizedBox(height: 6),
+          Text(
+            '${value ?? '-'}',
+            style: const TextStyle(
+              color: AppColors.text,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 9),
+          ),
+        ],
       ),
     );
   }
@@ -1072,7 +1179,7 @@ class _QuickActions extends StatelessWidget {
         Expanded(
           child: _QuickActionButton(
             icon: Icons.notifications_active_rounded,
-            label: '通知权限',
+            label: '通知',
             onTap: onNotifications,
           ),
         ),
@@ -1080,7 +1187,7 @@ class _QuickActions extends StatelessWidget {
         Expanded(
           child: _QuickActionButton(
             icon: Icons.cloud_sync_rounded,
-            label: '数据与同步',
+            label: '同步',
             onTap: onSync,
           ),
         ),
@@ -1088,7 +1195,7 @@ class _QuickActions extends StatelessWidget {
         Expanded(
           child: _QuickActionButton(
             icon: Icons.privacy_tip_outlined,
-            label: '隐私与记忆',
+            label: '隐私',
             onTap: onPrivacy,
           ),
         ),
@@ -1096,7 +1203,7 @@ class _QuickActions extends StatelessWidget {
         Expanded(
           child: _QuickActionButton(
             icon: Icons.psychology_alt_outlined,
-            label: '记忆管理',
+            label: '记忆',
             onTap: onMemory,
           ),
         ),
@@ -1122,8 +1229,8 @@ class _QuickActionButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        height: 88,
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+        height: 58,
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -1132,14 +1239,14 @@ class _QuickActionButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: AppColors.primary),
-            const SizedBox(height: 7),
+            Icon(icon, size: 20, color: AppColors.primary),
+            const SizedBox(height: 4),
             Text(
               label,
               maxLines: 2,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -1157,31 +1264,25 @@ class _SettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          childrenPadding: const EdgeInsets.only(bottom: 8),
-          iconColor: AppColors.primary,
-          collapsedIconColor: AppColors.textMuted,
-          leading: const Icon(Icons.folder_rounded, color: AppColors.primary),
-          title: Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.text,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 7),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.text,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
-          ),
-          subtitle: Text(
-            '${children.length} 项设置',
-            style: const TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          children: children,
+            const SizedBox(height: 3),
+            ...children.take(title == '复盘设置' ? 3 : 2),
+          ],
         ),
       ),
     );
@@ -1206,31 +1307,46 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -3),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 3),
       leading: Container(
-        width: 36,
-        height: 36,
+        width: 28,
+        height: 28,
         decoration: BoxDecoration(
           color: AppColors.primarySoft,
           borderRadius: BorderRadius.circular(11),
         ),
-        child: Icon(icon, color: AppColors.primary, size: 20),
+        child: Icon(icon, color: AppColors.primary, size: 16),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-      subtitle: Text(subtitle),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+      ),
+      subtitle: null,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (trailingText != null)
-            Text(
-              trailingText!,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 128),
+            child: Text(
+              trailingText ?? subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
               style: const TextStyle(
                 color: AppColors.textMuted,
-                fontSize: 12,
+                fontSize: 9,
                 fontWeight: FontWeight.w700,
               ),
             ),
+          ),
           if (onTap != null)
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textMuted,
+              size: 18,
+            ),
         ],
       ),
       onTap: onTap,
